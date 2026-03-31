@@ -40,10 +40,54 @@ export default function AdminDashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Chart Area */}
-        <div className="lg:col-span-2 glass-card p-6 min-h-[400px]">
-          <h2 className="text-lg font-semibold text-white mb-4">Ingresos Semanales</h2>
-          <div className="w-full h-full flex items-center justify-center border-2 border-dashed border-white/5 rounded-xl">
-             <span className="text-white/30 text-sm font-medium">Gráfico (Proximamente)</span>
+        <div className="lg:col-span-2 glass-card p-6 flex flex-col h-[400px]">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-lg font-bold text-white">Ingresos Semanales</h2>
+            <div className="flex gap-4 text-xs font-bold text-white/50">
+               <span className="flex items-center gap-1"><div className="w-3 h-3 rounded-sm bg-primary" /> Efectivo</span>
+               <span className="flex items-center gap-1"><div className="w-3 h-3 rounded-sm bg-[#742284]" /> Yape</span>
+            </div>
+          </div>
+          
+          <div className="flex-1 flex items-end justify-between gap-2 xl:gap-4 pb-2 border-b border-white/10 relative">
+             {/* Líneas Guía Background */}
+             <div className="absolute top-0 w-full h-[1px] bg-white/5" />
+             <div className="absolute top-1/4 w-full h-[1px] bg-white/5" />
+             <div className="absolute top-1/2 w-full h-[1px] bg-white/5" />
+             <div className="absolute top-3/4 w-full h-[1px] bg-white/5" />
+
+             {/* Datos Grafico */}
+             {[
+               { day: 'Lun', cash: 40, yape: 60 },
+               { day: 'Mar', cash: 50, yape: 30 },
+               { day: 'Mié', cash: 20, yape: 40 },
+               { day: 'Jue', cash: 60, yape: 80 },
+               { day: 'Vie', cash: 30, yape: 90 },
+               { day: 'Sáb', cash: 90, yape: 120 },
+               { day: 'Dom', cash: 80, yape: 60 }
+             ].map((col, i) => (
+                <div key={i} className="flex-1 flex flex-col items-center gap-2 group z-10 w-full h-full justify-end cursor-pointer">
+                   
+                   {/* Tooltip Hover (simulado mediante group-hover) */}
+                   <div className="opacity-0 group-hover:opacity-100 transition-opacity absolute -top-8 bg-black/80 px-3 py-1 rounded-lg text-xs font-bold whitespace-nowrap z-20 pointer-events-none transform translate-y-2 group-hover:translate-y-0">
+                      S/ {col.cash + col.yape}
+                   </div>
+
+                   {/* Barras Apiladas */}
+                   <div className="w-full max-w-[40px] flex flex-col justify-end gap-1 flex-1 relative">
+                       <div 
+                          className="w-full bg-[#742284] rounded-t-sm transition-all duration-1000 group-hover:bg-[#742284]/80 shadow-[0_0_15px_rgba(116,34,132,0.5)]" 
+                          style={{ height: `${(col.yape / 200) * 100}%` }} 
+                       />
+                       <div 
+                          className="w-full bg-primary rounded-b-sm transition-all duration-1000 group-hover:bg-primary/80 shadow-[0_0_15px_rgba(15,255,160,0.5)]" 
+                          style={{ height: `${(col.cash / 200) * 100}%` }} 
+                       />
+                   </div>
+                   
+                   <span className="text-white/50 text-xs font-medium group-hover:text-white transition-colors">{col.day}</span>
+                </div>
+             ))}
           </div>
         </div>
 

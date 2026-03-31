@@ -26,8 +26,9 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
         <nav className="flex-1 p-4 flex flex-col gap-2">
           <SidebarLink href="/admin" icon={<LayoutDashboard size={20} />} label="Dashboard" />
-          <SidebarLink href="/admin/pedidos" icon={<Receipt size={20} />} label="Pedidos" />
-          <SidebarLink href="/admin/servicios" icon={<Package size={20} />} label="Servicios" />
+          <SidebarLink href="/admin/caja" icon={<Receipt size={20} />} label="Caja" />
+          <SidebarLink href="/admin/pedidos" icon={<Package size={20} />} label="Pedidos" />
+          <SidebarLink href="/admin/servicios" icon={<Settings size={20} />} label="Servicios" />
           <SidebarLink href="/admin/staff" icon={<Users size={20} />} label="Personal" />
         </nav>
 
