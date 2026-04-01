@@ -1,9 +1,12 @@
 "use client";
 
-import { use, useState } from "react";
-import { ArrowLeft, CheckCircle, UploadCloud, Info, Copy } from "lucide-react";
+import { use, useState, useEffect } from "react";
+import { ArrowLeft, CheckCircle, UploadCloud, Info, Copy, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { QRCodeSVG } from "qrcode.react";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { db, storage } from "@/lib/firebase";
 
 export default function YapePaymentPage({
   params,
@@ -12,15 +15,50 @@ export default function YapePaymentPage({
 }) {
   const { storeSlug, ticket } = use(params);
 
-  // Mocks del backend (En Fase de Integración vendrán de useStore / Firestore)
-  const store = { name: "Lavandería Magistral", yapeNumber: "999888777", yapeName: "Magistral S.A.C." };
-  const total = 22.00; // Mock
-
+  const [loading, setLoading] = useState(true);
+  const [store, setStore] = useState({ 
+    name: "Cargando...", 
+    yapeNumber: "999888777", 
+    yapeName: "Lavandería Magistral" 
+  });
+  const [order, setOrder] = useState<any>(null);
+  
   const [copied, setCopied] = useState(false);
   const [opCode, setOpCode] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDone, setIsDone] = useState(false);
+
+  // Cargar datos reales de la tienda y el pedido
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // Cargar Tienda
+        const storeSnap = await getDoc(doc(db, "stores", "demo-store"));
+        if (storeSnap.exists()) {
+          const s = storeSnap.data();
+          setStore({
+            name: s.storeName || "Lavandería Magistral",
+            yapeNumber: s.yapeNumber || "999888777",
+            yapeName: s.yapeName || "Magistral S.A.C. (Caja)"
+          });
+        }
+
+        // Cargar Pedido
+        const orderSnap = await getDoc(doc(db, "stores/demo-store/orders", ticket));
+        if (orderSnap.exists()) {
+          setOrder(orderSnap.data());
+        } else {
+          alert("No encontramos ese pedido en nuestro sistema.");
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, [ticket]);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(store.yapeNumber);
@@ -34,27 +72,55 @@ export default function YapePaymentPage({
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!file || !opCode) return alert("Completa todos los campos");
+    if (!file || !opCode || !order) return alert("Completa todos los campos");
     
     setIsSubmitting(true);
-    // Simula subida a Firebase Storage y actualización del Documento del Pedido
-    setTimeout(() => {
-      setIsSubmitting(false);
+    try {
+      // 1. Subir a Firebase Storage
+      const extension = file.name.split('.').pop();
+      const fileName = `${ticket}_${Date.now()}.${extension}`;
+      const storageRef = ref(storage, `stores/demo-store/vouchers/${fileName}`);
+      
+      const uploadResult = await uploadBytes(storageRef, file);
+      const downloadURL = await getDownloadURL(uploadResult.ref);
+
+      // 2. Actualizar el pedido en Firestore
+      await updateDoc(doc(db, "stores/demo-store/orders", ticket), {
+        opCode,
+        voucherUrl: downloadURL,
+        paymentStatus: "PENDING_VERIFICATION",
+        paymentMethod: "YAPE"
+      });
+
       setIsDone(true);
-    }, 1500);
+    } catch (error) {
+      console.error(error);
+      alert("Error al subir el comprobante. Intenta de nuevo.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-40">
+        <Loader2 className="animate-spin text-primary mb-4" size={48} />
+        <p className="text-white/60">Cargando datos de pago...</p>
+      </div>
+    );
+  }
 
   if (isDone) {
     return (
       <div className="flex flex-col items-center justify-center py-20 animate-in fade-in zoom-in duration-500 text-center">
-         <div className="w-24 h-24 mb-6 text-success animate-bounce">
-            <CheckCircle size={96} />
+         <div className="w-24 h-24 mb-6 text-success animate-bounce bg-success/10 rounded-full flex items-center justify-center mx-auto">
+            <CheckCircle size={56} />
          </div>
          <h1 className="text-3xl font-black text-white mb-4">Comprobante Enviado</h1>
          <p className="text-white/60 max-w-sm mb-8">
-           Nuestros cajeros están revisando tu pago. Si todo está correcto, el estado de tu pedido pasará a ser "PAGADO" y no harás cola al recogerlo.
+           Recibimos tu voucher. El administrador validará el pago en unos minutos y el status pasará a "PAGADO" en el portal de rastreo.
          </p>
          <Link href={`/${storeSlug}`} className="bg-primary hover:bg-primary/80 active:scale-95 px-8 flex font-bold py-4 text-white rounded-xl transition-all">
            Volver al Rastreo
@@ -62,6 +128,8 @@ export default function YapePaymentPage({
       </div>
     );
   }
+
+  const total = order?.total || 0;
 
   return (
     <div className="animate-in fade-in duration-500 pb-12 max-w-xl mx-auto mt-4 md:mt-8">
@@ -74,13 +142,12 @@ export default function YapePaymentPage({
          <div className="w-16 h-16 rounded-full bg-[#742284]/20 flex items-center justify-center mx-auto mb-4 text-[#742284]">
            <span className="font-black text-2xl font-mono">Y</span>
          </div>
-         <h1 className="text-2xl font-bold text-white mb-2">Paga tu Ticket {ticket}</h1>
-         <p className="text-white/60">Abre tu app Yape o Plin y escanea el código para ahorrar tiempo.</p>
+         <h1 className="text-2xl font-bold text-white mb-2">Paga tu Ticket {order?.ticketNumber || "..."}</h1>
+         <p className="text-white/60">Escanea el código QR desde tu app Yape o Plin.</p>
       </div>
 
       <div className="glass-card p-0 overflow-hidden border-[#742284]/30 shadow-2xl shadow-[#742284]/10">
          
-         {/* Datos QR */}
          <div className="p-8 text-center bg-gradient-to-b from-surface to-background flex flex-col items-center">
             <div className="bg-white p-4 rounded-3xl shadow-lg mb-6 rotate-1 hover:rotate-0 transition-transform cursor-pointer">
               <QRCodeSVG 
@@ -100,13 +167,11 @@ export default function YapePaymentPage({
             </button>
          </div>
 
-         {/* Formulario de Subida */}
          <div className="p-6 md:p-8 bg-surface border-t border-white/5">
             <h3 className="text-white font-bold mb-4 flex items-center gap-2">Sube tu evidencia <Info size={16} className="text-white/40"/></h3>
             
             <form onSubmit={handleSubmit} className="space-y-6">
               
-              {/* OpCode */}
               <div>
                  <label className="block text-xs font-bold uppercase text-white/50 mb-2">Código de Operación (Yape/Plin)</label>
                  <input type="text" value={opCode} onChange={e => setOpCode(e.target.value.replace(/[^0-9]/g, ''))} maxLength={10} required placeholder="Ej: 123456"
@@ -114,7 +179,6 @@ export default function YapePaymentPage({
                  />
               </div>
 
-              {/* Archivo */}
               <div>
                  <label className="block text-xs font-bold uppercase text-white/50 mb-2">Comprobante de Pago</label>
                  

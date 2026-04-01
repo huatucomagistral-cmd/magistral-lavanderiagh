@@ -1,23 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ArrowLeft, Search, Plus, Minus, CreditCard, DollarSign, PackageSearch } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/store/useStore";
+import { searchDNI } from "@/app/actions/reniec";
+import { collection, onSnapshot, addDoc, runTransaction, doc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
-type CatalogItem = {
+export type CatalogItem = {
   id: string;
   name: string;
   price: number;
   type: "KG" | "UNIT";
 };
-
-const mockCatalog: CatalogItem[] = [
-  { id: "1", name: "Lavado y Secado", price: 5.50, type: "KG" },
-  { id: "2", name: "Edredón 2 Plazas", price: 25.00, type: "UNIT" },
-  { id: "3", name: "Casaca", price: 12.00, type: "UNIT" },
-];
 
 export default function NuevoPedidoPage() {
   const router = useRouter();
@@ -27,18 +24,36 @@ export default function NuevoPedidoPage() {
   const [customerName, setCustomerName] = useState("");
   const [isSearchingDNI, setIsSearchingDNI] = useState(false);
   const [cart, setCart] = useState<{item: CatalogItem, qty: number}[]>([]);
-  const [payMethod, setPayMethod] = useState<"EFECTIVO" | "YAPE" | "TRANSFERENCIA">("EFECTIVO");
+  const [payMethod, setPayMethod] = useState<"EFECTIVO" | "YAPE" | "TRANSFERENCIA" | "LUEGO">("EFECTIVO");
   const [isSaving, setIsSaving] = useState(false);
+  const [loadingServices, setLoadingServices] = useState(true);
+  const [catalogDb, setCatalogDb] = useState<CatalogItem[]>([]);
 
-  const handleSearchDNI = (e: React.FormEvent) => {
+  // Escuchar Servicios Reales de Firebase
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, "stores/demo-store/services"), (snap) => {
+      const data = snap.docs.map(d => ({ id: d.id, ...d.data() })) as CatalogItem[];
+      setCatalogDb(data);
+      setLoadingServices(false);
+    });
+    return () => unsub();
+  }, []);
+
+  const handleSearchDNI = async (e: React.FormEvent) => {
     e.preventDefault();
     if(dni.length !== 8) return alert("DNI inválido");
     setIsSearchingDNI(true);
-    // Simular API RENIEC
-    setTimeout(() => {
-      setCustomerName("Carlos Pérez Ramírez");
-      setIsSearchingDNI(false);
-    }, 800);
+    
+    // Consulta real a la API mediante Server Action (seguro)
+    const result = await searchDNI(dni);
+    if (result.success && result.name) {
+      setCustomerName(result.name);
+    } else {
+      alert(result.error || "No se encontró el DNI.");
+      setCustomerName("");
+    }
+    
+    setIsSearchingDNI(false);
   };
 
   const addToCart = (item: CatalogItem) => {
@@ -61,17 +76,78 @@ export default function NuevoPedidoPage() {
 
   const total = cart.reduce((acc, current) => acc + (current.item.price * current.qty), 0);
 
-  const handleCreateOrder = () => {
+  const handleCreateOrder = async () => {
     if(!isCajaOpen) return alert("Debes ABRIR CAJA primero para procesar pedidos.");
     if(cart.length === 0) return alert("Agrega servicios al pedido.");
     if(!customerName) return alert("Busca o ingresa el nombre del cliente.");
 
     setIsSaving(true);
-    setTimeout(() => {
+    try {
+      const counterRef = doc(db, "stores/demo-store/meta/counters");
+      const ordersRef = collection(db, "stores/demo-store/orders");
+
+      let ticketNumber = "";
+      let newDocId = "";
+
+      // Obtener la fecha actual en formato YYMMDD (hora local del negocio)
+      const now = new Date();
+      const yy = String(now.getFullYear()).slice(2);
+      const mm = String(now.getMonth() + 1).padStart(2, "0");
+      const dd = String(now.getDate()).padStart(2, "0");
+      const todayStr = `${yy}${mm}${dd}`; // ej. "260401"
+
+      await runTransaction(db, async (transaction) => {
+        const counterSnap = await transaction.get(counterRef);
+        
+        let dailyCount = 1;
+        if (counterSnap.exists()) {
+          const data = counterSnap.data();
+          const lastDate = data.lastDate ?? "";
+          const currentDailyCount = data.dailyCount ?? 0;
+
+          if (lastDate === todayStr) {
+            // Mismo día: incrementar el contador diario
+            dailyCount = currentDailyCount + 1;
+          } else {
+            // Nuevo día: reiniciar a 001
+            dailyCount = 1;
+          }
+        }
+
+        // Formato YYMMDD-NNN  → ej. 260401-015
+        ticketNumber = `${todayStr}-${String(dailyCount).padStart(3, "0")}`;
+
+        // Actualizar el contador con la fecha y el contador del día
+        transaction.set(counterRef, { 
+          lastDate: todayStr, 
+          dailyCount,
+          // Mantener compatibilidad con el campo anterior
+          ordersCount: (counterSnap.exists() ? (counterSnap.data().ordersCount ?? 0) : 0) + 1
+        }, { merge: true });
+      });
+
+      // Crear el documento de la orden con el ticketNumber como campo
+      const orderData = {
+        ticketNumber,
+        customerName,
+        customerDni: dni || "0",
+        date: new Date().toISOString(),
+        items: cart,
+        total,
+        payMethod,
+        status: "RECIBIDO",
+        paymentStatus: payMethod === "LUEGO" ? "UNPAID" : (payMethod === "YAPE" ? "PENDING_VERIFICATION" : "PAID")
+      };
+
+      const docRef = await addDoc(ordersRef, orderData);
+      newDocId = docRef.id;
+
+      router.push(`/admin/pedidos/ticket/${newDocId}`);
+    } catch(err) {
+      console.error(err);
+      alert("Ocurrió un error al guardar el pedido en la nube.");
       setIsSaving(false);
-      alert("Pedido Creado: T-0046 (Simulado)");
-      router.push("/admin/pedidos/ticket/T-0046");
-    }, 1200);
+    }
   };
 
   return (
@@ -108,17 +184,24 @@ export default function NuevoPedidoPage() {
 
           <div className="glass-card p-6">
             <h2 className="text-sm font-bold text-white uppercase tracking-wider mb-4">2. Agregar Servicios</h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-               {mockCatalog.map(item => (
-                 <button key={item.id} onClick={() => addToCart(item)}
-                   className="flex flex-col items-center justify-center p-4 border border-white/10 rounded-xl bg-surface hover:bg-white/5 active:scale-95 transition-all group"
-                 >
-                    <span className="text-white/80 font-medium text-sm text-center mb-1 group-hover:text-white">{item.name}</span>
-                    <span className="text-primary font-mono font-bold text-lg">S/ {item.price.toFixed(2)}</span>
-                    <span className="text-[10px] text-white/40 uppercase bg-white/5 px-2 rounded-full mt-2">x {item.type}</span>
-                 </button>
-               ))}
-            </div>
+            
+            {loadingServices ? (
+               <div className="flex justify-center p-6"><span className="animate-spin border-4 border-white/20 border-t-primary rounded-full w-8 h-8"/></div>
+            ) : catalogDb.length === 0 ? (
+               <div className="text-center py-6 text-white/50 text-sm">No hay servicios (Agrégalos en Tarifario)</div>
+            ) : (
+               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {catalogDb.map(item => (
+                    <button key={item.id} onClick={() => addToCart(item)}
+                      className="flex flex-col items-center justify-center p-4 border border-white/10 rounded-xl bg-surface hover:bg-white/5 active:scale-95 transition-all group"
+                    >
+                       <span className="text-white/80 font-medium text-sm text-center mb-1 group-hover:text-white">{item.name}</span>
+                       <span className="text-primary font-mono font-bold text-lg">S/ {item.price.toFixed(2)}</span>
+                       <span className="text-[10px] text-white/40 uppercase bg-white/5 px-2 rounded-full mt-2">x {item.type}</span>
+                    </button>
+                  ))}
+               </div>
+            )}
           </div>
 
         </div>
@@ -171,6 +254,9 @@ export default function NuevoPedidoPage() {
                    <button onClick={() => setPayMethod("YAPE")} className={`py-3 rounded-lg flex justify-center items-center gap-2 transition-colors border ${payMethod === "YAPE" ? 'bg-[#742284]/20 text-white border-[#742284]/50' : 'bg-transparent text-white/50 border-white/5 hover:border-[#742284]/30'}`}>
                      Yape / Plin
                    </button>
+                   <button onClick={() => setPayMethod("LUEGO")} className={`py-3 rounded-lg flex justify-center items-center gap-2 transition-colors border col-span-2 ${payMethod === "LUEGO" ? 'bg-error/20 text-error border-error/50' : 'bg-transparent text-white/50 border-white/5 hover:border-error/30'}`}>
+                     Pagar al Recoger (Pendiente)
+                   </button>
                 </div>
 
                 {!isCajaOpen && (
@@ -180,8 +266,8 @@ export default function NuevoPedidoPage() {
                 )}
 
                 <button onClick={handleCreateOrder} disabled={total === 0 || isSaving || !isCajaOpen} 
-                  className="w-full bg-primary hover:bg-primary-hover disabled:opacity-50 disabled:pointer-events-none active:scale-95 transition-all text-white font-extrabold rounded-xl py-4 flex items-center justify-center gap-2 shadow-lg shadow-primary/20">
-                  {isSaving ? <span className="animate-spin border-2 border-white/30 border-t-white rounded-full w-5 h-5 mx-auto"/> : "💰 Terminar y Cobrar"}
+                  className={`w-full ${payMethod === 'LUEGO' ? 'bg-surface border border-white/10' : 'bg-primary'} hover:brightness-110 disabled:opacity-50 disabled:pointer-events-none active:scale-95 transition-all text-white font-extrabold rounded-xl py-4 flex items-center justify-center gap-2 shadow-lg shadow-primary/20`}>
+                  {isSaving ? <span className="animate-spin border-2 border-white/30 border-t-white rounded-full w-5 h-5 mx-auto"/> : (payMethod === 'LUEGO' ? "📝 Generar Orden sin Cobrar" : "💰 Terminar y Cobrar")}
                 </button>
              </div>
           </div>

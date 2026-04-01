@@ -1,23 +1,52 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useStore } from "@/store/useStore";
-import { LockKeyhole, LockOpen, DollarSign, Wallet, ArrowRightLeft, Ticket } from "lucide-react";
+import { LockKeyhole, LockOpen, DollarSign, Wallet, ArrowRightLeft, Ticket, Loader2 } from "lucide-react";
+import { collection, onSnapshot, query, orderBy } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
 export default function CajaPage() {
   const { isCajaOpen, setCajaStatus } = useStore();
   const [initialCash, setInitialCash] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
+  
+  const [orders, setOrders] = useState<any[]>([]);
+  const [loadingOrders, setLoadingOrders] = useState(true);
 
-  // Mocks de totales si estuviese abierta
-  const mockStats = {
-    ingresosEfectivo: 120.00,
-    ingresosYape: 85.00,
-    ingresosTransferencia: 0.00,
-    pedidosCobrados: 8,
-  };
+  useEffect(() => {
+    const q = query(collection(db, "stores/demo-store/orders"), orderBy("date", "desc"));
+    const unsub = onSnapshot(q, (snap) => {
+      const data = snap.docs.map(d => {
+        const raw = d.data();
+        // Manejar Firestore Timestamp Y strings ISO
+        const dateObj = raw.date?.toDate ? raw.date.toDate() : new Date(raw.date);
+        const todayStr = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+        const orderDateStr = isNaN(dateObj.getTime()) ? '' : dateObj.toISOString().slice(0, 10);
+        return {
+          id: d.id,
+          ...raw,
+          _isToday: orderDateStr === todayStr,
+        };
+      });
+      setOrders(data);
+      setLoadingOrders(false);
+    });
+    return () => unsub();
+  }, []);
 
-  const currentInitial = parseFloat(initialCash) || 50; // Mock current session base
+  // Misma lógica que el panel "Entregados Hoy": pedidos con ENTREGADO de hoy
+  const todayOrders = orders.filter(o => o._isToday && o.status === 'ENTREGADO');
+
+  const stats = todayOrders.reduce((acc, order) => {
+    if(order.payMethod === "EFECTIVO") acc.efectivo += Number(order.total) || 0;
+    if(order.payMethod === "YAPE") acc.yape += Number(order.total) || 0;
+    if(order.payMethod === "TRANSFERENCIA") acc.transferencia += Number(order.total) || 0;
+    acc.cobrados += 1;
+    return acc;
+  }, { efectivo: 0, yape: 0, transferencia: 0, cobrados: 0 });
+
+  const currentInitial = parseFloat(initialCash) || 50;
 
   const handleOpenCaja = (e: React.FormEvent) => {
     e.preventDefault();
@@ -93,7 +122,7 @@ export default function CajaPage() {
               </div>
               <h3 className="text-white/70 font-medium mb-1 relative z-10">Total Efectivo en Caja</h3>
               <p className="text-4xl font-black text-white tracking-tight relative z-10 font-mono">
-                S/ {(currentInitial + mockStats.ingresosEfectivo).toFixed(2)}
+                S/ {(currentInitial + stats.efectivo).toFixed(2)}
               </p>
               
               <div className="mt-6 flex flex-col gap-2 relative z-10">
@@ -103,7 +132,7 @@ export default function CajaPage() {
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-white/50">Cobros Efectivo:</span>
-                  <span className="text-success font-medium">+ S/ {mockStats.ingresosEfectivo.toFixed(2)}</span>
+                  <span className="text-success font-medium">+ S/ {stats.efectivo.toFixed(2)}</span>
                 </div>
               </div>
 
@@ -124,47 +153,59 @@ export default function CajaPage() {
                      <div className="w-8 h-8 rounded-full bg-[#742284]/20 flex items-center justify-center text-[#742284]"><DollarSign size={16}/></div>
                      <span className="text-white/70 font-medium text-sm">Cobros Yape</span>
                    </div>
-                   <p className="text-2xl font-bold text-white font-mono">S/ {mockStats.ingresosYape.toFixed(2)}</p>
+                   <p className="text-2xl font-bold text-white font-mono">S/ {stats.yape.toFixed(2)}</p>
                 </div>
                 <div className="glass-card p-5">
                    <div className="flex items-center gap-3 mb-2">
                      <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center text-accent"><ArrowRightLeft size={16}/></div>
                      <span className="text-white/70 font-medium text-sm">Transferencias</span>
                    </div>
-                   <p className="text-2xl font-bold text-white font-mono">S/ {mockStats.ingresosTransferencia.toFixed(2)}</p>
+                   <p className="text-2xl font-bold text-white font-mono">S/ {stats.transferencia.toFixed(2)}</p>
                 </div>
                 <div className="glass-card p-5">
                    <div className="flex items-center gap-3 mb-2">
                      <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white"><Ticket size={16}/></div>
                      <span className="text-white/70 font-medium text-sm">Pedidos Cobrados</span>
                    </div>
-                   <p className="text-2xl font-bold text-white font-mono">{mockStats.pedidosCobrados} pagos</p>
+                   <p className="text-2xl font-bold text-white font-mono">{stats.cobrados} pagos</p>
                 </div>
              </div>
 
-             <div className="glass-card p-6">
-                <h3 className="text-lg font-bold text-white mb-4">Últimos Movimientos Pagaods</h3>
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="border-b border-white/10 text-white/50 text-sm">
-                      <th className="pb-3 font-medium">Ticket</th>
-                      <th className="pb-3 font-medium">Método</th>
-                      <th className="pb-3 font-medium text-right">Monto</th>
-                    </tr>
-                  </thead>
-                  <tbody className="text-sm">
-                    <tr className="border-b border-white/5">
-                      <td className="py-3 text-white font-mono">T-0045</td>
-                      <td className="py-3"><span className="px-2 py-1 rounded bg-[#742284]/20 text-[#742284] text-xs font-bold">YAPE</span></td>
-                      <td className="py-3 text-right text-success font-bold font-mono">+ 15.00</td>
-                    </tr>
-                    <tr className="border-b border-white/5">
-                      <td className="py-3 text-white font-mono">T-0044</td>
-                      <td className="py-3"><span className="px-2 py-1 rounded bg-white/10 text-white/70 text-xs font-bold">EFECTIVO</span></td>
-                      <td className="py-3 text-right text-success font-bold font-mono">+ 25.50</td>
-                    </tr>
-                  </tbody>
-                </table>
+              <div className="glass-card p-6">
+                <h3 className="text-lg font-bold text-white mb-4">Últimos Movimientos Pagados (Hoy)</h3>
+                
+                {loadingOrders ? (
+                   <div className="flex py-8 justify-center"><Loader2 className="animate-spin text-white/50" /></div>
+                ) : (
+                  <div className="max-h-64 overflow-y-auto pr-2 scrollbar-hide">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="border-b border-white/10 text-white/50 text-sm">
+                          <th className="pb-3 font-medium">Ticket</th>
+                          <th className="pb-3 font-medium">Método</th>
+                          <th className="pb-3 font-medium text-right">Monto</th>
+                        </tr>
+                      </thead>
+                      <tbody className="text-sm">
+                        {todayOrders.map((o) => (
+                          <tr key={o.id} className="border-b border-white/5">
+                            <td className="py-3 font-mono">
+                              <span className="text-primary font-bold">{o.ticketNumber || o.id.slice(0,6).toUpperCase()}</span>
+                              <span className="block text-white/40 text-[10px] font-sans normal-case">{o.customerName}</span>
+                            </td>
+                            <td className="py-3">
+                              {o.payMethod === "YAPE" && <span className="px-2 py-1 rounded bg-[#742284]/20 text-[#742284] text-xs font-bold">YAPE</span>}
+                              {o.payMethod === "EFECTIVO" && <span className="px-2 py-1 rounded bg-white/10 text-white/70 text-xs font-bold">EFECTIVO</span>}
+                              {o.payMethod === "TRANSFERENCIA" && <span className="px-2 py-1 rounded bg-accent/20 text-accent text-xs font-bold">TRANSFER</span>}
+                              {!o.payMethod && <span className="text-white/20 text-xs">—</span>}
+                            </td>
+                            <td className="py-3 text-right text-success font-bold font-mono">+ {Number(o.total).toFixed(2)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
              </div>
           </div>
         </div>

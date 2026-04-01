@@ -1,10 +1,10 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useState, useEffect } from "react";
 import { Search, ChevronRight, Package, CheckCircle, Clock } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
-import { QrCode } from "lucide-react";
+import { collection, query, where, getDocs } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
 interface PublicPageProps {
   params: Promise<{ storeSlug: string }>;
@@ -18,6 +18,7 @@ type TicketResult = {
   items: number;
   total: number;
   date: string;
+  paymentStatus: string;
 } | null;
 
 export default function StorefrontPage({ params }: PublicPageProps) {
@@ -28,24 +29,61 @@ export default function StorefrontPage({ params }: PublicPageProps) {
   const [isSearching, setIsSearching] = useState(false);
   const [result, setResult] = useState<TicketResult>(null);
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!searchQuery) return;
+  // Helper para buscar por número de ticket (T-XXXX) en el campo ticketNumber
+  const executeSearch = async (queryTicket: string) => {
+    if (!queryTicket) return;
     setIsSearching(true);
     setResult(null);
 
-    // Mock Backend Search
-    setTimeout(() => {
-      setIsSearching(false);
-      if (searchQuery.toUpperCase() === 'T-0045') {
-        setResult({ ticket: "T-0045", status: "EN_PROCESO", items: 3, total: 15.00, date: "Hoy, 10:30 AM" });
-      } else if (searchQuery.toUpperCase() === 'T-0043') {
-        setResult({ ticket: "T-0043", status: "LISTO", items: 5, total: 22.00, date: "Ayer" });
+    const normalized = queryTicket.trim().toUpperCase();
+
+    try {
+      // Buscar por el campo ticketNumber, no por el ID del documento
+      const q = query(
+        collection(db, "stores/demo-store/orders"),
+        where("ticketNumber", "==", normalized)
+      );
+      const snap = await getDocs(q);
+
+      if (!snap.empty) {
+        const docSnap = snap.docs[0];
+        const data = docSnap.data();
+        setResult({
+          ticket: data.ticketNumber,
+          rawTicket: docSnap.id,   // ID real de Firestore para el link de Yape
+          status: data.status as TrackStatus,
+          items: data.items?.length || 0,
+          total: data.total,
+          date: new Date(data.date).toLocaleString(),
+          paymentStatus: data.paymentStatus || "UNPAID",
+        } as any);
       } else {
-        alert("Ese ticket no existe o ya fue entregado.");
+        alert(`El ticket "${normalized}" no fue encontrado. Verifica el número e intenta de nuevo.`);
       }
-    }, 1000);
+    } catch (e) {
+      console.error(e);
+      alert("Error buscando el ticket. Intenta nuevamente.");
+    } finally {
+      setIsSearching(false);
+    }
   };
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    executeSearch(searchQuery);
+  };
+
+  // Buscar auto-mágicamente si venimos de la emisión (QR scan)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const tick = params.get('ticket');
+      if (tick) {
+        setSearchQuery(tick);
+        executeSearch(tick);
+      }
+    }
+  }, []);
 
   return (
     <div className="flex flex-col gap-10 animate-in slide-in-from-bottom-6 fade-in duration-700 pb-10">
@@ -64,7 +102,7 @@ export default function StorefrontPage({ params }: PublicPageProps) {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Nº de Ticket (ej. T-0045)"
+            placeholder="Nº de Ticket (ej. 260401-015)"
             disabled={isSearching}
             className="flex-1 bg-transparent border-none appearance-none focus:outline-none focus:ring-0 text-white placeholder:text-white/30 px-4 py-3 uppercase"
           />
@@ -124,16 +162,34 @@ export default function StorefrontPage({ params }: PublicPageProps) {
                </div>
              </div>
 
-             {/* CTA Pago (Solo si está LISTO) */}
-             {result.status === 'LISTO' && (
+             {/* CTA Pago (Si no está pagado ni en verificación) */}
+             {result.paymentStatus === 'UNPAID' && (
                <div className="mt-8 pt-6 border-t border-dashed border-white/20 text-center relative z-10">
-                  <h3 className="text-lg font-bold text-white mb-2">¡Turopa ya está lista y huelerico! ✨</h3>
+                  <h3 className="text-lg font-bold text-white mb-2">
+                    {result.status === 'LISTO' ? '¡Tu ropa ya está lista! ✨' : 'Adelanta tu pago ✨'}
+                  </h3>
                   <p className="text-sm text-white/60 mb-6">Paga ahora con Yape y ahorra tiempo al recoger tu orden en la sucursal.</p>
                   
-                  <Link href={`/${storeSlug}/yape/${result.ticket}`} className="bg-[#742284] hover:bg-[#742284]/80 active:scale-95 text-white w-full sm:w-auto px-8 mx-auto font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-[#742284]/20">
+                  <Link href={`/${storeSlug}/yape/${(result as any).rawTicket}`} className="bg-[#742284] hover:bg-[#742284]/80 active:scale-95 text-white w-full sm:w-auto px-8 mx-auto font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-[#742284]/20">
                     Ir a Pago con Yape <ChevronRight size={18} />
                   </Link>
                </div>
+             )}
+
+             {result.paymentStatus === 'PENDING_VERIFICATION' && (
+                <div className="mt-8 pt-6 border-t border-dashed border-white/10 text-center relative z-10">
+                  <p className="text-sm text-primary flex items-center justify-center gap-2 font-bold animate-pulse">
+                     <Clock size={16} /> Pago en verificación por el administrador...
+                  </p>
+                </div>
+             )}
+
+             {result.paymentStatus === 'PAID' && (
+                <div className="mt-8 pt-6 border-t border-dashed border-white/10 text-center relative z-10">
+                  <p className="text-sm text-success flex items-center justify-center gap-2 font-bold">
+                     <CheckCircle size={16} /> Pedido Pagado Correctamente
+                  </p>
+                </div>
              )}
 
              {result.status === 'EN_PROCESO' && (

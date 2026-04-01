@@ -1,7 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus, Trash2, Edit2, Info } from "lucide-react";
+import { collection, onSnapshot, addDoc, deleteDoc, doc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
 type ServiceItem = {
   id: string;
@@ -11,14 +13,9 @@ type ServiceItem = {
   description?: string;
 };
 
-const initialServices: ServiceItem[] = [
-  { id: "1", name: "Lavado Básico al Peso", price: 6.50, type: "KG", description: "Lavado y secado. Precios por kilo exacto." },
-  { id: "2", name: "Lavado de Edredón", price: 25.00, type: "UNIT", description: "Cualquier tamaño. Garantía de no encogimiento." },
-  { id: "3", name: "Lavado al Seco (Terno)", price: 35.00, type: "UNIT", description: "Lavado profesional sin agua." },
-];
-
 export default function ServicesPage() {
-  const [services, setServices] = useState<ServiceItem[]>(initialServices);
+  const [services, setServices] = useState<ServiceItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Form State
@@ -27,25 +24,47 @@ export default function ServicesPage() {
   const [type, setType] = useState<"KG" | "UNIT">("KG");
   const [description, setDescription] = useState("");
 
-  const handleCreate = (e: React.FormEvent) => {
+  // Firebase Real-time Listener
+  useEffect(() => {
+    const collRef = collection(db, "stores/demo-store/services");
+    const unsubscribe = onSnapshot(collRef, (snapshot) => {
+      const data = snapshot.docs.map(item => ({
+        id: item.id,
+        ...item.data()
+      })) as ServiceItem[];
+      setServices(data);
+      setIsLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    const newService: ServiceItem = {
-      id: Math.random().toString(36).substring(7),
-      name,
-      price: parseFloat(price) || 0,
-      type,
-      description
-    };
-    setServices([...services, newService]);
     setIsModalOpen(false);
     
-    // reset
-    setName(""); setPrice(""); setType("KG"); setDescription("");
+    try {
+      // Guardar en Firestore
+      await addDoc(collection(db, "stores/demo-store/services"), {
+        name,
+        price: parseFloat(price) || 0,
+        type,
+        description
+      });
+      // reset
+      setName(""); setPrice(""); setType("KG"); setDescription("");
+    } catch(error) {
+       console.error(error);
+       alert("Error al guardar en la nube");
+    }
   };
 
-  const handleDelete = (id: string) => {
-    if (confirm("¿Seguro de eliminar este servicio del tarifario?")) {
-      setServices(services.filter(s => s.id !== id));
+  const handleDelete = async (id: string) => {
+    if (confirm("¿Seguro de eliminar este servicio de Firestore?")) {
+      try {
+        await deleteDoc(doc(db, "stores/demo-store/services", id));
+      } catch(error) {
+        alert("Falló la eliminación");
+      }
     }
   };
 
@@ -64,7 +83,17 @@ export default function ServicesPage() {
         </button>
       </div>
 
+      {isLoading ? (
+         <div className="flex items-center justify-center p-12">
+           <span className="animate-spin border-4 border-white/10 border-t-primary rounded-full w-12 h-12" />
+         </div>
+      ) : (
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        {services.length === 0 && (
+           <div className="col-span-full text-center py-10 text-white/50 border-2 border-dashed border-white/5 rounded-2xl">
+              No hay servicios registrados. Crea el primero.
+           </div>
+        )}
         {services.map(service => (
           <div key={service.id} className="glass-card p-6 flex flex-col justify-between group">
             <div className="mb-4 flex justify-between items-start">
@@ -100,6 +129,7 @@ export default function ServicesPage() {
           </div>
         ))}
       </div>
+      )}
 
       {/* Modal Creación Simple */}
       {isModalOpen && (
