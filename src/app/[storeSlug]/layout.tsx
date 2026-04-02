@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { Search, MapPin, Phone } from "lucide-react";
+import { collection, query, where, getDocs } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
 interface PublicLayoutProps {
   children: React.ReactNode;
@@ -9,24 +11,57 @@ interface PublicLayoutProps {
 export default async function PublicLayout({ children, params }: PublicLayoutProps) {
   const { storeSlug } = await params;
   
-  // En un caso real buscaríamos en Firestore la data de la tienda
-  const storeData = {
-    name: "Lavandería Magistral",
-    color: "#3b82f6", // tailwind blue-500
-  };
+  // Buscamos la tienda en la colección por el campo slug
+  let storeData = null;
+
+  try {
+    const q = query(collection(db, "stores"), where("slug", "==", storeSlug.toLowerCase()));
+    const snap = await getDocs(q);
+    if (!snap.empty) {
+      const data = snap.docs[0].data();
+      storeData = {
+        name: data.storeName || "Lavandería Magistral",
+        color: data.color || "#3b82f6",
+        logoUrl: data.logoUrl || null,
+      };
+    }
+  } catch (error) {
+    console.error("Error obteniendo los datos de la tienda para el Layout:", error);
+  }
+
+  // SI LA TIENDA NO EXISTE, MOSTRAMOS UN 404 LIMPIO, NO EL LAYOUT
+  if (!storeData) {
+    return (
+      <div className="flex flex-col min-h-screen bg-background text-foreground justify-center p-4 text-center items-center">
+        <h1 className="text-6xl font-black text-white/20 mb-2">404</h1>
+        <h2 className="text-2xl font-bold text-white mb-2">Tienda no encontrada</h2>
+        <p className="text-white/50 max-w-sm mx-auto">
+          No hemos encontrado ninguna lavandería con el enlace <b className="text-white">/{storeSlug}</b>. Verifica la URL e inténtalo nuevamente.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground selection:bg-primary/30">
       {/* Header Glassmorphism */}
       <header className="glass-header h-16 sticky top-0 z-50 px-4 md:px-8 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div 
-             className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg text-white shadow-lg"
-             style={{ background: `linear-gradient(135deg, ${storeData.color}, #0a0a0a)` }}
-          >
-            LM
-          </div>
-          <span className="font-bold text-lg tracking-tight text-white hidden sm:block">
+        <div className="flex items-center gap-3">
+          {storeData.logoUrl ? (
+             <div 
+                className="w-10 h-10 rounded-full flex items-center justify-center bg-white shadow-lg overflow-hidden border border-white/20 shrink-0"
+             >
+                <img src={storeData.logoUrl} alt={storeData.name} className="w-full h-full object-contain" />
+             </div>
+          ) : (
+             <div 
+                className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg text-white shadow-lg shrink-0"
+                style={{ background: `linear-gradient(135deg, ${storeData.color}, #0a0a0a)` }}
+             >
+               {storeData.name.charAt(0).toUpperCase()}
+             </div>
+          )}
+          <span className="font-bold text-lg tracking-tight text-white hidden sm:block truncate max-w-[200px]">
              {storeData.name}
           </span>
         </div>

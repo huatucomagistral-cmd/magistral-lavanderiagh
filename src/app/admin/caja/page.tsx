@@ -3,19 +3,20 @@
 import { useState, useEffect } from "react";
 import { useStore } from "@/store/useStore";
 import { LockKeyhole, LockOpen, DollarSign, Wallet, ArrowRightLeft, Ticket, Loader2 } from "lucide-react";
-import { collection, onSnapshot, query, orderBy } from "firebase/firestore";
+import { collection, onSnapshot, query, orderBy, setDoc, doc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
 export default function CajaPage() {
-  const { isCajaOpen, setCajaStatus } = useStore();
-  const [initialCash, setInitialCash] = useState("");
+  const { isCajaOpen, initialCash: globalInitialCash, user } = useStore();
+  const [initialCashInput, setInitialCashInput] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   
   const [orders, setOrders] = useState<any[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(true);
 
   useEffect(() => {
-    const q = query(collection(db, "stores/demo-store/orders"), orderBy("date", "desc"));
+    if (!user?.storeId) return;
+    const q = query(collection(db, `stores/${user.storeId}/orders`), orderBy("date", "desc"));
     const unsub = onSnapshot(q, (snap) => {
       const data = snap.docs.map(d => {
         const raw = d.data();
@@ -46,26 +47,48 @@ export default function CajaPage() {
     return acc;
   }, { efectivo: 0, yape: 0, transferencia: 0, cobrados: 0 });
 
-  const currentInitial = parseFloat(initialCash) || 50;
+  const currentInitial = globalInitialCash || 0;
 
-  const handleOpenCaja = (e: React.FormEvent) => {
+  const handleOpenCaja = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!initialCashInput) return;
     setIsProcessing(true);
-    setTimeout(() => {
-      setCajaStatus(true);
+    
+    try {
+      if (!user?.storeId) throw new Error("Store ID missing");
+      await setDoc(doc(db, `stores/${user.storeId}/caja/sesion`), {
+        isOpen: true,
+        initialCash: parseFloat(initialCashInput),
+        openedAt: new Date().toISOString(),
+        openedBy: user?.email || "unknown"
+      });
+      // El onSnapshot del Layout actualizará el store automáticamente
+    } catch (err) {
+      console.error("Error abriendo caja", err);
+      alert("No se pudo abrir la caja.");
+    } finally {
       setIsProcessing(false);
-    }, 1000);
+    }
   };
 
-  const handleCloseCaja = () => {
+  const handleCloseCaja = async () => {
     if(confirm("Al cerrar caja se generará el reporte del día y no podrás cobrar más pedidos en esta sesión. ¿Continuar?")) {
       setIsProcessing(true);
-      setTimeout(() => {
-        setCajaStatus(false);
-        setInitialCash("");
-        setIsProcessing(false);
+      try {
+        if (!user?.storeId) throw new Error("Store ID missing");
+        await setDoc(doc(db, `stores/${user.storeId}/caja/sesion`), {
+          isOpen: false,
+          initialCash: 0,
+          closedAt: new Date().toISOString(),
+          closedBy: user?.email || "unknown"
+        });
+        setInitialCashInput("");
         alert("Caja cerrada exitosamente. Reporte generado.");
-      }, 1000);
+      } catch (err) {
+         console.error("Error cerrando caja", err);
+      } finally {
+         setIsProcessing(false);
+      }
     }
   };
 
@@ -98,7 +121,7 @@ export default function CajaPage() {
                <div className="relative max-w-xs mx-auto">
                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/50 font-bold">S/</span>
                  <input 
-                   type="number" step="0.10" min="0" value={initialCash} onChange={e => setInitialCash(e.target.value)} required
+                   type="number" step="0.10" min="0" value={initialCashInput} onChange={e => setInitialCashInput(e.target.value)} required
                    className="w-full bg-black/40 border border-white/10 rounded-2xl pl-10 pr-4 py-4 text-white font-mono text-xl text-center focus:outline-none focus:ring-2 focus:ring-primary shadow-inner"
                    placeholder="0.00"
                  />

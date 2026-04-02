@@ -1,25 +1,118 @@
 "use client";
 
-import { useState } from "react";
-import { Save, UploadCloud } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Save, UploadCloud, ImageIcon } from "lucide-react";
+import { doc, getDoc, setDoc } from "firebase/firestore";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { db, storage } from "@/lib/firebase";
+import { useStore } from "@/store/useStore";
 
 export default function ConfigPage() {
+  const { user } = useStore();
   const [storeName, setStoreName] = useState("Lavandería Sol");
   const [slug, setSlug] = useState("lavanderia-sol");
   const [color, setColor] = useState("#3b82f6");
-  const [yapeNumber, setYapeNumber] = useState("987654321");
-  const [yapeName, setYapeName] = useState("Juan Perez");
+  const [yapeNumber, setYapeNumber] = useState("");
+  const [yapeName, setYapeName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isFetching, setIsFetching] = useState(true);
+
+  const [yapeQrFile, setYapeQrFile] = useState<File | null>(null);
+  const [yapeQrPreview, setYapeQrPreview] = useState<string | null>(null);
+
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchConfig = async () => {
+      if (!user?.storeId) return;
+      try {
+        const snap = await getDoc(doc(db, "stores", user.storeId));
+        if (snap.exists()) {
+          const data = snap.data();
+          setStoreName(data.storeName || "Lavandería Magistral");
+          setSlug(data.slug || "demo-store");
+          setColor(data.color || "#3b82f6");
+          setYapeNumber(data.yapeNumber || "");
+          setYapeName(data.yapeName || "");
+          if (data.yapeQrUrl) {
+            setYapeQrPreview(data.yapeQrUrl);
+          }
+          if (data.logoUrl) {
+            setLogoPreview(data.logoUrl);
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching config", err);
+      } finally {
+        setIsFetching(false);
+      }
+    };
+    fetchConfig();
+  }, [user?.storeId]);
+
+  const handleYapeQrChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const file = e.target.files[0];
+      setYapeQrFile(file);
+      setYapeQrPreview(URL.createObjectURL(file));
+    }
+  };
+
+  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const file = e.target.files[0];
+      setLogoFile(file);
+      setLogoPreview(URL.createObjectURL(file));
+    }
+  };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    // Aquí conectaremos con Firestore updateDoc a la colección "stores"
-    setTimeout(() => {
+    try {
+      let uploadedQrUrl = yapeQrPreview; // Mantiene el previo si existe
+      let uploadedLogoUrl = logoPreview;
+
+      if (!user?.storeId) throw new Error("Store ID missing");
+
+      if (logoFile) {
+        const fileExt = logoFile.name.split(".").pop();
+        const logoRef = ref(storage, `stores/${user.storeId}/config/logo_${Date.now()}.${fileExt}`);
+        await uploadBytes(logoRef, logoFile);
+        uploadedLogoUrl = await getDownloadURL(logoRef);
+      }
+
+      if (yapeQrFile) {
+        const fileExt = yapeQrFile.name.split(".").pop();
+        const storageRef = ref(storage, `stores/${user.storeId}/config/yapeQr_${Date.now()}.${fileExt}`);
+        await uploadBytes(storageRef, yapeQrFile);
+        uploadedQrUrl = await getDownloadURL(storageRef);
+      }
+
+      await setDoc(doc(db, "stores", user.storeId), {
+        storeName,
+        slug,
+        color,
+        yapeNumber,
+        yapeName,
+        yapeQrUrl: uploadedQrUrl,
+        logoUrl: uploadedLogoUrl,
+        updatedAt: new Date().toISOString()
+      }, { merge: true });
+
+      alert("Configuración Guardada exitosamente.");
+    } catch (err) {
+      console.error("Error al guardar config", err);
+      alert("Error al guardar la configuración.");
+    } finally {
       setIsLoading(false);
-      alert("Configuración Guardada exitosamente (Mock)");
-    }, 1000);
+    }
   };
+
+  if (isFetching) {
+    return <div className="text-white">Cargando configuración...</div>;
+  }
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
@@ -36,10 +129,17 @@ export default function ConfigPage() {
             <h2 className="text-lg font-semibold text-white border-b border-white/10 pb-2">Datos Generales</h2>
             
             <div className="flex flex-col md:flex-row gap-6">
-               <div className="w-24 h-24 rounded-2xl bg-white/5 border border-white/10 flex flex-col items-center justify-center shrink-0 hover:bg-white/10 transition-colors cursor-pointer group">
-                  <UploadCloud className="text-white/50 group-hover:text-primary transition-colors" size={24} />
-                  <span className="text-xs text-white/50 mt-2 font-medium">Subir Logo</span>
-               </div>
+               <label className="w-24 h-24 rounded-2xl bg-white/5 border border-white/10 flex flex-col items-center justify-center shrink-0 hover:bg-white/10 transition-colors cursor-pointer group overflow-hidden relative">
+                  {logoPreview ? (
+                     <img src={logoPreview} alt="Logo" className="w-full h-full object-contain bg-white" />
+                  ) : (
+                     <>
+                        <UploadCloud className="text-white/50 group-hover:text-primary transition-colors" size={24} />
+                        <span className="text-xs text-white/50 mt-2 font-medium text-center leading-tight px-1">Subir Logo</span>
+                     </>
+                  )}
+                  <input type="file" accept="image/*" className="hidden" onChange={handleLogoChange} />
+               </label>
                
                <div className="flex-1 space-y-4">
                  <div>
@@ -89,9 +189,25 @@ export default function ConfigPage() {
                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-[#742284]"
                    />
                  </div>
+                 
+                 <div className="md:col-span-2">
+                   <label className="block text-sm font-medium text-white/70 mb-2">Imagen QR Oficial (Yape/Plin)</label>
+                   <div className="flex items-center gap-4">
+                      {yapeQrPreview && (
+                        <div className="w-24 h-24 rounded-xl border border-white/10 overflow-hidden shrink-0 bg-white items-center flex justify-center">
+                           <img src={yapeQrPreview} alt="QR Preview" className="w-full h-full object-contain" />
+                        </div>
+                      )}
+                      <label className="flex-1 border-2 border-dashed border-white/10 hover:border-[#742284]/50 bg-black/20 rounded-xl px-4 py-6 text-center cursor-pointer transition-colors group">
+                         <ImageIcon size={24} className="text-white/30 group-hover:text-[#742284] mx-auto mb-2" />
+                         <span className="text-white/70 text-sm font-medium">Toca aquí para seleccionar tu QR</span>
+                         <input type="file" accept="image/*" className="hidden" onChange={handleYapeQrChange} />
+                      </label>
+                   </div>
+                 </div>
             </div>
             <p className="text-xs text-warning/80 bg-warning/10 p-3 rounded-lg border border-warning/20">
-              Estos datos se usarán para generar automáticamente el Código QR de cobro que verán tus clientes en su portal web.
+              Estos datos junto con el QR se usarán para la pantalla de cobro que verán tus clientes.
             </p>
           </section>
 
@@ -109,9 +225,15 @@ export default function ConfigPage() {
              <h3 className="text-white font-medium mb-4 text-center">Vista Previa (Tema)</h3>
              <div className="aspect-[9/16] bg-black rounded-3xl border-[6px] border-white/10 overflow-hidden relative shadow-2xl">
                 {/* Header Mock */}
-                <div className="h-16 flex items-center justify-between px-4 z-10 relative" style={{ background: `linear-gradient(135deg, ${color}, #0a0a0a)` }}>
-                   <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center font-bold text-white text-xs">L</div>
-                   <span className="text-white font-bold text-sm">{storeName || 'Tienda'}</span>
+                <div className="h-16 flex items-center px-4 z-10 relative gap-3" style={{ background: `linear-gradient(135deg, ${color}, #0a0a0a)` }}>
+                   {logoPreview ? (
+                      <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center overflow-hidden shrink-0 border border-white/20">
+                         <img src={logoPreview} alt="Preview" className="w-full h-full object-contain" />
+                      </div>
+                   ) : (
+                      <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center font-bold text-white text-xs shrink-0">L</div>
+                   )}
+                   <span className="text-white font-bold text-sm truncate">{storeName || 'Tienda'}</span>
                 </div>
                 {/* Body Mock */}
                 <div className="p-4 relative">

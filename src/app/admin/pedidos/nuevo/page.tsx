@@ -18,7 +18,7 @@ export type CatalogItem = {
 
 export default function NuevoPedidoPage() {
   const router = useRouter();
-  const { isCajaOpen } = useStore();
+  const { isCajaOpen, user } = useStore();
   
   const [dni, setDni] = useState("");
   const [customerName, setCustomerName] = useState("");
@@ -31,7 +31,8 @@ export default function NuevoPedidoPage() {
 
   // Escuchar Servicios Reales de Firebase
   useEffect(() => {
-    const unsub = onSnapshot(collection(db, "stores/demo-store/services"), (snap) => {
+    if (!user?.storeId) return;
+    const unsub = onSnapshot(collection(db, `stores/${user.storeId}/services`), (snap) => {
       const data = snap.docs.map(d => ({ id: d.id, ...d.data() })) as CatalogItem[];
       setCatalogDb(data);
       setLoadingServices(false);
@@ -83,8 +84,9 @@ export default function NuevoPedidoPage() {
 
     setIsSaving(true);
     try {
-      const counterRef = doc(db, "stores/demo-store/meta/counters");
-      const ordersRef = collection(db, "stores/demo-store/orders");
+      if (!user?.storeId) throw new Error("Store ID missing");
+      const counterRef = doc(db, `stores/${user.storeId}/meta/counters`);
+      const ordersRef = collection(db, `stores/${user.storeId}/orders`);
 
       let ticketNumber = "";
       let newDocId = "";

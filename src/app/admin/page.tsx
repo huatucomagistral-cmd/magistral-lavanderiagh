@@ -4,13 +4,16 @@ import { useEffect, useState } from "react";
 import { TrendingUp, Users, DollarSign, Activity, Loader2 } from "lucide-react";
 import { collection, onSnapshot, query, orderBy, limit } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { useStore } from "@/store/useStore";
 
 export default function AdminDashboard() {
+  const { user } = useStore();
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const q = query(collection(db, "stores/demo-store/orders"), orderBy("date", "desc"));
+    if (!user?.storeId) return;
+    const q = query(collection(db, `stores/${user.storeId}/orders`), orderBy("date", "desc"));
     const unsub = onSnapshot(q, (snap) => {
       const data = snap.docs.map(d => {
         const raw = d.data();
@@ -58,13 +61,15 @@ export default function AdminDashboard() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <KpiCard 
-          title="Ingresos Hoy"
-          value={`S/ ${ingresosHoy.toFixed(2)}`}
-          trend="+0%"
-          trendUp={true}
-          icon={<DollarSign className="text-primary" size={24} />}
-        />
+        {user?.role === "ADMIN" && (
+          <KpiCard 
+            title="Ingresos Hoy"
+            value={`S/ ${ingresosHoy.toFixed(2)}`}
+            trend="+0%"
+            trendUp={true}
+            icon={<DollarSign className="text-primary" size={24} />}
+          />
+        )}
         <KpiCard 
           title="Nuevos Pedidos"
           value={pedidosNuevos.toString()}
@@ -77,17 +82,20 @@ export default function AdminDashboard() {
           value={enProceso.toString()}
           icon={<TrendingUp className="text-warning" size={24} />}
         />
-        <KpiCard 
-          title="Clientes de Hoy"
-          value={clientesHoy.toString()}
-          trend="+0%"
-          trendUp={true}
-          icon={<Users className="text-success" size={24} />}
-        />
+        {user?.role === "ADMIN" && (
+          <KpiCard 
+            title="Clientes de Hoy"
+            value={clientesHoy.toString()}
+            trend="+0%"
+            trendUp={true}
+            icon={<Users className="text-success" size={24} />}
+          />
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Gráfico Semanal (Estructura preparada para datos reales en el futuro) */}
+        {user?.role === "ADMIN" && (
         <div className="lg:col-span-2 glass-card p-6 flex flex-col h-[400px]">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-lg font-bold text-white">Ingresos Semanales</h2>
@@ -130,6 +138,7 @@ export default function AdminDashboard() {
              ))}
           </div>
         </div>
+        )}
 
         {/* Recent Activity Sincronizada */}
         <div className="glass-card p-6 overflow-hidden flex flex-col">

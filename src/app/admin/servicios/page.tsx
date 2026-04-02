@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { Plus, Trash2, Edit2, Info } from "lucide-react";
-import { collection, onSnapshot, addDoc, deleteDoc, doc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { useStore } from "@/store/useStore";
+import { collection, onSnapshot, addDoc, deleteDoc, doc } from "firebase/firestore";
 
 type ServiceItem = {
   id: string;
@@ -14,6 +15,7 @@ type ServiceItem = {
 };
 
 export default function ServicesPage() {
+  const { user } = useStore();
   const [services, setServices] = useState<ServiceItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -26,7 +28,8 @@ export default function ServicesPage() {
 
   // Firebase Real-time Listener
   useEffect(() => {
-    const collRef = collection(db, "stores/demo-store/services");
+    if (!user?.storeId) return;
+    const collRef = collection(db, `stores/${user.storeId}/services`);
     const unsubscribe = onSnapshot(collRef, (snapshot) => {
       const data = snapshot.docs.map(item => ({
         id: item.id,
@@ -44,7 +47,8 @@ export default function ServicesPage() {
     
     try {
       // Guardar en Firestore
-      await addDoc(collection(db, "stores/demo-store/services"), {
+      if (!user?.storeId) throw new Error("Store ID missing");
+      await addDoc(collection(db, `stores/${user.storeId}/services`), {
         name,
         price: parseFloat(price) || 0,
         type,
@@ -61,7 +65,8 @@ export default function ServicesPage() {
   const handleDelete = async (id: string) => {
     if (confirm("¿Seguro de eliminar este servicio de Firestore?")) {
       try {
-        await deleteDoc(doc(db, "stores/demo-store/services", id));
+        if (!user?.storeId) throw new Error("Store ID missing");
+        await deleteDoc(doc(db, `stores/${user.storeId}/services`, id));
       } catch(error) {
         alert("Falló la eliminación");
       }

@@ -4,7 +4,7 @@ import { use, useState, useEffect } from "react";
 import { ArrowLeft, CheckCircle, UploadCloud, Info, Copy, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { QRCodeSVG } from "qrcode.react";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc, collection, query, where, getDocs } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "@/lib/firebase";
 
@@ -17,14 +17,15 @@ export default function YapePaymentPage({
 
   const [loading, setLoading] = useState(true);
   const [store, setStore] = useState({ 
+    id: "",
     name: "Cargando...", 
-    yapeNumber: "999888777", 
-    yapeName: "Lavandería Magistral" 
+    yapeNumber: "", 
+    yapeName: "",
+    yapeQrUrl: ""
   });
   const [order, setOrder] = useState<any>(null);
   
   const [copied, setCopied] = useState(false);
-  const [opCode, setOpCode] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDone, setIsDone] = useState(false);
@@ -33,19 +34,29 @@ export default function YapePaymentPage({
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Cargar Tienda
-        const storeSnap = await getDoc(doc(db, "stores", "demo-store"));
-        if (storeSnap.exists()) {
-          const s = storeSnap.data();
-          setStore({
-            name: s.storeName || "Lavandería Magistral",
-            yapeNumber: s.yapeNumber || "999888777",
-            yapeName: s.yapeName || "Magistral S.A.C. (Caja)"
-          });
+        // Encontrar el verdadero ID del documento de la tienda buscando por slug
+        const storeQ = query(collection(db, "stores"), where("slug", "==", storeSlug.toLowerCase()));
+        const storeSnap = await getDocs(storeQ);
+        
+        if (storeSnap.empty) {
+          alert("La tienda no existe.");
+          setLoading(false);
+          return;
         }
 
+        const realStoreId = storeSnap.docs[0].id;
+        const s = storeSnap.docs[0].data();
+
+        setStore({
+          id: realStoreId,
+          name: s.storeName || "Lavandería",
+          yapeNumber: s.yapeNumber || "999888777",
+          yapeName: s.yapeName || "",
+          yapeQrUrl: s.yapeQrUrl || ""
+        });
+
         // Cargar Pedido
-        const orderSnap = await getDoc(doc(db, "stores/demo-store/orders", ticket));
+        const orderSnap = await getDoc(doc(db, `stores/${realStoreId}/orders`, ticket));
         if (orderSnap.exists()) {
           setOrder(orderSnap.data());
         } else {
@@ -58,7 +69,7 @@ export default function YapePaymentPage({
       }
     };
     fetchData();
-  }, [ticket]);
+  }, [ticket, storeSlug]);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(store.yapeNumber);
@@ -74,21 +85,22 @@ export default function YapePaymentPage({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!file || !opCode || !order) return alert("Completa todos los campos");
+    if (!file || !order) return alert("Por favor sube la captura de tu pago.");
     
     setIsSubmitting(true);
     try {
+      if (!store.id) throw new Error("Store ID not found");
+
       // 1. Subir a Firebase Storage
       const extension = file.name.split('.').pop();
       const fileName = `${ticket}_${Date.now()}.${extension}`;
-      const storageRef = ref(storage, `stores/demo-store/vouchers/${fileName}`);
+      const storageRef = ref(storage, `stores/${store.id}/vouchers/${fileName}`);
       
       const uploadResult = await uploadBytes(storageRef, file);
       const downloadURL = await getDownloadURL(uploadResult.ref);
 
       // 2. Actualizar el pedido en Firestore
-      await updateDoc(doc(db, "stores/demo-store/orders", ticket), {
-        opCode,
+      await updateDoc(doc(db, `stores/${store.id}/orders`, ticket), {
         voucherUrl: downloadURL,
         paymentStatus: "PENDING_VERIFICATION",
         paymentMethod: "YAPE"
@@ -138,62 +150,74 @@ export default function YapePaymentPage({
         <ArrowLeft size={18} /> Cancelar y Volver
       </Link>
 
-      <div className="text-center mb-8">
-         <div className="w-16 h-16 rounded-full bg-[#742284]/20 flex items-center justify-center mx-auto mb-4 text-[#742284]">
-           <span className="font-black text-2xl font-mono">Y</span>
+      <div className="text-center mb-8 flex flex-col items-center">
+         <div className="w-16 h-16 rounded-3xl bg-gradient-to-tr from-[#742284] to-[#B03BBF] shadow-[0_0_30px_rgba(116,34,132,0.4)] flex items-center justify-center mx-auto mb-5 text-white">
+           <span className="font-black text-3xl font-sans tracking-tighter shrink-0 pt-1">Y</span>
          </div>
-         <h1 className="text-2xl font-bold text-white mb-2">Paga tu Ticket {order?.ticketNumber || "..."}</h1>
-         <p className="text-white/60">Escanea el código QR desde tu app Yape o Plin.</p>
+         <h1 className="text-2xl font-bold text-white mb-2">Pago Segúro por Yape</h1>
+         <p className="text-white/60 text-sm">Ticket <strong className="text-white">{order?.ticketNumber || "..."}</strong></p>
       </div>
 
-      <div className="glass-card p-0 overflow-hidden border-[#742284]/30 shadow-2xl shadow-[#742284]/10">
+      <div className="bg-[#111111]/80 backdrop-blur-2xl rounded-[2.5rem] border border-white/5 overflow-hidden shadow-2xl">
          
-         <div className="p-8 text-center bg-gradient-to-b from-surface to-background flex flex-col items-center">
-            <div className="bg-white p-4 rounded-3xl shadow-lg mb-6 rotate-1 hover:rotate-0 transition-transform cursor-pointer">
-              <QRCodeSVG 
-                value={`YAPE:${store.yapeNumber}?amount=${total}`} 
-                size={200}
-                fgColor="#742284"
-                level="Q"
-                marginSize={1}
-              />
-            </div>
+          <div className="p-8 pb-10 text-center flex flex-col items-center relative">
             
-            <p className="text-3xl font-black text-primary font-mono mb-2">S/ {total.toFixed(2)}</p>
-            <p className="text-sm text-white/50 font-medium">{store.yapeName}</p>
-            
-            <button onClick={handleCopy} className="mt-4 bg-[#742284]/10 hover:bg-[#742284]/20 text-[#742284] px-4 py-2 rounded-full font-bold flex items-center gap-2 active:scale-95 transition-all text-sm border border-[#742284]/30">
-               {copied ? "¡Copiado!" : store.yapeNumber} <Copy size={14} />
-            </button>
-         </div>
+            {/* Soft glow behind the QR */}
+            <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-48 h-48 bg-[#742284]/20 blur-[80px] rounded-full pointer-events-none" />
 
-         <div className="p-6 md:p-8 bg-surface border-t border-white/5">
-            <h3 className="text-white font-bold mb-4 flex items-center gap-2">Sube tu evidencia <Info size={16} className="text-white/40"/></h3>
-            
-            <form onSubmit={handleSubmit} className="space-y-6">
-              
-              <div>
-                 <label className="block text-xs font-bold uppercase text-white/50 mb-2">Código de Operación (Yape/Plin)</label>
-                 <input type="text" value={opCode} onChange={e => setOpCode(e.target.value.replace(/[^0-9]/g, ''))} maxLength={10} required placeholder="Ej: 123456"
-                   className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white font-mono focus:outline-none focus:ring-2 focus:ring-[#742284]/50"
+            {store.yapeQrUrl ? (
+               <div className="w-full max-w-[260px] rounded-[2rem] shadow-[0_20px_50px_-15px_rgba(116,34,132,0.5)] mb-8 overflow-hidden border border-[#742284]/30 bg-[#742284] relative z-10 transition-transform hover:scale-[1.02] duration-500">
+                 <img src={store.yapeQrUrl} alt="QR Yape Oficial" className="w-full h-auto object-cover" />
+               </div>
+            ) : (
+               <div className="bg-white p-5 rounded-[2rem] shadow-[0_20px_50px_-15px_rgba(116,34,132,0.5)] mb-8 relative z-10">
+                 <QRCodeSVG 
+                   value={`YAPE:${store.yapeNumber}?amount=${total}`} 
+                   size={220}
+                   fgColor="#742284"
+                   level="Q"
+                   marginSize={1}
                  />
-              </div>
+               </div>
+            )}
+            
+            <p className="text-5xl font-black text-[#00E5C0] font-sans tracking-tight mb-3">S/ {total.toFixed(2)}</p>
+            {store.yapeName && <p className="text-lg text-white font-medium tracking-tight bg-white/5 px-4 py-1.5 rounded-full inline-block mb-1">{store.yapeName}</p>}
+            
+            {store.yapeNumber && (
+              <button 
+                onClick={handleCopy} 
+                className="mt-5 bg-gradient-to-r from-[#742284] to-[#B03BBF] hover:shadow-[0_0_20px_rgba(116,34,132,0.4)] text-white px-8 py-3.5 rounded-full font-bold flex items-center gap-3 active:scale-95 transition-all border-0 shadow-lg"
+              >
+                 {copied ? "¡Número Copiado!" : store.yapeNumber} <Copy size={18} />
+              </button>
+            )}
+            
+            <p className="text-white/40 text-xs mt-6 font-medium">Escanea o copia el número desde tu App Yape</p>
+          </div>
+
+         <div className="p-8 bg-[#0a0a0a] border-t border-white/5 relative z-10">
+            <h3 className="text-white font-bold mb-5 flex items-center gap-2">Paso 2: Adjunta tu voucher <Info size={16} className="text-white/30"/></h3>
+            
+            <form onSubmit={handleSubmit} className="space-y-4">
 
               <div>
-                 <label className="block text-xs font-bold uppercase text-white/50 mb-2">Comprobante de Pago</label>
-                 
-                 <label htmlFor="file-upload" className="w-full border-2 border-dashed border-white/10 hover:border-[#742284]/50 hover:bg-[#742284]/5 bg-black/20 rounded-xl px-4 py-8 text-center cursor-pointer flex flex-col items-center justify-center transition-all group">
-                   <UploadCloud size={28} className="text-white/30 group-hover:text-[#742284] mb-3 transition-colors" />
-                   <span className="text-white font-medium text-sm">
-                     {file ? file.name : "Toca aquí para seleccionar captura"}
+                 <label htmlFor="file-upload" className={`w-full border-2 ${file ? 'border-[#00E5C0]/50 bg-[#00E5C0]/5' : 'border-dashed border-white/10 hover:border-[#742284]/50 bg-white/5'} rounded-2xl px-4 py-10 text-center cursor-pointer flex flex-col items-center justify-center transition-all group`}>
+                   {file ? (
+                     <CheckCircle size={32} className="text-[#00E5C0] mb-3" />
+                   ) : (
+                     <UploadCloud size={32} className="text-white/20 group-hover:text-[#742284] mb-3 transition-colors" />
+                   )}
+                   <span className={`font-medium mb-1 ${file ? 'text-[#00E5C0]' : 'text-white/80'}`}>
+                     {file ? file.name : "Toca para abrir galería"}
                    </span>
-                   <span className="text-white/40 text-xs mt-1">Soporta PNG, JPG o PDF</span>
+                   {!file && <span className="text-white/40 text-xs font-medium">Soporta PNG o JPG</span>}
                  </label>
                  <input id="file-upload" type="file" accept="image/png, image/jpeg, application/pdf" className="hidden" onChange={handleFileChange} />
               </div>
 
-              <button type="submit" disabled={isSubmitting || !opCode || !file} className="w-full bg-[#742284] hover:bg-[#742284]/80 text-white font-black py-4 rounded-xl flex items-center justify-center gap-2 transition-transform active:scale-95 disabled:opacity-50 mt-4 disabled:pointer-events-none">
-                {isSubmitting ? <span className="animate-spin border-2 border-white/30 border-t-white rounded-full w-5 h-5" /> : "Enviar Comprobante"}
+              <button type="submit" disabled={isSubmitting || !file} className="w-full bg-white hover:bg-gray-200 text-black font-extrabold py-4 rounded-2xl flex items-center justify-center gap-2 transition-transform active:scale-95 disabled:opacity-20 mt-6 disabled:pointer-events-none text-lg">
+                {isSubmitting ? <span className="animate-spin border-2 border-black/30 border-t-black rounded-full w-5 h-5" /> : "Validar mi Pago"}
               </button>
 
             </form>

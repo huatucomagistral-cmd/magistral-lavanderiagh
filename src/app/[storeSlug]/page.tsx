@@ -38,9 +38,21 @@ export default function StorefrontPage({ params }: PublicPageProps) {
     const normalized = queryTicket.trim().toUpperCase();
 
     try {
-      // Buscar por el campo ticketNumber, no por el ID del documento
+      // 1. Encontrar el verdadero ID del documento de la tienda buscando por slug
+      const storeQ = query(collection(db, "stores"), where("slug", "==", storeSlug.toLowerCase()));
+      const storeSnap = await getDocs(storeQ);
+      
+      if (storeSnap.empty) {
+        alert("La tienda configurada no existe.");
+        setIsSearching(false);
+        return;
+      }
+      
+      const realStoreId = storeSnap.docs[0].id;
+
+      // 2. Buscar por el campo ticketNumber usando el ID de la tienda encontrado
       const q = query(
-        collection(db, "stores/demo-store/orders"),
+        collection(db, `stores/${realStoreId}/orders`),
         where("ticketNumber", "==", normalized)
       );
       const snap = await getDocs(q);

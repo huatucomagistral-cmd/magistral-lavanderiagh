@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Plus, Search, MoreVertical, MapPin, CheckCircle, PackageSearch, Loader2, Info, History, X, Check } from "lucide-react";
 import { collection, onSnapshot, doc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { useStore } from "@/store/useStore";
 
 type OrderStatus = 'RECIBIDO' | 'EN_PROCESO' | 'LISTO' | 'ENTREGADO';
 
@@ -22,6 +23,7 @@ type Order = {
 };
 
 export default function PedidosPage() {
+  const { user } = useStore();
   const [orders, setOrders] = useState<Order[]>([]);
   const [showHistory, setShowHistory] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -29,7 +31,8 @@ export default function PedidosPage() {
 
   // Cargar orders en tiempo real desde Firebase
   useEffect(() => {
-    const unsub = onSnapshot(collection(db, "stores/demo-store/orders"), (snap) => {
+    if (!user?.storeId) return;
+    const unsub = onSnapshot(collection(db, `stores/${user.storeId}/orders`), (snap) => {
       const data = snap.docs.map(d => ({
         id: d.id,
         ...d.data(),
@@ -43,7 +46,8 @@ export default function PedidosPage() {
 
   const updateStatus = async (id: string, newStatus: OrderStatus) => {
     try {
-      const orderRef = doc(db, "stores/demo-store/orders", id);
+      if (!user?.storeId) throw new Error("Store ID missing");
+      const orderRef = doc(db, `stores/${user.storeId}/orders`, id);
       await updateDoc(orderRef, { status: newStatus });
     } catch(err) {
       console.error("Error updating status: ", err);
@@ -52,7 +56,8 @@ export default function PedidosPage() {
 
   const confirmPayment = async (id: string, method: string, andDeliver: boolean = false) => {
     try {
-      const orderRef = doc(db, "stores/demo-store/orders", id);
+      if (!user?.storeId) throw new Error("Store ID missing");
+      const orderRef = doc(db, `stores/${user.storeId}/orders`, id);
       const updates: any = { 
         paymentStatus: 'PAID',
         payMethod: method
@@ -147,8 +152,9 @@ export default function PedidosPage() {
                   {order.paymentStatus === 'PENDING_VERIFICATION' ? (
                     <button 
                       onClick={async () => {
-                        const orderRef = doc(db, "stores/demo-store/orders", order.id);
-                        await updateDoc(orderRef, { paymentStatus: 'PAID' });
+                        if (!user?.storeId) return;
+                        const orderRef = doc(db, `stores/${user.storeId}/orders`, order.id);
+                        await updateDoc(orderRef, { paymentStatus: 'PAID', payMethod: 'YAPE' });
                       }}
                       className="flex-1 bg-success text-white hover:bg-success/80 py-1.5 rounded text-xs font-bold transition-colors shadow-lg shadow-success/20"
                     >

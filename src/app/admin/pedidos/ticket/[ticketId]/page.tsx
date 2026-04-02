@@ -2,10 +2,12 @@
 
 import { use, useEffect, useState } from "react";
 import Link from "next/link";
-import { Printer, ArrowLeft, Download, Share2, Loader2 } from "lucide-react";
-import { QRCodeSVG } from "qrcode.react";
+import { Printer, ArrowLeft, Copy, Share2, Loader2 } from "lucide-react";
+import { QRCodeCanvas } from "qrcode.react";
+import html2canvas from "html2canvas";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { useStore } from "@/store/useStore";
 
 export default function TicketViewPage({
   params,
@@ -13,14 +15,16 @@ export default function TicketViewPage({
   params: Promise<{ ticketId: string }>;
 }) {
   const { ticketId } = use(params);
+  const { user } = useStore();
   const [ticketData, setTicketData] = useState<any>(null);
   const [dateStr, setDateStr] = useState("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchTicket() {
+      if (!user?.storeId) return;
       try {
-        const d = await getDoc(doc(db, "stores/demo-store/orders", ticketId));
+        const d = await getDoc(doc(db, `stores/${user.storeId}/orders`, ticketId));
         if (d.exists()) {
           setTicketData(d.data());
           // Formatearemos la fecha en base al guardado
@@ -38,6 +42,62 @@ export default function TicketViewPage({
 
   const handlePrint = () => {
     window.print();
+  };
+
+  const handleWhatsApp = () => {
+    if (!ticketData) return;
+    
+    // Crear el link de rastreo
+    const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
+    const trackingLink = `${baseUrl}/${user?.storeId}?ticket=${ticketData.ticketNumber || ticketId}`;
+    
+    // Si tienes el nombre del comercio en algun config global, genial. Aquí hardcodeo 'Lavandería Magistral' por el momento.
+    const text = `Hola ${ticketData.customerName || ''}, gracias por confiar en Lavandería Magistral. Tu pedido #${ticketData.ticketNumber || ticketId.slice(0, 6).toUpperCase()} ha sido recibido.\n\nPuedes ver tu recibo digital y rastrear el estado de tus prendas en tiempo real aquí:\n${trackingLink}`;
+    
+    // Si existe el teléfono del cliente lo abrimos en su chat directo, si no, que elija el contacto
+    const phone = ticketData.customerPhone ? ticketData.customerPhone.replace(/\D/g, '') : '';
+    const encodedText = encodeURIComponent(text);
+    
+    // Usamos wa.me que abre WhatsApp en el fon (o WhatsApp Web si está en PC)
+    const url = phone ? `https://wa.me/51${phone}?text=${encodedText}` : `https://wa.me/?text=${encodedText}`;
+    
+    window.open(url, '_blank');
+  };
+
+  const handleCopyImage = async () => {
+    const element = document.getElementById("ticket-content");
+    if (!element) return;
+    
+    try {
+      const canvas = await html2canvas(element, {
+        scale: 2, 
+        useCORS: true,
+        backgroundColor: "#ffffff"
+      });
+      
+      canvas.toBlob(async (blob) => {
+        if (!blob) throw new Error("No se pudo generar la imagen.");
+        try {
+          await navigator.clipboard.write([
+            new window.ClipboardItem({ "image/png": blob })
+          ]);
+          alert("✅ Imagen copiada al portapapeles. ¡Ahora puedes presionar Ctrl+V en WhatsApp!");
+        } catch (clipboardErr: any) {
+          console.error("Error del portapapeles:", clipboardErr);
+          alert("No se pudo copiar automáticamente (el navegador puede estar bloqueándolo). Se descargará la imagen como alternativa.");
+          // Fallback a descarga si el portapapeles falla
+          const image = canvas.toDataURL("image/png");
+          const link = document.createElement("a");
+          link.href = image;
+          link.download = `Ticket-${ticketData.ticketNumber || ticketId.slice(0,6).toUpperCase()}.png`;
+          link.click();
+        }
+      }, "image/png");
+
+    } catch (e) {
+      console.error("Error al generar la captura:", e);
+      alert("Hubo un error al generar la imagen. Inténtelo de nuevo.");
+    }
   };
 
   if (loading) {
@@ -72,17 +132,17 @@ export default function TicketViewPage({
             <button onClick={handlePrint} className="bg-primary hover:bg-primary-hover active:scale-95 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-all">
                <Printer size={18} /> Imprimir (80mm)
             </button>
-            <button className="bg-white/5 hover:bg-white/10 active:scale-95 text-white font-medium py-3 rounded-xl flex items-center justify-center gap-2 transition-all border border-white/10">
-               <Download size={18} /> Guardar Imagen
+            <button onClick={handleCopyImage} className="bg-white/5 hover:bg-white/10 active:scale-95 text-white font-medium py-3 rounded-xl flex items-center justify-center gap-2 transition-all border border-white/10">
+               <Copy size={18} /> Copiar Imagen
             </button>
-            <button className="bg-success/20 hover:bg-success/30 text-success font-medium py-3 rounded-xl flex items-center justify-center gap-2 transition-all">
+            <button onClick={handleWhatsApp} className="bg-success/20 hover:bg-success/30 active:scale-95 text-success font-medium py-3 rounded-xl flex items-center justify-center gap-2 transition-all border border-success/30">
                <Share2 size={18} /> Mandar por WhatsApp
             </button>
          </div>
       </div>
 
       {/* Papel del Ticket Físico (Termal) */}
-      <div className="bg-white text-black p-6 w-full max-w-[320px] shadow-2xl mx-auto md:mx-0 font-mono text-sm relative print:shadow-none print:m-0 print:p-0">
+      <div id="ticket-content" className="ticket-print-area bg-white text-black p-6 w-full max-w-[320px] shadow-2xl mx-auto md:mx-0 font-mono text-sm relative print:shadow-none print:m-0 print:p-0">
          
          {/* Corte dentado (decorativo web) */}
          <div className="absolute -top-1 left-0 w-full h-2 bg-background flex print:hidden" style={{ backgroundImage: "radial-gradient(circle, #09090b 4px, transparent 5px)", backgroundSize: "10px 10px" }} />
@@ -130,7 +190,7 @@ export default function TicketViewPage({
 
          <div className="flex flex-col items-center justify-center text-center mt-6 pt-6 border-t-2 border-dashed border-black/30">
             <p className="text-[10px] font-bold mb-2 uppercase">Escanea para rastrear tu pedido</p>
-            <QRCodeSVG value={`${typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000'}/demo-store?ticket=${ticketData.ticketNumber || ticketId}`} size={100} level="M" />
+            <QRCodeCanvas value={`${typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000'}/${user?.storeId}?ticket=${ticketData.ticketNumber || ticketId}`} size={100} level="M" />
             <p className="text-[10px] mt-3 font-semibold">¡Gracias por su preferencia!</p>
             <p className="text-[9px] mt-1">Sistemas Magistral - SaaS</p>
          </div>

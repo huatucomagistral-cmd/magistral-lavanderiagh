@@ -1,15 +1,15 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary: #3b82f6;
-  --color-primary-hover: #2563eb;
-  --color-accent: #06b6d4;
+  --color-primary: #38bdf8; /* sky-400 */
+  --color-primary-hover: #0284c7; /* sky-600 */
+  --color-accent: #22d3ee; /* cyan-400 */
   
-  --color-background: #09090b; /* Deep zinc-950 */
-  --color-foreground: #fafafa;
-  --color-surface: #18181b; /* zinc-900 */
-  --color-surface-hover: #27272a; /* zinc-800 */
-  --color-border: #27272a;
+  --color-background: #020617; /* Very deep slate-950 (Midnight) */
+  --color-foreground: #f8fafc; /* slate-50 */
+  --color-surface: #0f172a; /* slate-900 (Water depth) */
+  --color-surface-hover: #1e293b; /* slate-800 */
+  --color-border: rgba(255, 255, 255, 0.08); /* Subtle border */
   
   --color-success: #10b981;
   --color-warning: #f59e0b;
@@ -21,8 +21,8 @@
 
 @layer base {
   :root {
-    --background: #09090b;
-    --foreground: #fafafa;
+    --background: #020617;
+    --foreground: #f8fafc;
   }
 
   body {
@@ -51,5 +51,35 @@
   
   .text-gradient {
     @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent;
+  }
+}
+
+/* Modificadores para impresión en Ticketera Térmica (80mm) */
+@media print {
+  /* Ocultar TODO el sistema web por defecto al imprimir */
+  body * {
+    visibility: hidden;
+  }
+  
+  /* Hacer visible únicamente el área con la clase 'ticket-print-area' */
+  .ticket-print-area, .ticket-print-area * {
+    visibility: visible;
+  }
+  
+  /* Posicionar el ticket arriba a la izquierda sin márgenes para que la ticketera no lo corte */
+  .ticket-print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 80mm !important; /* Forzar el ancho del rollo de papel */
+    margin: 0;
+    padding: 0.5cm; /* Margen interno de medio centímetro en todos los lados */
+    box-sizing: border-box; /* Asegura que el padding no cambie el ancho total de 80mm */
+  }
+  
+  /* Quitar los márgenes de página por defecto del navegador */
+  @page {
+    margin: 0;
+    size: auto; /* Permite que el largo sea infinito según el contenido */
   }
 }
