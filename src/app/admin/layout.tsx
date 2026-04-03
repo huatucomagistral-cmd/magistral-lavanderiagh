@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { LayoutDashboard, Users, Receipt, Package, Settings, LogOut } from "lucide-react";
+import { LayoutDashboard, Users, Receipt, Package, Settings, LogOut, Menu, X } from "lucide-react";
 import Link from "next/link";
 import { useStore } from "@/store/useStore";
 import { auth, db } from "@/lib/firebase";
@@ -17,6 +17,12 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const router = useRouter();
   const pathname = usePathname();
   const { user, setUser, currentStore } = useStore();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // Cerrar menú móvil al cambiar de ruta
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [pathname]);
 
   // Route Guard: Evitar que el PERSONAL entre a urls bloqueadas escribiéndolas manual
   useEffect(() => {
@@ -80,10 +86,19 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   if (!user) return null;
 
   return (
-    <div className="flex min-h-screen bg-background text-foreground">
+    <div className="flex h-screen bg-background text-foreground overflow-hidden">
+      
+      {/* Mobile Sidebar Overlay */}
+      {isMobileMenuOpen && (
+        <div 
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 md:hidden"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
-      <aside className="w-64 glass border-r border-white/5 hidden md:flex flex-col">
-        <div className="p-6 border-b border-white/5">
+      <aside className={`fixed inset-y-0 left-0 z-50 w-64 glass border-r border-white/5 flex flex-col transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"}`}>
+        <div className="p-6 border-b border-white/5 flex justify-between items-center">
           <div className="flex items-center gap-3">
             {currentStore?.logoUrl ? (
               <img 
@@ -98,16 +113,22 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                 </span>
               </div>
             )}
-            <h1 className="font-bold text-xl tracking-tight text-white truncate max-w-[150px]">
+            <h1 className="font-bold text-xl tracking-tight text-white truncate max-w-[120px]">
               {currentStore?.name || "Magistral"}
             </h1>
           </div>
-          <p className="text-xs text-white/50 mt-1 uppercase tracking-wider font-semibold">
-            {user.role === "ADMIN" ? "Admin Panel" : "Personal Panel"}
+          {/* Close button for mobile */}
+          <button onClick={() => setIsMobileMenuOpen(false)} className="md:hidden text-white/50 hover:text-white">
+            <X size={20} />
+          </button>
+        </div>
+        <div className="px-6 py-2">
+          <p className="text-[10px] text-white/50 uppercase tracking-widest font-bold">
+            {user.role === "ADMIN" ? "Panel Administrador" : "Panel Personal"}
           </p>
         </div>
 
-        <nav className="flex-1 p-4 flex flex-col gap-2">
+        <nav className="flex-1 p-4 flex flex-col gap-2 overflow-y-auto">
           <SidebarLink href="/admin" icon={<LayoutDashboard size={20} />} label="Dashboard" />
           <SidebarLink href="/admin/caja" icon={<Receipt size={20} />} label="Caja" />
           <SidebarLink href="/admin/pedidos" icon={<Package size={20} />} label="Pedidos" />
@@ -124,30 +145,65 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           {user.role === "ADMIN" && (
               <SidebarLink href="/admin/configuracion" icon={<Settings size={20} />} label="Configuración" />
           )}
-          <button onClick={handleLogout} className="flex items-center gap-3 px-3 py-2 w-full text-white/50 hover:text-error transition-colors rounded-lg hover:bg-white/5 mt-2">
+          <button onClick={handleLogout} className="flex items-center gap-3 px-3 py-2.5 w-full text-white/50 hover:text-error transition-all rounded-xl hover:bg-error/10 mt-2 font-medium">
             <LogOut size={20} />
-            <span className="font-medium text-sm">Cerrar Sesión</span>
+            <span className="text-sm">Cerrar Sesión</span>
           </button>
         </div>
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col relative overflow-hidden">
+      <main className="flex-1 flex flex-col min-w-0 relative h-full">
         {/* Top Header */}
-        <header className="glass-header h-16 flex items-center justify-end px-6">
-           <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-surface border border-white/10 flex items-center justify-center text-sm font-bold text-primary uppercase">
-                {user.email.charAt(0)}
+        <header className="glass-header h-16 flex items-center justify-between px-4 lg:px-6 shrink-0 z-30 relative">
+           
+           {/* Left side: Hamburger menu & Mobile Logo */}
+           <div className="flex items-center gap-3 md:hidden">
+              <button 
+                onClick={() => setIsMobileMenuOpen(true)}
+                className="p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+                aria-label="Abrir menú"
+              >
+                <Menu size={24} />
+              </button>
+              
+              <div className="flex items-center gap-2">
+                {currentStore?.logoUrl ? (
+                  <img 
+                    src={currentStore.logoUrl} 
+                    alt={currentStore.name} 
+                    className="w-7 h-7 rounded object-contain bg-white" 
+                  />
+                ) : (
+                  <div className="w-7 h-7 rounded bg-gradient-to-tr from-primary to-accent flex items-center justify-center">
+                    <span className="font-bold text-white text-sm">
+                      {currentStore?.name ? currentStore.name.charAt(0).toUpperCase() : "M"}
+                    </span>
+                  </div>
+                )}
+                <span className="font-bold text-white text-sm truncate max-w-[100px]">
+                  {currentStore?.name || "Magistral"}
+                </span>
               </div>
+           </div>
+
+           {/* Placeholder for desktop layout alignment */}
+           <div className="hidden md:block"></div>
+
+           {/* Right side: User Profile */}
+           <div className="flex items-center gap-3">
               <div className="flex flex-col items-end">
-                  <span className="text-sm font-medium">{user.email}</span>
-                  <span className="text-[10px] text-white/50 uppercase tracking-widest">{user.role}</span>
+                  <span className="text-sm font-medium text-white truncate max-w-[120px] sm:max-w-[200px]">{user.email}</span>
+                  <span className="text-[10px] text-white/50 uppercase tracking-widest font-bold">{user.role}</span>
+              </div>
+              <div className="w-8 h-8 rounded-full bg-surface border border-white/10 flex items-center justify-center text-sm font-bold text-primary uppercase shadow-lg">
+                {user.email.charAt(0)}
               </div>
            </div>
         </header>
         
-        <div className="flex-1 overflow-y-auto p-6 lg:p-10">
-          <div className="max-w-6xl mx-auto w-full">
+        <div className="flex-1 overflow-y-auto w-full">
+          <div className="p-4 sm:p-6 lg:p-10 max-w-6xl mx-auto w-full min-h-full">
             {children}
           </div>
         </div>
@@ -157,12 +213,19 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 }
 
 function SidebarLink({ href, icon, label }: { href: string; icon: React.ReactNode; label: string }) {
+  const pathname = usePathname();
+  const isActive = pathname === href || pathname.startsWith(`${href}/`);
+  
   return (
     <Link 
       href={href}
-      className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/70 hover:text-white hover:bg-white/5 transition-all group"
+      className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all group ${
+        isActive 
+          ? "bg-primary/20 text-white shadow-inner shadow-primary/20 border border-primary/20" 
+          : "text-white/70 hover:text-white hover:bg-white/5"
+      }`}
     >
-      <div className="text-white/50 group-hover:text-primary transition-colors">
+      <div className={`${isActive ? "text-primary" : "text-white/50 group-hover:text-primary"} transition-colors`}>
         {icon}
       </div>
       <span className="font-medium text-sm">{label}</span>
