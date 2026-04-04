@@ -76,38 +76,57 @@ export default function TicketViewPage({
   const handleCopyImage = async () => {
     const element = document.getElementById("ticket-content");
     if (!element) return;
-    
+
+    // Ocultar elementos decorativos del DOM que distorsionan la captura
+    const decorations = element.querySelectorAll<HTMLElement>(".print\\:hidden");
+    decorations.forEach(el => { el.style.display = "none"; });
+
     try {
       const canvas = await html2canvas(element, {
-        scale: 2, 
+        scale: 3,
         useCORS: true,
-        backgroundColor: "#ffffff"
+        backgroundColor: "#ffffff",
+        logging: false,
+        removeContainer: true,
       });
-      
-      canvas.toBlob(async (blob) => {
-        if (!blob) throw new Error("No se pudo generar la imagen.");
-        try {
-          await navigator.clipboard.write([
-            new window.ClipboardItem({ "image/png": blob })
-          ]);
-          alert("✅ Imagen copiada al portapapeles. ¡Ahora puedes presionar Ctrl+V en WhatsApp!");
-        } catch (clipboardErr: any) {
-          console.error("Error del portapapeles:", clipboardErr);
-          alert("No se pudo copiar automáticamente (el navegador puede estar bloqueándolo). Se descargará la imagen como alternativa.");
-          // Fallback a descarga si el portapapeles falla
-          const image = canvas.toDataURL("image/png");
-          const link = document.createElement("a");
-          link.href = image;
-          link.download = `Ticket-${ticketData.ticketNumber || ticketId.slice(0,6).toUpperCase()}.png`;
-          link.click();
-        }
-      }, "image/png");
 
+      // Restaurar decoraciones
+      decorations.forEach(el => { el.style.display = ""; });
+
+      const fileName = `Ticket-${ticketData?.ticketNumber || ticketId.slice(0, 6).toUpperCase()}.png`;
+
+      // En móvil o si ClipboardItem no está disponible → descargar la imagen directamente
+      const isMobile = /iPhone|iPad|Android|Mobile/i.test(navigator.userAgent);
+      const canUseClipboard = !isMobile && typeof window.ClipboardItem !== "undefined" && navigator.clipboard?.write;
+
+      if (canUseClipboard) {
+        canvas.toBlob(async (blob) => {
+          if (!blob) return;
+          try {
+            await navigator.clipboard.write([
+              new window.ClipboardItem({ "image/png": blob }),
+            ]);
+            alert("✅ Imagen copiada al portapapeles. Ahora puedes pegarla (Ctrl+V) en WhatsApp, Telegram, etc.");
+          } catch {
+            // Fallback a descarga si el clipboard falla
+            const url = canvas.toDataURL("image/png");
+            const a = document.createElement("a");
+            a.href = url; a.download = fileName; a.click();
+          }
+        }, "image/png");
+      } else {
+        // Móvil: descargar directamente
+        const url = canvas.toDataURL("image/png");
+        const a = document.createElement("a");
+        a.href = url; a.download = fileName; a.click();
+      }
     } catch (e) {
-      console.error("Error al generar la captura:", e);
+      decorations.forEach(el => { el.style.display = ""; });
+      console.error("Error al generar captura:", e);
       alert("Hubo un error al generar la imagen. Inténtelo de nuevo.");
     }
   };
+
 
   if (loading) {
     return (
@@ -199,7 +218,7 @@ export default function TicketViewPage({
 
          <div className="flex flex-col items-center justify-center text-center mt-6 pt-6 border-t-2 border-dashed border-black/30">
             <p className="text-[10px] font-bold mb-2 uppercase">Escanea para rastrear tu pedido</p>
-            <QRCodeCanvas value={`${typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000'}/${user?.storeId}?ticket=${ticketData.ticketNumber || ticketId}`} size={100} level="M" />
+            <QRCodeCanvas value={`${typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000'}/${storeSlug || user?.storeId}?ticket=${ticketData.ticketNumber || ticketId}`} size={100} level="M" />
             <p className="text-[10px] mt-3 font-semibold">¡Gracias por su preferencia!</p>
             <p className="text-[9px] mt-1">Sistemas Magistral - SaaS</p>
          </div>
