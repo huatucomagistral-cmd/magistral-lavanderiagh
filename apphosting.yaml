@@ -1,0 +1,12 @@
+runConfig:
+  concurrency: 80
+  cpu: 1
+  memoryMiB: 512
+  minInstances: 0
+
+env:
+  - variable: APIS_PERU_TOKEN
+    value: "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6ImNodWF0dWNvcm9qYXMyNUBnbWFpbC5jb20ifQ.r3VALiWg0Y9FtMpTobFNOJJmjOhkuBTQ9MMQr0Q2v9A"
+    availability:
+      - BUILD
+      - RUNTIME
