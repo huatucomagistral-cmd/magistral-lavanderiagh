@@ -5,6 +5,7 @@ import { Plus, Trash2, Edit2, Info } from "lucide-react";
 import { db } from "@/lib/firebase";
 import { useStore } from "@/store/useStore";
 import { collection, onSnapshot, addDoc, deleteDoc, doc } from "firebase/firestore";
+import { toast } from "react-hot-toast";
 
 type ServiceItem = {
   id: string;
@@ -58,7 +59,7 @@ export default function ServicesPage() {
       setName(""); setPrice(""); setType("KG"); setDescription("");
     } catch(error) {
        console.error(error);
-       alert("Error al guardar en la nube");
+       toast.error("Error al guardar en la nube");
     }
   };
 
@@ -68,7 +69,7 @@ export default function ServicesPage() {
         if (!user?.storeId) throw new Error("Store ID missing");
         await deleteDoc(doc(db, `stores/${user.storeId}/services`, id));
       } catch(error) {
-        alert("Falló la eliminación");
+        toast.error("Falló la eliminación");
       }
     }
   };

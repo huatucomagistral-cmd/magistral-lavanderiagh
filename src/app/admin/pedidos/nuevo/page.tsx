@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowLeft, Search, Plus, Minus, CreditCard, DollarSign, PackageSearch } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/store/useStore";
+import { toast } from "react-hot-toast";
 import { searchDNI } from "@/app/actions/reniec";
 import { collection, onSnapshot, addDoc, runTransaction, doc, getDoc, getDocs, query, where, setDoc, increment } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -52,7 +53,7 @@ export default function NuevoPedidoPage() {
 
   const handleSearchDNI = async (e: React.FormEvent) => {
     e.preventDefault();
-    if(dni.length !== 8) return alert("DNI inválido");
+    if(dni.length !== 8) return toast.error("DNI inválido");
     setIsSearchingDNI(true);
     
     // Consulta real a la API mediante Server Action (seguro)
@@ -61,7 +62,7 @@ export default function NuevoPedidoPage() {
     if (result.success && result.name) {
       tempName = result.name;
     } else {
-      alert(result.error || "No se encontró el DNI en RENIEC.");
+      toast.error(result.error || "No se encontró el DNI en RENIEC.");
     }
 
     // CRM: Buscar si el cliente ya existe en nuestra DB Local (sobreescribe nombre/telefono si ya los teníamos)
@@ -135,7 +136,7 @@ export default function NuevoPedidoPage() {
        const q = query(collection(db, `stores/${user.storeId}/coupons`), where("code", "==", couponCode.trim().toUpperCase()), where("isActive", "==", true));
        const snap = await getDocs(q);
        if (snap.empty) {
-         alert("Cupón inválido, expirado o no existe.");
+         toast.error("Cupón inválido, expirado o no existe.");
          setAppliedCoupon(null);
        } else {
          const data = snap.docs[0].data();
@@ -143,15 +144,15 @@ export default function NuevoPedidoPage() {
        }
      } catch(e) {
        console.error(e);
-       alert("Error verificando cupón.");
+       toast.error("Error verificando cupón.");
      }
      setIsValidatingCoupon(false);
   };
 
   const handleCreateOrder = async () => {
-    if(!isCajaOpen) return alert("Debes ABRIR CAJA primero para procesar pedidos.");
-    if(cart.length === 0) return alert("Agrega servicios al pedido.");
-    if(!customerName) return alert("Busca o ingresa el nombre del cliente.");
+    if(!isCajaOpen) return toast.error("Debes ABRIR CAJA primero para procesar pedidos.");
+    if(cart.length === 0) return toast.error("Agrega servicios al pedido.");
+    if(!customerName) return toast.error("Busca o ingresa el nombre del cliente.");
 
     setIsSaving(true);
     try {
@@ -250,7 +251,7 @@ export default function NuevoPedidoPage() {
       router.push(`/admin/pedidos/ticket/${newDocId}`);
     } catch(err) {
       console.error(err);
-      alert("Ocurrió un error al guardar el pedido en la nube.");
+      toast.error("Ocurrió un error al guardar el pedido en la nube.");
       setIsSaving(false);
     }
   };

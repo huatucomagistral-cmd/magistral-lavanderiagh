@@ -2,6 +2,7 @@
 
 import { use, useState, useEffect } from "react";
 import { Search, ChevronRight, Package, CheckCircle, Clock, Plus } from "lucide-react";
+import { toast } from "react-hot-toast";
 import Link from "next/link";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -68,7 +69,7 @@ export default function StorefrontPage({ params }: PublicPageProps) {
          const storeQ = query(collection(db, "stores"), where("slug", "==", storeSlug.toLowerCase()));
          const storeSnap = await getDocs(storeQ);
          if (storeSnap.empty) {
-           alert("La tienda configurada no existe.");
+           toast.error("La tienda configurada no existe.");
            setIsSearching(false);
            return;
          }
@@ -95,11 +96,11 @@ export default function StorefrontPage({ params }: PublicPageProps) {
           paymentStatus: data.paymentStatus || "UNPAID",
         } as any);
       } else {
-        alert(`El ticket "${normalized}" no fue encontrado. Verifica el número e intenta de nuevo.`);
+        toast.error(`El ticket "${normalized}" no fue encontrado. Verifica el número e intenta de nuevo.`);
       }
     } catch (e) {
       console.error(e);
-      alert("Error buscando el ticket. Intenta nuevamente.");
+      toast.error("Error buscando el ticket. Intenta nuevamente.");
     } finally {
       setIsSearching(false);
     }

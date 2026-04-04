@@ -6,6 +6,7 @@ import { collection, onSnapshot, addDoc, deleteDoc, doc, getDoc } from "firebase
 import { QRCodeSVG } from "qrcode.react";
 import { db } from "@/lib/firebase";
 import { useStore } from "@/store/useStore";
+import { toast } from "react-hot-toast";
 
 type CouponType = "PERCENTAGE" | "FIXED";
 
@@ -72,7 +73,7 @@ export default function MarketingPage() {
       setNewCode("");
       setNewVal("10");
     } catch {
-      alert("Error creando cupón");
+      toast.error("Error creando cupón");
     }
     setIsAdding(false);
   };

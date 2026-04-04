@@ -2,6 +2,7 @@
 
 import { use, useState, useEffect } from "react";
 import { ArrowLeft, CheckCircle, UploadCloud, Info, Copy, Loader2 } from "lucide-react";
+import { toast } from "react-hot-toast";
 import Link from "next/link";
 import { QRCodeSVG } from "qrcode.react";
 import { doc, getDoc, updateDoc, collection, query, where, getDocs } from "firebase/firestore";
@@ -39,7 +40,7 @@ export default function YapePaymentPage({
         const storeSnap = await getDocs(storeQ);
         
         if (storeSnap.empty) {
-          alert("La tienda no existe.");
+          toast.error("La tienda no existe.");
           setLoading(false);
           return;
         }
@@ -60,7 +61,7 @@ export default function YapePaymentPage({
         if (orderSnap.exists()) {
           setOrder(orderSnap.data());
         } else {
-          alert("No encontramos ese pedido en nuestro sistema.");
+          toast.error("No encontramos ese pedido en nuestro sistema.");
         }
       } catch (err) {
         console.error(err);
@@ -85,7 +86,7 @@ export default function YapePaymentPage({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!file || !order) return alert("Por favor sube la captura de tu pago.");
+    if (!file || !order) return toast.error("Por favor sube la captura de tu pago.");
     
     setIsSubmitting(true);
     try {
@@ -109,7 +110,7 @@ export default function YapePaymentPage({
       setIsDone(true);
     } catch (error) {
       console.error(error);
-      alert("Error al subir el comprobante. Intenta de nuevo.");
+      toast.error("Error al subir el comprobante. Intenta de nuevo.");
     } finally {
       setIsSubmitting(false);
     }

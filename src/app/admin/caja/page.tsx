@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useStore } from "@/store/useStore";
+import { toast } from "react-hot-toast";
 import { LockKeyhole, LockOpen, DollarSign, Wallet, ArrowRightLeft, Ticket, Loader2 } from "lucide-react";
 import { collection, onSnapshot, query, orderBy, setDoc, doc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -65,7 +66,7 @@ export default function CajaPage() {
       // El onSnapshot del Layout actualizará el store automáticamente
     } catch (err) {
       console.error("Error abriendo caja", err);
-      alert("No se pudo abrir la caja.");
+      toast.error("No se pudo abrir la caja.");
     } finally {
       setIsProcessing(false);
     }
@@ -83,7 +84,7 @@ export default function CajaPage() {
           closedBy: user?.email || "unknown"
         });
         setInitialCashInput("");
-        alert("Caja cerrada exitosamente. Reporte generado.");
+        toast.success("Caja cerrada exitosamente. Reporte generado.");
       } catch (err) {
          console.error("Error cerrando caja", err);
       } finally {

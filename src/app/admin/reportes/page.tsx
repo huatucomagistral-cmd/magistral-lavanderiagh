@@ -5,6 +5,7 @@ import { useStore } from "@/store/useStore";
 import { collection, query, where, getDocs, orderBy } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { TrendingUp, Download, Calendar, DollarSign, Loader2, BarChart2, Activity } from "lucide-react";
+import { toast } from "react-hot-toast";
 import * as XLSX from "xlsx";
 
 const OrderStatusObj: any = {
@@ -50,7 +51,7 @@ export default function ReportesPage() {
       let start, end;
       if (filterType === "CUSTOM") {
         if (!startDate || !endDate) {
-          alert("Selecciona fecha de inicio y fin para el filtro personalizado.");
+          toast.error("Selecciona fecha de inicio y fin para el filtro personalizado.");
           setLoading(false);
           return;
         }
@@ -123,7 +124,7 @@ export default function ReportesPage() {
 
   // Exportar a Excel usando XLSX
   const handleExportExcel = () => {
-    if (orders.length === 0) return alert("No hay datos para exportar en este rango.");
+    if (orders.length === 0) return toast.error("No hay datos para exportar en este rango.");
 
     const excelData = orders.map(o => {
       const dateObj = new Date(o.date);

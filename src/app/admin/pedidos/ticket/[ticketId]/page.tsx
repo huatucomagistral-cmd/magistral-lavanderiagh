@@ -7,6 +7,7 @@ import { QRCodeCanvas } from "qrcode.react";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useStore } from "@/store/useStore";
+import { toast } from "react-hot-toast";
 
 export default function TicketViewPage({
   params,
@@ -239,14 +240,14 @@ export default function TicketViewPage({
     // ── Copy to Clipboard ───────────────────────────────────────────────────
     canvas.toBlob(async (blob) => {
       if (!blob) {
-        alert("Error al generar la imagen del ticket.");
+        toast.error("Error al generar la imagen del ticket.");
         return;
       }
       try {
         await navigator.clipboard.write([
           new window.ClipboardItem({ "image/png": blob }),
         ]);
-        alert("✅ Ticket copiado al portapapeles. (Usa Ctrl+V para pegar en WhatsApp o Telegram)");
+        toast.success("✅ Ticket copiado al portapapeles. (Usa Ctrl+V para pegar en WhatsApp o Telegram)");
       } catch (err) {
         console.error("Clipboard error:", err);
         // Fallback a descarga si el navegador bloquea el portapapeles (ej. algunos móviles)
@@ -257,7 +258,7 @@ export default function TicketViewPage({
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-        alert("⚠️ Tu navegador no permite copiar. El ticket se ha descargado como alternativa.");
+        toast("⚠️ Tu navegador no permite copiar. El ticket se ha descargado como alternativa.");
       }
     }, "image/png");
   };

@@ -6,6 +6,7 @@ import { doc, getDoc, setDoc } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "@/lib/firebase";
 import { useStore } from "@/store/useStore";
+import { toast } from "react-hot-toast";
 
 export default function ConfigPage() {
   const { user } = useStore();
@@ -97,10 +98,10 @@ export default function ConfigPage() {
         updatedAt: new Date().toISOString()
       }, { merge: true });
 
-      alert("Configuración Guardada exitosamente.");
+      toast.success("Configuración Guardada exitosamente.");
     } catch (err) {
       console.error("Error al guardar config", err);
-      alert("Error al guardar la configuración.");
+      toast.error("Error al guardar la configuración.");
     } finally {
       setIsLoading(false);
     }
