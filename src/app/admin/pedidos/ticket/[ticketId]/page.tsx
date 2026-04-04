@@ -4,7 +4,6 @@ import { use, useEffect, useState } from "react";
 import Link from "next/link";
 import { Printer, ArrowLeft, Copy, Share2, Loader2 } from "lucide-react";
 import { QRCodeCanvas } from "qrcode.react";
-import html2canvas from "html2canvas";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useStore } from "@/store/useStore";
@@ -73,58 +72,158 @@ export default function TicketViewPage({
     window.open(url, '_blank');
   };
 
-  const handleCopyImage = async () => {
-    const element = document.getElementById("ticket-content");
-    if (!element) return;
+  const handleDownloadImage = () => {
+    if (!ticketData) return;
 
-    // Ocultar elementos decorativos del DOM que distorsionan la captura
-    const decorations = element.querySelectorAll<HTMLElement>(".print\\:hidden");
-    decorations.forEach(el => { el.style.display = "none"; });
+    const W = 560;
+    const PAD = 32;
+    const LINE = 22;
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d")!;
 
-    try {
-      const canvas = await html2canvas(element, {
-        scale: 3,
-        useCORS: true,
-        backgroundColor: "#ffffff",
-        logging: false,
-        removeContainer: true,
-      });
-
-      // Restaurar decoraciones
-      decorations.forEach(el => { el.style.display = ""; });
-
-      const fileName = `Ticket-${ticketData?.ticketNumber || ticketId.slice(0, 6).toUpperCase()}.png`;
-
-      // En móvil o si ClipboardItem no está disponible → descargar la imagen directamente
-      const isMobile = /iPhone|iPad|Android|Mobile/i.test(navigator.userAgent);
-      const canUseClipboard = !isMobile && typeof window.ClipboardItem !== "undefined" && navigator.clipboard?.write;
-
-      if (canUseClipboard) {
-        canvas.toBlob(async (blob) => {
-          if (!blob) return;
-          try {
-            await navigator.clipboard.write([
-              new window.ClipboardItem({ "image/png": blob }),
-            ]);
-            alert("✅ Imagen copiada al portapapeles. Ahora puedes pegarla (Ctrl+V) en WhatsApp, Telegram, etc.");
-          } catch {
-            // Fallback a descarga si el clipboard falla
-            const url = canvas.toDataURL("image/png");
-            const a = document.createElement("a");
-            a.href = url; a.download = fileName; a.click();
-          }
-        }, "image/png");
-      } else {
-        // Móvil: descargar directamente
-        const url = canvas.toDataURL("image/png");
-        const a = document.createElement("a");
-        a.href = url; a.download = fileName; a.click();
+    // ── Helpers ──────────────────────────────────────────────────────────────
+    const setFont = (size: number, weight = "normal") => {
+      ctx.font = `${weight} ${size}px 'Courier New', Courier, monospace`;
+    };
+    const dashed = (y: number) => {
+      ctx.setLineDash([6, 4]);
+      ctx.strokeStyle = "#aaa";
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(PAD, y); ctx.lineTo(W - PAD, y); ctx.stroke();
+      ctx.setLineDash([]);
+    };
+    const solid = (y: number) => {
+      ctx.strokeStyle = "#333";
+      ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(PAD, y); ctx.lineTo(W - PAD, y); ctx.stroke();
+    };
+    const wrapText = (text: string, x: number, y: number, maxW: number, lh: number): number => {
+      const words = text.split(" ");
+      let line = "";
+      for (const word of words) {
+        const test = line ? `${line} ${word}` : word;
+        if (ctx.measureText(test).width > maxW && line) {
+          ctx.fillText(line, x, y); y += lh; line = word;
+        } else { line = test; }
       }
-    } catch (e) {
-      decorations.forEach(el => { el.style.display = ""; });
-      console.error("Error al generar captura:", e);
-      alert("Hubo un error al generar la imagen. Inténtelo de nuevo.");
+      if (line) { ctx.fillText(line, x, y); y += lh; }
+      return y;
+    };
+
+    // ── First pass: measure height ────────────────────────────────────────────
+    const items: any[] = ticketData.items || [];
+    const ticketNum = ticketData.ticketNumber || ticketId.slice(0, 8).toUpperCase();
+    const isPaid = ticketData.paymentStatus === "PAID";
+    const totalH =
+      PAD +           // top
+      60 +            // store name
+      LINE * 2 +      // address + ruc
+      16 +            // gap
+      LINE * 4 +      // date / ticket / client / dni
+      16 +            // gap
+      LINE +          // table header
+      items.length * LINE +   // rows
+      16 +            // gap
+      60 +            // status stamp
+      LINE * 2 +      // total + pay method
+      24 +            // gap
+      LINE +          // footer
+      PAD;            // bottom
+
+    canvas.width = W;
+    canvas.height = totalH;
+
+    // ── Background ────────────────────────────────────────────────────────────
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, W, totalH);
+
+    let y = PAD;
+
+    // ── Header ────────────────────────────────────────────────────────────────
+    ctx.fillStyle = "#111";
+    ctx.textAlign = "center";
+    setFont(28, "bold");
+    ctx.fillText("LAVANDERÍA MAGISTRAL", W / 2, y + 28); y += 40;
+    setFont(13);
+    ctx.fillText("Av. Principal 123 - Sede Central", W / 2, y); y += LINE;
+    ctx.fillText("RUC: 20123456789", W / 2, y); y += LINE + 8;
+    dashed(y); y += 16;
+
+    // ── Info block ────────────────────────────────────────────────────────────
+    ctx.textAlign = "left";
+    setFont(13, "bold");
+    ctx.fillStyle = "#111";
+    ctx.fillText(`FECHA: ${dateStr}`, PAD, y); y += LINE;
+    ctx.fillText(`TICKET: ${ticketNum}`, PAD, y); y += LINE;
+    ctx.fillText(`CLIENTE: ${ticketData.customerName || "Cliente"}`, PAD, y); y += LINE;
+    if (ticketData.customerDni && ticketData.customerDni !== "0") {
+      ctx.fillText(`DNI: ${ticketData.customerDni}`, PAD, y); y += LINE;
     }
+    y += 8;
+    solid(y); y += 8;
+
+    // ── Table header ─────────────────────────────────────────────────────────
+    setFont(12, "bold");
+    ctx.fillStyle = "#333";
+    ctx.textAlign = "left";
+    ctx.fillText("CANT", PAD, y + LINE - 4);
+    ctx.fillText("DESCRIPCIÓN", PAD + 60, y + LINE - 4);
+    ctx.textAlign = "right";
+    ctx.fillText("IMPORTE", W - PAD, y + LINE - 4);
+    y += LINE;
+    solid(y); y += 8;
+
+    // ── Rows ─────────────────────────────────────────────────────────────────
+    setFont(12);
+    ctx.fillStyle = "#111";
+    for (const ci of items) {
+      const price = (ci.item.price * ci.qty).toFixed(2);
+      ctx.textAlign = "left";
+      ctx.fillText(`${ci.qty}`, PAD, y + LINE - 4);
+      ctx.fillText(ci.item.name, PAD + 60, y + LINE - 4);
+      ctx.textAlign = "right";
+      ctx.fillText(price, W - PAD, y + LINE - 4);
+      y += LINE;
+    }
+    y += 8;
+    solid(y); y += 16;
+
+    // ── Status stamp ─────────────────────────────────────────────────────────
+    const stampColor = isPaid ? "#16a34a" : "#dc2626";
+    ctx.strokeStyle = stampColor;
+    ctx.lineWidth = 4;
+    ctx.strokeRect(PAD + 40, y, W - PAD * 2 - 80, 44);
+    setFont(22, "bold");
+    ctx.fillStyle = stampColor;
+    ctx.textAlign = "center";
+    ctx.fillText(isPaid ? "CANCELADO" : "POR COBRAR", W / 2, y + 30);
+    y += 60;
+
+    // ── Total ─────────────────────────────────────────────────────────────────
+    ctx.textAlign = "right";
+    setFont(16, "bold");
+    ctx.fillStyle = "#111";
+    ctx.fillText(`TOTAL: S/ ${Number(ticketData.total).toFixed(2)}`, W - PAD, y); y += LINE;
+    setFont(12);
+    const payLabel = ticketData.payMethod === "LUEGO" ? "PENDIENTE (Al recoger)" : ticketData.payMethod;
+    ctx.fillText(`Medio de Pago: ${payLabel}`, W - PAD, y); y += LINE + 8;
+
+    dashed(y); y += 16;
+
+    // ── Footer ────────────────────────────────────────────────────────────────
+    ctx.textAlign = "center";
+    setFont(11);
+    ctx.fillStyle = "#888";
+    ctx.fillText("¡Gracias por su preferencia! - Sistemas Magistral SaaS", W / 2, y);
+
+    // ── Download ─────────────────────────────────────────────────────────────
+    const fileName = `Ticket-${ticketNum}.png`;
+    const link = document.createElement("a");
+    link.href = canvas.toDataURL("image/png");
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
 
@@ -160,8 +259,8 @@ export default function TicketViewPage({
             <button onClick={handlePrint} className="bg-primary hover:bg-primary-hover active:scale-95 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-all">
                <Printer size={18} /> Imprimir (80mm)
             </button>
-            <button onClick={handleCopyImage} className="bg-white/5 hover:bg-white/10 active:scale-95 text-white font-medium py-3 rounded-xl flex items-center justify-center gap-2 transition-all border border-white/10">
-               <Copy size={18} /> Copiar Imagen
+            <button onClick={handleDownloadImage} className="bg-white/5 hover:bg-white/10 active:scale-95 text-white font-medium py-3 rounded-xl flex items-center justify-center gap-2 transition-all border border-white/10">
+               <Copy size={18} /> Descargar Imagen
             </button>
             <button onClick={handleWhatsApp} className="bg-success/20 hover:bg-success/30 active:scale-95 text-success font-medium py-3 rounded-xl flex items-center justify-center gap-2 transition-all border border-success/30">
                <Share2 size={18} /> Mandar por WhatsApp
