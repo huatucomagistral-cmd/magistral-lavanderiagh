@@ -1,7 +1,7 @@
 "use client";
 
 import { use, useState, useEffect } from "react";
-import { Search, ChevronRight, Package, CheckCircle, Clock } from "lucide-react";
+import { Search, ChevronRight, Package, CheckCircle, Clock, Plus } from "lucide-react";
 import Link from "next/link";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -29,6 +29,31 @@ export default function StorefrontPage({ params }: PublicPageProps) {
   const [isSearching, setIsSearching] = useState(false);
   const [result, setResult] = useState<TicketResult>(null);
 
+  // Growth & SaaS
+  const [services, setServices] = useState<any[]>([]);
+  const [calcItems, setCalcItems] = useState<Record<string, number>>({});
+  const [storeId, setStoreId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchStore = async () => {
+      try {
+        const storeQ = query(collection(db, "stores"), where("slug", "==", storeSlug.toLowerCase()));
+        const storeSnap = await getDocs(storeQ);
+        if (!storeSnap.empty) {
+          const id = storeSnap.docs[0].id;
+          setStoreId(id);
+          
+          // Fetch services
+          const servSnap = await getDocs(collection(db, `stores/${id}/services`));
+          setServices(servSnap.docs.map(d => ({id: d.id, ...d.data()})));
+        }
+      } catch (e) {
+        console.error("Error fetching store", e);
+      }
+    };
+    fetchStore();
+  }, [storeSlug]);
+
   // Helper para buscar por número de ticket (T-XXXX) en el campo ticketNumber
   const executeSearch = async (queryTicket: string) => {
     if (!queryTicket) return;
@@ -38,17 +63,17 @@ export default function StorefrontPage({ params }: PublicPageProps) {
     const normalized = queryTicket.trim().toUpperCase();
 
     try {
-      // 1. Encontrar el verdadero ID del documento de la tienda buscando por slug
-      const storeQ = query(collection(db, "stores"), where("slug", "==", storeSlug.toLowerCase()));
-      const storeSnap = await getDocs(storeQ);
-      
-      if (storeSnap.empty) {
-        alert("La tienda configurada no existe.");
-        setIsSearching(false);
-        return;
+      let realStoreId = storeId;
+      if (!realStoreId) {
+         const storeQ = query(collection(db, "stores"), where("slug", "==", storeSlug.toLowerCase()));
+         const storeSnap = await getDocs(storeQ);
+         if (storeSnap.empty) {
+           alert("La tienda configurada no existe.");
+           setIsSearching(false);
+           return;
+         }
+         realStoreId = storeSnap.docs[0].id;
       }
-      
-      const realStoreId = storeSnap.docs[0].id;
 
       // 2. Buscar por el campo ticketNumber usando el ID de la tienda encontrado
       const q = query(
@@ -216,31 +241,97 @@ export default function StorefrontPage({ params }: PublicPageProps) {
         </section>
       )}
 
-      {/* Servicios Rápidos */}
+      {/* Tarifario y Calculadora */}
       <section className="mt-8">
-        <h2 className="text-2xl font-bold text-white mb-6">Servicios Destacados</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <ServiceCard title="Lavado por Kilo" price="S/ 6.00" />
-          <ServiceCard title="Edredones" price="S/ 25.00" />
-          <ServiceCard title="Ternos (Seco)" price="S/ 35.00" />
-          <ServiceCard title="Zapatillas" price="S/ 15.00" />
+        <div className="flex justify-between items-end mb-6">
+           <div>
+             <h2 className="text-2xl font-bold text-white mb-2">Tarifario de Servicios</h2>
+             <p className="text-white/50 text-sm">Precios transparentes. Calcula tu presupuesto fácilmente.</p>
+           </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+           {/* Slider de Servicios */}
+           <div className="lg:col-span-2 grid grid-cols-2 sm:grid-cols-3 gap-4">
+              {services.map(s => (
+                 <div key={s.id} className="glass-card p-4 flex flex-col relative group cursor-pointer hover:border-primary/50 transition-colors"
+                      onClick={() => setCalcItems(prev => ({...prev, [s.id]: (prev[s.id] || 0) + 1}))}>
+                    <div className="flex-1 mb-4">
+                      <h3 className="text-white font-bold leading-tight line-clamp-2 text-sm">{s.name}</h3>
+                      <p className="font-mono text-primary font-bold mt-1 text-sm">S/ {Number(s.price).toFixed(2)} <span className="text-[10px] text-white/30">/{s.type}</span></p>
+                    </div>
+                    <button className="bg-white/5 hover:bg-primary/20 text-white rounded-lg py-2 text-xs font-bold w-full transition-colors flex items-center justify-center gap-1">
+                      <Plus size={14} /> Añadir a cálculo
+                    </button>
+                 </div>
+              ))}
+              {services.length === 0 && (
+                 <div className="col-span-2 sm:col-span-3 text-center py-10 bg-white/5 rounded-2xl border border-white/5">
+                    <p className="text-white/50 text-sm">No hay servicios configurados aún.</p>
+                 </div>
+              )}
+           </div>
+
+           {/* Calculadora Flotante */}
+           <div className="lg:col-span-1">
+              <div className="glass-card p-6 sticky top-24 border-primary/20 bg-gradient-to-br from-surface to-primary/5 shadow-2xl">
+                 <h3 className="text-white font-bold mb-4 flex items-center gap-2 border-b border-white/10 pb-4">
+                   <Clock size={18} className="text-primary" /> Mi Presupuesto
+                 </h3>
+                 
+                 {Object.keys(calcItems).length === 0 ? (
+                    <div className="text-center py-8">
+                       <Package size={32} className="text-white/10 mx-auto mb-2" />
+                       <p className="text-sm text-white/30">Toca "Añadir a cálculo" para estimar tu total.</p>
+                    </div>
+                 ) : (
+                    <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2">
+                       {Object.keys(calcItems).map(id => {
+                          const s = services.find(x => x.id === id);
+                          if (!s) return null;
+                          const qty = calcItems[id];
+                          return (
+                             <div key={id} className="flex justify-between items-center bg-black/20 rounded-lg p-2">
+                                <div className="flex-1">
+                                   <p className="text-xs font-bold text-white line-clamp-1">{s.name}</p>
+                                   <p className="text-[10px] text-primary">S/ {(s.price * qty).toFixed(2)}</p>
+                                </div>
+                                <div className="flex items-center gap-2 bg-white/5 rounded-lg px-2 py-1">
+                                   <button className="text-white/50 hover:text-white" onClick={() => setCalcItems(prev => {
+                                      const n = {...prev};
+                                      if (n[id] > 1) n[id]--; else delete n[id];
+                                      return n;
+                                   })}>-</button>
+                                   <span className="text-xs text-white font-bold w-4 text-center">{qty}</span>
+                                   <button className="text-white/50 hover:text-white" onClick={() => setCalcItems(prev => ({...prev, [id]: prev[id] + 1}))}>+</button>
+                                </div>
+                             </div>
+                          );
+                       })}
+                    </div>
+                 )}
+
+                 {Object.keys(calcItems).length > 0 && (
+                    <div className="mt-6 pt-4 border-t border-dashed border-white/10">
+                       <div className="flex justify-between items-end mb-4">
+                          <span className="text-white/60 text-sm">Total estimado</span>
+                          <span className="text-2xl font-bold text-white">
+                             S/ {Object.keys(calcItems).reduce((acc, id) => {
+                                const s = services.find(x => x.id === id);
+                                return acc + (s ? s.price * calcItems[id] : 0);
+                             }, 0).toFixed(2)}
+                          </span>
+                       </div>
+                       <button className="w-full text-xs text-white/30 hover:text-white/80 transition-colors underline" onClick={() => setCalcItems({})}>
+                          Limpiar cálculo
+                       </button>
+                    </div>
+                 )}
+              </div>
+           </div>
         </div>
       </section>
 
-    </div>
-  );
-}
-
-function ServiceCard({ title, price }: { title: string; price: string }) {
-  return (
-    <div className="glass-card aspect-square p-6 flex flex-col justify-end relative group hover:-translate-y-1 transition-transform border border-white/5 hover:border-white/20 cursor-default">
-      <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-surface to-white/10 absolute top-4 right-4 flex items-center justify-center border border-white/5">
-        <span className="text-white/30 text-[10px] font-bold">✨</span>
-      </div>
-      <div>
-        <h3 className="text-white font-bold leading-tight mb-1 group-hover:text-primary transition-colors">{title}</h3>
-        <p className="font-mono text-primary font-bold">{price}</p>
-      </div>
     </div>
   );
 }

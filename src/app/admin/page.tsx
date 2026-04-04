@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { TrendingUp, Users, DollarSign, Activity, Loader2 } from "lucide-react";
+import { TrendingUp, Users, DollarSign, Activity, Loader2, Star, Award } from "lucide-react";
 import { collection, onSnapshot, query, orderBy, limit } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useStore } from "@/store/useStore";
@@ -43,7 +43,30 @@ export default function AdminDashboard() {
   const enProceso = orders.filter(o => o.status !== 'ENTREGADO').length;
   
   // Clientes únicos hoy (aproximación rápida)
-  const clientesHoy = new Set(todayOrders.map(o => o.customerPhone)).size;
+  const clientesHoy = new Set(todayOrders.map(o => o.customerPhone || o.customerDni)).size;
+
+  // KPIs Adicionales para Admin
+  const ingresosTotales = orders
+    .filter(o => o.status === 'ENTREGADO' || o.paymentStatus === 'PAID')
+    .reduce((acc, o) => acc + (Number(o.total) || 0), 0);
+
+  const topCustomers = (() => {
+    const map = new Map();
+    orders.forEach(o => {
+      if(!o.customerName) return;
+      const key = o.customerPhone || o.customerDni || o.customerName;
+      const current = map.get(key) || { name: o.customerName, spent: 0, count: 0, phone: o.customerPhone };
+      if(o.status === 'ENTREGADO' || o.paymentStatus === 'PAID') {
+        current.spent += Number(o.total) || 0;
+      }
+      current.count += 1;
+      map.set(key, current);
+    });
+    return Array.from(map.values())
+      .filter(c => c.spent > 0)
+      .sort((a, b) => b.spent - a.spent)
+      .slice(0, 5);
+  })();
 
   if (loading) {
     return (
@@ -138,6 +161,37 @@ export default function AdminDashboard() {
              ))}
           </div>
         </div>
+        )}
+
+        {/* Business Intelligence (Admin Only) */}
+        {user?.role === "ADMIN" && (
+          <div className="glass-card p-6 overflow-hidden flex flex-col">
+            <h2 className="text-lg font-semibold text-white mb-2 flex items-center gap-2">
+              <Award className="text-primary" /> Top 5 Clientes
+            </h2>
+            <p className="text-xs text-white/50 mb-4 block">Total histórico acumulado: <strong className="text-primary tracking-widest text-sm">S/ {ingresosTotales.toFixed(2)}</strong></p>
+            <div className="space-y-3 flex-1 overflow-y-auto pr-2 scrollbar-hide">
+              {topCustomers.map((c, i) => (
+                <div key={i} className="flex justify-between items-center bg-white/5 p-3 rounded-lg border border-white/5">
+                   <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-primary/20 text-primary font-black flex items-center justify-center text-xs">
+                        {i + 1}
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-white">{c.name}</p>
+                        <p className="text-[10px] text-white/40">{c.count} pedidos</p>
+                      </div>
+                   </div>
+                   <div className="text-right">
+                      <p className="text-sm font-mono font-bold text-primary">S/ {c.spent.toFixed(2)}</p>
+                   </div>
+                </div>
+              ))}
+              {topCustomers.length === 0 && (
+                <p className="text-white/30 text-sm text-center py-6 italic">No hay clientes frecuentes aún</p>
+              )}
+            </div>
+          </div>
         )}
 
         {/* Recent Activity Sincronizada */}

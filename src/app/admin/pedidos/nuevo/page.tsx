@@ -6,7 +6,7 @@ import { ArrowLeft, Search, Plus, Minus, CreditCard, DollarSign, PackageSearch }
 import { useRouter } from "next/navigation";
 import { useStore } from "@/store/useStore";
 import { searchDNI } from "@/app/actions/reniec";
-import { collection, onSnapshot, addDoc, runTransaction, doc } from "firebase/firestore";
+import { collection, onSnapshot, addDoc, runTransaction, doc, getDoc, getDocs, query, where, setDoc, increment } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
 export type CatalogItem = {
@@ -22,12 +22,22 @@ export default function NuevoPedidoPage() {
   
   const [dni, setDni] = useState("");
   const [customerName, setCustomerName] = useState("");
+  const [customerPhone, setCustomerPhone] = useState("");
   const [isSearchingDNI, setIsSearchingDNI] = useState(false);
   const [cart, setCart] = useState<{item: CatalogItem, qty: number}[]>([]);
   const [payMethod, setPayMethod] = useState<"EFECTIVO" | "YAPE" | "TRANSFERENCIA" | "LUEGO">("EFECTIVO");
   const [isSaving, setIsSaving] = useState(false);
   const [loadingServices, setLoadingServices] = useState(true);
   const [catalogDb, setCatalogDb] = useState<CatalogItem[]>([]);
+
+  // CRM CRM & Rewards State
+  const [clientProfile, setClientProfile] = useState<{ dni: string, name: string, phone: string, totalKgAccumulated: number } | null>(null);
+  const [useReward, setUseReward] = useState(false);
+  
+  // Coupon State
+  const [couponCode, setCouponCode] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<{ code: string, type: string, value: number } | null>(null);
+  const [isValidatingCoupon, setIsValidatingCoupon] = useState(false);
 
   // Escuchar Servicios Reales de Firebase
   useEffect(() => {
@@ -47,11 +57,28 @@ export default function NuevoPedidoPage() {
     
     // Consulta real a la API mediante Server Action (seguro)
     const result = await searchDNI(dni);
+    let tempName = "";
     if (result.success && result.name) {
-      setCustomerName(result.name);
+      tempName = result.name;
     } else {
-      alert(result.error || "No se encontró el DNI.");
-      setCustomerName("");
+      alert(result.error || "No se encontró el DNI en RENIEC.");
+    }
+
+    // CRM: Buscar si el cliente ya existe en nuestra DB Local (sobreescribe nombre/telefono si ya los teníamos)
+    if (user?.storeId) {
+      const clientRef = doc(db, `stores/${user.storeId}/clients/${dni}`);
+      const clientSnap = await getDoc(clientRef);
+      if (clientSnap.exists()) {
+        const cData = clientSnap.data();
+        setClientProfile({ dni, name: cData.name, phone: cData.phone, totalKgAccumulated: cData.totalKgAccumulated || 0 });
+        setCustomerName(cData.name || tempName);
+        if (cData.phone) setCustomerPhone(cData.phone);
+      } else {
+        setCustomerName(tempName);
+        setClientProfile(null);
+      }
+    } else {
+       setCustomerName(tempName);
     }
     
     setIsSearchingDNI(false);
@@ -75,7 +102,51 @@ export default function NuevoPedidoPage() {
     }).filter(c => c.qty > 0));
   };
 
-  const total = cart.reduce((acc, current) => acc + (current.item.price * current.qty), 0);
+  // Cálculos de Totales
+  const subtotal = cart.reduce((acc, current) => acc + (current.item.price * current.qty), 0);
+  
+  // Calcular deducciones (Loyalty)
+  let rewardDiscount = 0;
+  if (useReward && clientProfile && clientProfile.totalKgAccumulated >= 10) {
+     // Buscar cuánto cuesta 1KG en el catálogo para descontarlo
+     const kgItem = catalogDb.find(c => c.type === 'KG');
+     if (kgItem) rewardDiscount = kgItem.price;
+  }
+
+  // Calcular deducciones (Cupones)
+  let couponDiscount = 0;
+  if (appliedCoupon) {
+     if (appliedCoupon.type === 'PERCENTAGE') {
+        couponDiscount = subtotal * (appliedCoupon.value / 100);
+     } else {
+        couponDiscount = appliedCoupon.value;
+     }
+  }
+
+  let total = subtotal - rewardDiscount - couponDiscount;
+  if (total < 0) total = 0;
+
+  // Lógica para validar cupones
+  const handleValidateCoupon = async () => {
+     if(!couponCode) return;
+     if(!user?.storeId) return;
+     setIsValidatingCoupon(true);
+     try {
+       const q = query(collection(db, `stores/${user.storeId}/coupons`), where("code", "==", couponCode.trim().toUpperCase()), where("isActive", "==", true));
+       const snap = await getDocs(q);
+       if (snap.empty) {
+         alert("Cupón inválido, expirado o no existe.");
+         setAppliedCoupon(null);
+       } else {
+         const data = snap.docs[0].data();
+         setAppliedCoupon({ code: data.code, type: data.type, value: data.discount });
+       }
+     } catch(e) {
+       console.error(e);
+       alert("Error verificando cupón.");
+     }
+     setIsValidatingCoupon(false);
+  };
 
   const handleCreateOrder = async () => {
     if(!isCajaOpen) return alert("Debes ABRIR CAJA primero para procesar pedidos.");
@@ -128,13 +199,17 @@ export default function NuevoPedidoPage() {
         }, { merge: true });
       });
 
-      // Crear el documento de la orden con el ticketNumber como campo
       const orderData = {
         ticketNumber,
         customerName,
         customerDni: dni || "0",
+        customerPhone,
         date: new Date().toISOString(),
         items: cart,
+        subtotal,
+        discountReward: rewardDiscount,
+        discountCoupon: couponDiscount,
+        appliedCoupon: appliedCoupon ? appliedCoupon.code : null,
         total,
         payMethod,
         status: "RECIBIDO",
@@ -143,6 +218,34 @@ export default function NuevoPedidoPage() {
 
       const docRef = await addDoc(ordersRef, orderData);
       newDocId = docRef.id;
+
+      // Actualizar CRM del Cliente
+      if (dni && dni.length === 8 && user?.storeId) {
+         const clientRef = doc(db, `stores/${user.storeId}/clients/${dni}`);
+         
+         // Cuántos kg lleva este nuevo pedido
+         const kgsInThisOrder = cart.filter(c => c.item.type === 'KG').reduce((acc, c) => acc + c.qty, 0);
+         
+         // Cuántos kgs se gastó en recompensa (si usó)
+         const kgsSpent = useReward ? 10 : 0;
+         const netKgsChange = kgsInThisOrder - kgsSpent;
+
+         // Insertar o actualizar
+         if (clientProfile) { // Ya existía
+            await setDoc(clientRef, {
+               name: customerName,
+               phone: customerPhone,
+               totalKgAccumulated: increment(netKgsChange)
+            }, { merge: true });
+         } else { // Crear nuevo
+            await setDoc(clientRef, {
+               dni,
+               name: customerName,
+               phone: customerPhone,
+               totalKgAccumulated: netKgsChange
+            }, { merge: true });
+         }
+      }
 
       router.push(`/admin/pedidos/ticket/${newDocId}`);
     } catch(err) {
@@ -170,18 +273,41 @@ export default function NuevoPedidoPage() {
           
           <div className="glass-card p-6 border-l-4 border-l-primary/50">
             <h2 className="text-sm font-bold text-white uppercase tracking-wider mb-4">1. Datos del Cliente (API Reniec)</h2>
-            <form onSubmit={handleSearchDNI} className="flex gap-2">
-              <input type="text" maxLength={8} value={dni} onChange={e => setDni(e.target.value.replace(/[^0-9]/g, ''))}
-                placeholder="Número de DNI" className="w-40 bg-[#18181b] border border-white/10 rounded-xl px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-primary font-mono text-center"
-              />
-              <button type="submit" disabled={isSearchingDNI || dni.length !== 8} className="bg-white/10 hover:bg-white/20 text-white font-bold px-4 py-2 rounded-xl transition-colors disabled:opacity-50">
-                 {isSearchingDNI ? <span className="animate-spin border border-white/30 border-t-white rounded-full w-4 h-4 inline-block" /> : <Search size={18} />}
-              </button>
-              
+            <form onSubmit={handleSearchDNI} className="space-y-3">
+              {/* Fila 1: DNI + búsqueda + Celular */}
+              <div className="flex gap-2">
+                <input type="text" maxLength={8} value={dni} onChange={e => setDni(e.target.value.replace(/[^0-9]/g, ''))}
+                  placeholder="Número de DNI" className="w-36 bg-[#18181b] border border-white/10 rounded-xl px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-primary font-mono text-center"
+                />
+                <button type="submit" disabled={isSearchingDNI || dni.length !== 8} className="bg-white/10 hover:bg-white/20 text-white font-bold px-4 py-2 rounded-xl transition-colors disabled:opacity-50 shrink-0">
+                   {isSearchingDNI ? <span className="animate-spin border border-white/30 border-t-white rounded-full w-4 h-4 inline-block" /> : <Search size={18} />}
+                </button>
+                <input type="text" maxLength={9} value={customerPhone} onChange={e => setCustomerPhone(e.target.value.replace(/[^0-9]/g, ''))}
+                  placeholder="Celular (Opcional)" className="w-40 bg-[#18181b] border border-white/10 rounded-xl px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-primary font-mono text-center"
+                />
+              </div>
+              {/* Fila 2: Nombre completo (ancho total) */}
               <input type="text" value={customerName} onChange={e => setCustomerName(e.target.value)}
-                placeholder="Nombre Completo" className="flex-1 bg-[#18181b] border border-white/10 rounded-xl px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-primary"
+                placeholder="Nombre Completo" className="w-full bg-[#18181b] border border-white/10 rounded-xl px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-primary"
               />
             </form>
+            
+            {clientProfile && (
+              <div className="mt-4 bg-primary/10 border border-primary/20 rounded-xl p-3 flex items-center justify-between">
+                 <div>
+                   <p className="text-primary font-bold text-sm flex items-center gap-1">🎟️ Perfil de Fidelidad</p>
+                   <p className="text-white/60 text-xs">Kilos Acumulados Históricamente: <span className="font-bold text-white">{clientProfile.totalKgAccumulated} kg</span></p>
+                 </div>
+                 {clientProfile.totalKgAccumulated >= 10 && (
+                   <button 
+                     onClick={() => setUseReward(!useReward)}
+                     className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${useReward ? 'bg-success text-white' : 'bg-white/10 text-white hover:bg-white/20'}`}
+                   >
+                     {useReward ? "Recompensa Aplicada ✓" : "🎁 Canjear 1KG Gratis"}
+                   </button>
+                 )}
+              </div>
+            )}
           </div>
 
           <div className="glass-card p-6">
@@ -243,7 +369,41 @@ export default function NuevoPedidoPage() {
                 )}
              </div>
 
+             <div className="p-4 bg-[#18181b] border-t border-b border-white/5 space-y-3">
+               {/* Cupones */}
+               <div className="flex gap-2">
+                 <input type="text" value={couponCode} onChange={e => setCouponCode(e.target.value)} placeholder="Código de Cupón" className="flex-1 bg-background border border-white/10 text-white text-sm px-3 py-2 rounded-lg uppercase placeholder:normal-case"/>
+                 <button onClick={handleValidateCoupon} disabled={isValidatingCoupon || !couponCode} className="bg-white/10 hover:bg-white/20 text-white text-xs font-bold px-3 py-2 rounded-lg transition-colors">Validar</button>
+               </div>
+               
+               {appliedCoupon && (
+                 <div className="flex justify-between items-center bg-success/10 border border-success/30 px-3 py-2 rounded-lg">
+                    <span className="text-success text-xs font-bold flex items-center gap-1">🏷️ {appliedCoupon.code}</span>
+                    <button onClick={() => setAppliedCoupon(null)} className="text-success/50 hover:text-success text-xs underline">Quitar</button>
+                 </div>
+               )}
+             </div>
+
              <div className="p-4 bg-background/50 border-t border-white/5">
+                <div className="space-y-1 mb-4 border-b border-white/10 pb-4">
+                  <div className="flex justify-between text-white/50 text-sm">
+                     <span>Subtotal</span>
+                     <span>S/ {subtotal.toFixed(2)}</span>
+                  </div>
+                  {useReward && (
+                    <div className="flex justify-between text-success text-sm font-bold">
+                       <span>Recompensa (1KG Gratis)</span>
+                       <span>- S/ {rewardDiscount.toFixed(2)}</span>
+                    </div>
+                  )}
+                  {appliedCoupon && (
+                    <div className="flex justify-between text-success text-sm font-bold">
+                       <span>Cupón ({appliedCoupon.code})</span>
+                       <span>- S/ {couponDiscount.toFixed(2)}</span>
+                    </div>
+                  )}
+                </div>
+
                 <div className="flex justify-between items-center mb-4">
                   <span className="text-white/70">Total a Pagar</span>
                   <span className="text-3xl font-black text-primary font-mono">S/ {total.toFixed(2)}</span>

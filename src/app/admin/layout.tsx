@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { LayoutDashboard, Users, Receipt, Package, Settings, LogOut, Menu, X } from "lucide-react";
+import { LayoutDashboard, Users, Receipt, Package, Settings, LogOut, Menu, X, ClipboardList, TrendingUp, Megaphone } from "lucide-react";
 import Link from "next/link";
 import { useStore } from "@/store/useStore";
 import { auth, db } from "@/lib/firebase";
@@ -32,7 +32,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     }
 
     if (user.role === "PERSONAL") {
-      const blockedPaths = ["/admin/servicios", "/admin/staff", "/admin/configuracion"];
+      const blockedPaths = ["/admin/servicios", "/admin/staff", "/admin/configuracion", "/admin/reportes", "/admin/marketing"];
       if (blockedPaths.some(p => pathname.startsWith(p))) {
         router.push("/admin"); // Kick them back to dashboard
       }
@@ -129,14 +129,22 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         </div>
 
         <nav className="flex-1 p-4 flex flex-col gap-2 overflow-y-auto">
-          <SidebarLink href="/admin" icon={<LayoutDashboard size={20} />} label="Dashboard" />
+          <SidebarLink href="/admin" icon={<LayoutDashboard size={20} />} label="Dashboard" exact />
           <SidebarLink href="/admin/caja" icon={<Receipt size={20} />} label="Caja" />
-          <SidebarLink href="/admin/pedidos" icon={<Package size={20} />} label="Pedidos" />
+          <SidebarLink
+            href="/admin/pedidos"
+            icon={<Package size={20} />}
+            label="Pedidos"
+            excludePaths={["/admin/pedidos/historial"]}
+          />
+          <SidebarLink href="/admin/pedidos/historial" icon={<ClipboardList size={20} />} label="Historial" />
           
           {user.role === "ADMIN" && (
             <>
               <SidebarLink href="/admin/servicios" icon={<Settings size={20} />} label="Servicios" />
               <SidebarLink href="/admin/staff" icon={<Users size={20} />} label="Personal" />
+              <SidebarLink href="/admin/reportes" icon={<TrendingUp size={20} />} label="Reportes Fin" />
+              <SidebarLink href="/admin/marketing" icon={<Megaphone size={20} />} label="Marketing" />
             </>
           )}
         </nav>
@@ -212,9 +220,22 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   );
 }
 
-function SidebarLink({ href, icon, label }: { href: string; icon: React.ReactNode; label: string }) {
+function SidebarLink({
+  href, icon, label, exact = false, excludePaths = []
+}: {
+  href: string;
+  icon: React.ReactNode;
+  label: string;
+  exact?: boolean;
+  excludePaths?: string[];
+}) {
   const pathname = usePathname();
-  const isActive = pathname === href || pathname.startsWith(`${href}/`);
+
+  // Excluir rutas hijas específicas (ej. Pedidos no debe activarse cuando es Historial)
+  const isExcluded = excludePaths.some(p => pathname.startsWith(p));
+  const isActive = !isExcluded && (
+    exact ? pathname === href : pathname === href || pathname.startsWith(`${href}/`)
+  );
   
   return (
     <Link 

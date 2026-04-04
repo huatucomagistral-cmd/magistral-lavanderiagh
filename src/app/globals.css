@@ -21,6 +21,7 @@
 
 @layer base {
   :root {
+    color-scheme: dark;
     --background: #020617;
     --foreground: #f8fafc;
   }
@@ -28,6 +29,7 @@
   body {
     background-color: var(--background);
     color: var(--foreground);
+    color-scheme: dark;
     @apply antialiased min-h-screen selection:bg-primary/30;
   }
 }

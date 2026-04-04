@@ -16,6 +16,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Magistral SaaS - Lavanderías",
   description: "Plataforma Premium para la Gestión de Lavanderías",
+  other: {
+    "color-scheme": "dark",
+  },
 };
 
 export default function RootLayout({
@@ -27,7 +30,8 @@ export default function RootLayout({
     <html
       lang="es"
       // "dark" class is added here to enforce our premium dark mode
-      className={`${geistSans.variable} ${geistMono.variable} dark antialiased h-full`}
+      className={`${geistSans.variable} ${geistMono.variable} antialiased h-full`}
+      style={{ colorScheme: "dark" }}
     >
       <body className="min-h-full flex flex-col bg-background text-foreground">
         <AuthProvider>

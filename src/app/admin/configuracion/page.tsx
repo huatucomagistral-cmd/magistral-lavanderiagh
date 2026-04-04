@@ -35,12 +35,8 @@ export default function ConfigPage() {
           setColor(data.color || "#3b82f6");
           setYapeNumber(data.yapeNumber || "");
           setYapeName(data.yapeName || "");
-          if (data.yapeQrUrl) {
-            setYapeQrPreview(data.yapeQrUrl);
-          }
-          if (data.logoUrl) {
-            setLogoPreview(data.logoUrl);
-          }
+          if (data.yapeQrUrl) setYapeQrPreview(data.yapeQrUrl);
+          if (data.logoUrl) setLogoPreview(data.logoUrl);
         }
       } catch (err) {
         console.error("Error fetching config", err);
@@ -219,36 +215,36 @@ export default function ConfigPage() {
           </div>
         </form>
 
-        {/* Preview Panel */}
-        <div className="lg:col-span-1 hidden lg:block">
-           <div className="glass-card p-6 sticky top-24">
-             <h3 className="text-white font-medium mb-4 text-center">Vista Previa (Tema)</h3>
-             <div className="aspect-[9/16] bg-black rounded-3xl border-[6px] border-white/10 overflow-hidden relative shadow-2xl">
-                {/* Header Mock */}
-                <div className="h-16 flex items-center px-4 z-10 relative gap-3" style={{ background: `linear-gradient(135deg, ${color}, #0a0a0a)` }}>
-                   {logoPreview ? (
-                      <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center overflow-hidden shrink-0 border border-white/20">
-                         <img src={logoPreview} alt="Preview" className="w-full h-full object-contain" />
-                      </div>
-                   ) : (
-                      <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center font-bold text-white text-xs shrink-0">L</div>
-                   )}
-                   <span className="text-white font-bold text-sm truncate">{storeName || 'Tienda'}</span>
-                </div>
-                {/* Body Mock */}
-                <div className="p-4 relative">
-                   <div className="absolute top-0 right-[-50px] w-32 h-32 blur-[40px] opacity-30 rounded-full pointer-events-none" style={{ backgroundColor: color }} />
-                   <div className="h-6 w-3/4 bg-white/10 rounded mb-4" />
-                   <div className="h-20 w-full bg-white/5 rounded-xl border border-white/5 mb-2" />
-                   <div className="h-20 w-full bg-white/5 rounded-xl border border-white/5" />
-                   
-                   <div className="mt-8 mx-auto w-24 h-24 bg-white rounded-xl flex items-center justify-center p-2">
-                      <div className="w-full h-full bg-[#742284]/20 rounded-lg border border-[#742284]/30" />
-                   </div>
-                </div>
-             </div>
-           </div>
-        </div>
+         {/* Preview Panel */}
+         <div className="lg:col-span-1 hidden lg:block">
+            <div className="glass-card p-6 sticky top-24">
+              <h3 className="text-white font-medium mb-4 text-center">Vista Previa (Tema)</h3>
+              <div className="aspect-[9/16] bg-black rounded-3xl border-[6px] border-white/10 overflow-hidden relative shadow-2xl">
+                 {/* Header Mock */}
+                 <div className="h-16 flex items-center px-4 z-10 relative gap-3" style={{ background: `linear-gradient(135deg, ${color}, #0a0a0a)` }}>
+                    {logoPreview ? (
+                       <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center overflow-hidden shrink-0 border border-white/20">
+                          <img src={logoPreview} alt="Preview" className="w-full h-full object-contain" />
+                       </div>
+                    ) : (
+                       <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center font-bold text-white text-xs shrink-0">L</div>
+                    )}
+                    <span className="text-white font-bold text-sm truncate">{storeName || 'Tienda'}</span>
+                 </div>
+                 {/* Body Mock */}
+                 <div className="p-4 relative">
+                    <div className="absolute top-0 right-[-50px] w-32 h-32 blur-[40px] opacity-30 rounded-full pointer-events-none" style={{ backgroundColor: color }} />
+                    <div className="h-6 w-3/4 bg-white/10 rounded mb-4" />
+                    <div className="h-20 w-full bg-white/5 rounded-xl border border-white/5 mb-2" />
+                    <div className="h-20 w-full bg-white/5 rounded-xl border border-white/5" />
+                    
+                    <div className="mt-8 mx-auto w-24 h-24 bg-white rounded-xl flex items-center justify-center p-2">
+                       <div className="w-full h-full bg-[#742284]/20 rounded-lg border border-[#742284]/30" />
+                    </div>
+                 </div>
+              </div>
+            </div>
+         </div>
       </div>
     </div>
   );
