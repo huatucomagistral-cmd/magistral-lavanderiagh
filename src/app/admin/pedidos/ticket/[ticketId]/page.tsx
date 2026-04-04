@@ -75,10 +75,39 @@ export default function TicketViewPage({
   const handleCopyImage = () => {
     if (!ticketData) return;
 
-    const W = 560;
-    const PAD = 32;
-    const LINE = 22;
+    const W = 380;
+    const PAD = 24;
+    const LINE = 20;
+
+    // Obtener instancia del QR para dibujarla
+    const qrEl = document.querySelector("#ticket-content canvas") as HTMLCanvasElement;
+    const QR_SIZE = qrEl ? 120 : 0;
+    
+    // Obtener imagen del logo o en su defecto solo texto
+    // ── First pass: measure height ────────────────────────────────────────────
+    const items: any[] = ticketData.items || [];
+    const ticketNum = ticketData.ticketNumber || ticketId.slice(0, 8).toUpperCase();
+    const isPaid = ticketData.paymentStatus === "PAID";
+    const totalH =
+      PAD +           
+      60 +            // store name
+      LINE * 2 +      // address + ruc
+      16 +            // gap
+      LINE * 4 +      // date/ticket/client/dni
+      16 +            
+      LINE +          // table header
+      items.length * LINE +
+      16 +            
+      60 +            // status stamp
+      LINE * 2 +      // total/pay
+      32 +            // gap pre-QR
+      (QR_SIZE > 0 ? QR_SIZE + 40 : 0) + // QR area
+      LINE +          // footer
+      PAD;            
+
     const canvas = document.createElement("canvas");
+    canvas.width = W;
+    canvas.height = totalH;
     const ctx = canvas.getContext("2d")!;
 
     // ── Helpers ──────────────────────────────────────────────────────────────
@@ -86,52 +115,17 @@ export default function TicketViewPage({
       ctx.font = `${weight} ${size}px 'Courier New', Courier, monospace`;
     };
     const dashed = (y: number) => {
-      ctx.setLineDash([6, 4]);
+      ctx.setLineDash([4, 4]);
       ctx.strokeStyle = "#aaa";
       ctx.lineWidth = 1;
       ctx.beginPath(); ctx.moveTo(PAD, y); ctx.lineTo(W - PAD, y); ctx.stroke();
       ctx.setLineDash([]);
     };
-    const solid = (y: number) => {
-      ctx.strokeStyle = "#333";
-      ctx.lineWidth = 2;
+    const solid = (y: number, lw = 2) => {
+      ctx.strokeStyle = "#111";
+      ctx.lineWidth = lw;
       ctx.beginPath(); ctx.moveTo(PAD, y); ctx.lineTo(W - PAD, y); ctx.stroke();
     };
-    const wrapText = (text: string, x: number, y: number, maxW: number, lh: number): number => {
-      const words = text.split(" ");
-      let line = "";
-      for (const word of words) {
-        const test = line ? `${line} ${word}` : word;
-        if (ctx.measureText(test).width > maxW && line) {
-          ctx.fillText(line, x, y); y += lh; line = word;
-        } else { line = test; }
-      }
-      if (line) { ctx.fillText(line, x, y); y += lh; }
-      return y;
-    };
-
-    // ── First pass: measure height ────────────────────────────────────────────
-    const items: any[] = ticketData.items || [];
-    const ticketNum = ticketData.ticketNumber || ticketId.slice(0, 8).toUpperCase();
-    const isPaid = ticketData.paymentStatus === "PAID";
-    const totalH =
-      PAD +           // top
-      60 +            // store name
-      LINE * 2 +      // address + ruc
-      16 +            // gap
-      LINE * 4 +      // date / ticket / client / dni
-      16 +            // gap
-      LINE +          // table header
-      items.length * LINE +   // rows
-      16 +            // gap
-      60 +            // status stamp
-      LINE * 2 +      // total + pay method
-      24 +            // gap
-      LINE +          // footer
-      PAD;            // bottom
-
-    canvas.width = W;
-    canvas.height = totalH;
 
     // ── Background ────────────────────────────────────────────────────────────
     ctx.fillStyle = "#ffffff";
@@ -140,81 +134,107 @@ export default function TicketViewPage({
     let y = PAD;
 
     // ── Header ────────────────────────────────────────────────────────────────
-    ctx.fillStyle = "#111";
+    ctx.fillStyle = "#000";
     ctx.textAlign = "center";
-    setFont(28, "bold");
-    ctx.fillText("LAVANDERÍA MAGISTRAL", W / 2, y + 28); y += 40;
-    setFont(13);
-    ctx.fillText("Av. Principal 123 - Sede Central", W / 2, y); y += LINE;
-    ctx.fillText("RUC: 20123456789", W / 2, y); y += LINE + 8;
+    setFont(26, "900");
+    ctx.fillText("LAVANDERÍA MAGISTRAL", W / 2, y + 24); y += 38;
+    setFont(12, "bold");
+    ctx.fillText("Av. Principal 123 - Sede Central", W / 2, y); y += LINE - 4;
+    setFont(12);
+    ctx.fillText("RUC: 20123456789", W / 2, y); y += LINE;
     dashed(y); y += 16;
 
     // ── Info block ────────────────────────────────────────────────────────────
     ctx.textAlign = "left";
-    setFont(13, "bold");
-    ctx.fillStyle = "#111";
+    setFont(12, "bold");
+    ctx.fillStyle = "#000";
     ctx.fillText(`FECHA: ${dateStr}`, PAD, y); y += LINE;
-    ctx.fillText(`TICKET: ${ticketNum}`, PAD, y); y += LINE;
+    
+    // TICKET badge
+    ctx.fillText("TICKET:", PAD, y);
+    const tw = ctx.measureText("TICKET:").width;
+    ctx.fillStyle = "#000";
+    ctx.fillRect(PAD + tw + 6, y - 14, 110, LINE + 2);
+    ctx.fillStyle = "#fff";
+    setFont(14, "900");
+    ctx.fillText(ticketNum, PAD + tw + 12, y + 2);
+    y += LINE;
+    
+    ctx.fillStyle = "#000";
+    setFont(12, "bold");
     ctx.fillText(`CLIENTE: ${ticketData.customerName || "Cliente"}`, PAD, y); y += LINE;
     if (ticketData.customerDni && ticketData.customerDni !== "0") {
       ctx.fillText(`DNI: ${ticketData.customerDni}`, PAD, y); y += LINE;
     }
-    y += 8;
-    solid(y); y += 8;
+    y += 4;
+    solid(y); y += 6;
 
     // ── Table header ─────────────────────────────────────────────────────────
-    setFont(12, "bold");
-    ctx.fillStyle = "#333";
-    ctx.textAlign = "left";
-    ctx.fillText("CANT", PAD, y + LINE - 4);
-    ctx.fillText("DESCRIPCIÓN", PAD + 60, y + LINE - 4);
+    setFont(11, "900");
+    ctx.fillText("CANT DESC", PAD, y + LINE - 6);
     ctx.textAlign = "right";
-    ctx.fillText("IMPORTE", W - PAD, y + LINE - 4);
+    ctx.fillText("IMP", W - PAD, y + LINE - 6);
     y += LINE;
-    solid(y); y += 8;
+    solid(y, 1); y += 8;
 
     // ── Rows ─────────────────────────────────────────────────────────────────
-    setFont(12);
-    ctx.fillStyle = "#111";
+    setFont(12, "bold");
     for (const ci of items) {
       const price = (ci.item.price * ci.qty).toFixed(2);
       ctx.textAlign = "left";
       ctx.fillText(`${ci.qty}`, PAD, y + LINE - 4);
-      ctx.fillText(ci.item.name, PAD + 60, y + LINE - 4);
+      ctx.fillText(ci.item.name, PAD + 30, y + LINE - 4);
       ctx.textAlign = "right";
       ctx.fillText(price, W - PAD, y + LINE - 4);
       y += LINE;
     }
     y += 8;
-    solid(y); y += 16;
+    solid(y); y += 24;
 
-    // ── Status stamp ─────────────────────────────────────────────────────────
+    // ── Status stamp (Rotated) ───────────────────────────────────────────────
     const stampColor = isPaid ? "#16a34a" : "#dc2626";
+    ctx.save();
+    ctx.translate(W / 2, y + 15);
+    ctx.rotate(-2 * Math.PI / 180);
     ctx.strokeStyle = stampColor;
-    ctx.lineWidth = 4;
-    ctx.strokeRect(PAD + 40, y, W - PAD * 2 - 80, 44);
-    setFont(22, "bold");
+    ctx.lineWidth = 3;
+    ctx.strokeRect(-120, -18, 240, 36);
+    setFont(20, "900");
     ctx.fillStyle = stampColor;
     ctx.textAlign = "center";
-    ctx.fillText(isPaid ? "CANCELADO" : "POR COBRAR", W / 2, y + 30);
-    y += 60;
+    ctx.fillText(isPaid ? "CANCELADO" : "POR COBRAR", 0, 7);
+    ctx.restore();
+    y += 48;
 
     // ── Total ─────────────────────────────────────────────────────────────────
     ctx.textAlign = "right";
-    setFont(16, "bold");
-    ctx.fillStyle = "#111";
+    setFont(16, "900");
+    ctx.fillStyle = "#000";
     ctx.fillText(`TOTAL: S/ ${Number(ticketData.total).toFixed(2)}`, W - PAD, y); y += LINE;
-    setFont(12);
+    setFont(10, "bold");
     const payLabel = ticketData.payMethod === "LUEGO" ? "PENDIENTE (Al recoger)" : ticketData.payMethod;
-    ctx.fillText(`Medio de Pago: ${payLabel}`, W - PAD, y); y += LINE + 8;
+    ctx.fillText(`Medio de Pago: ${payLabel}`, W - PAD, y); y += LINE + 4;
 
-    dashed(y); y += 16;
+    dashed(y); y += 24;
+
+    // ── QR Code ──────────────────────────────────────────────────────────────
+    if (qrEl) {
+      ctx.textAlign = "center";
+      setFont(10, "bold");
+      ctx.fillText("ESCANEA PARA RASTREAR TU PEDIDO", W / 2, y);
+      y += 10;
+      ctx.drawImage(qrEl, W / 2 - 60, y, 120, 120);
+      y += 140;
+    }
 
     // ── Footer ────────────────────────────────────────────────────────────────
     ctx.textAlign = "center";
-    setFont(11);
-    ctx.fillStyle = "#888";
-    ctx.fillText("¡Gracias por su preferencia! - Sistemas Magistral SaaS", W / 2, y);
+    setFont(10);
+    ctx.fillStyle = "#333";
+    ctx.fillText("¡Gracias por su preferencia!", W / 2, y);
+    y += 12;
+    setFont(9);
+    ctx.fillText("Sistemas Magistral - SaaS", W / 2, y);
 
     // ── Copy to Clipboard ───────────────────────────────────────────────────
     canvas.toBlob(async (blob) => {
