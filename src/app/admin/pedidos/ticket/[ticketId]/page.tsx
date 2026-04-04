@@ -19,6 +19,7 @@ export default function TicketViewPage({
   const [ticketData, setTicketData] = useState<any>(null);
   const [dateStr, setDateStr] = useState("");
   const [loading, setLoading] = useState(true);
+  const [storeSlug, setStoreSlug] = useState<string>("");
 
   useEffect(() => {
     async function fetchTicket() {
@@ -30,6 +31,13 @@ export default function TicketViewPage({
           // Formatearemos la fecha en base al guardado
           const date = new Date(d.data().date);
           setDateStr(date.toLocaleString());
+        }
+        // Obtener el slug real de la tienda
+        const storeDoc = await getDoc(doc(db, "stores", user.storeId));
+        if (storeDoc.exists()) {
+          setStoreSlug(storeDoc.data().slug || user.storeId);
+        } else {
+          setStoreSlug(user.storeId);
         }
       } catch (e) {
         console.error("Error reading ticket", e);
@@ -49,7 +57,8 @@ export default function TicketViewPage({
     
     // Crear el link de rastreo
     const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
-    const trackingLink = `${baseUrl}/${user?.storeId}?ticket=${ticketData.ticketNumber || ticketId}`;
+    const slug = storeSlug || user?.storeId;
+    const trackingLink = `${baseUrl}/${slug}?ticket=${ticketData.ticketNumber || ticketId}`;
     
     // Si tienes el nombre del comercio en algun config global, genial. Aquí hardcodeo 'Lavandería Magistral' por el momento.
     const text = `Hola ${ticketData.customerName || ''}, gracias por confiar en Lavandería Magistral. Tu pedido #${ticketData.ticketNumber || ticketId.slice(0, 6).toUpperCase()} ha sido recibido.\n\nPuedes ver tu recibo digital y rastrear el estado de tus prendas en tiempo real aquí:\n${trackingLink}`;
