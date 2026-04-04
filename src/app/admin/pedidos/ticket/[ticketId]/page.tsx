@@ -72,7 +72,7 @@ export default function TicketViewPage({
     window.open(url, '_blank');
   };
 
-  const handleDownloadImage = () => {
+  const handleCopyImage = () => {
     if (!ticketData) return;
 
     const W = 560;
@@ -216,14 +216,30 @@ export default function TicketViewPage({
     ctx.fillStyle = "#888";
     ctx.fillText("¡Gracias por su preferencia! - Sistemas Magistral SaaS", W / 2, y);
 
-    // ── Download ─────────────────────────────────────────────────────────────
-    const fileName = `Ticket-${ticketNum}.png`;
-    const link = document.createElement("a");
-    link.href = canvas.toDataURL("image/png");
-    link.download = fileName;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    // ── Copy to Clipboard ───────────────────────────────────────────────────
+    canvas.toBlob(async (blob) => {
+      if (!blob) {
+        alert("Error al generar la imagen del ticket.");
+        return;
+      }
+      try {
+        await navigator.clipboard.write([
+          new window.ClipboardItem({ "image/png": blob }),
+        ]);
+        alert("✅ Ticket copiado al portapapeles. (Usa Ctrl+V para pegar en WhatsApp o Telegram)");
+      } catch (err) {
+        console.error("Clipboard error:", err);
+        // Fallback a descarga si el navegador bloquea el portapapeles (ej. algunos móviles)
+        const fileName = `Ticket-${ticketNum}.png`;
+        const link = document.createElement("a");
+        link.href = canvas.toDataURL("image/png");
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        alert("⚠️ Tu navegador no permite copiar. El ticket se ha descargado como alternativa.");
+      }
+    }, "image/png");
   };
 
 
@@ -259,8 +275,8 @@ export default function TicketViewPage({
             <button onClick={handlePrint} className="bg-primary hover:bg-primary-hover active:scale-95 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-all">
                <Printer size={18} /> Imprimir (80mm)
             </button>
-            <button onClick={handleDownloadImage} className="bg-white/5 hover:bg-white/10 active:scale-95 text-white font-medium py-3 rounded-xl flex items-center justify-center gap-2 transition-all border border-white/10">
-               <Copy size={18} /> Descargar Imagen
+            <button onClick={handleCopyImage} className="bg-white/5 hover:bg-white/10 active:scale-95 text-white font-medium py-3 rounded-xl flex items-center justify-center gap-2 transition-all border border-white/10">
+               <Copy size={18} /> Copiar Imagen
             </button>
             <button onClick={handleWhatsApp} className="bg-success/20 hover:bg-success/30 active:scale-95 text-success font-medium py-3 rounded-xl flex items-center justify-center gap-2 transition-all border border-success/30">
                <Share2 size={18} /> Mandar por WhatsApp
