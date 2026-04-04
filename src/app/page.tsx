@@ -33,9 +33,6 @@ import { ArrowRight, CheckCircle2, Shield, Zap, TrendingUp } from "lucide-react"
           <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-accent/20 rounded-full blur-[150px] -z-10 opacity-60 mix-blend-screen max-w-full" />
           
           <div className="max-w-7xl mx-auto px-6 relative z-10 text-center">
-            <div className="inline-flex items-center px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-sm mb-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-              <span className="text-white/80">La solución definitiva para el éxito de tu lavandería</span>
-            </div>
             
             <h1 className="text-5xl lg:text-7xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-br from-white to-white/50 mb-6 max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-6 duration-700 delay-100">
               El software más avanzado para tu lavandería
@@ -45,12 +42,12 @@ import { ArrowRight, CheckCircle2, Shield, Zap, TrendingUp } from "lucide-react"
               Gestiona pedidos, controla tu caja chica, emite tickets y ofrécele a tus clientes una vista online del estado de sus prendas.
             </p>
             
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-in fade-in slide-in-from-bottom-10 duration-700 delay-300">
-              <Link href="/login" className="w-full sm:w-auto bg-white text-black hover:bg-gray-100 px-8 py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-2 transition-transform hover:scale-105 active:scale-95">
-                Empieza Gratis Ahora <ArrowRight size={20} />
+            <div className="flex flex-row items-center justify-center gap-4 animate-in fade-in slide-in-from-bottom-10 duration-700 delay-300">
+              <Link href="/login" className="glass-button px-6 py-3 rounded-xl font-bold text-white text-base flex items-center justify-center">
+                Iniciar Sesión
               </Link>
-              <Link href="/login" className="w-full sm:w-auto glass-button px-8 py-4 rounded-xl font-bold text-white text-lg flex items-center justify-center">
-                Acceso a Trabajador
+              <Link href="/registro" className="bg-white text-black hover:bg-gray-100 px-6 py-3 rounded-xl font-bold text-base flex items-center justify-center gap-2 transition-transform hover:scale-105 active:scale-95">
+                Crear Tienda <ArrowRight size={18} />
               </Link>
             </div>
           </div>

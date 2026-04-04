@@ -87,7 +87,7 @@ export default function PedidosPage() {
     const columnOrders = filteredOrders.filter(o => o.status === status);
     
     return (
-      <div className="flex flex-col h-full glass-card p-4 overflow-hidden">
+      <div className="flex flex-col h-[420px] md:h-full glass-card p-4 overflow-hidden">
         <div className={`mb-4 flex items-center justify-between pb-2 border-b-2 ${colorClass}`}>
           <h3 className="font-bold text-white uppercase tracking-wider text-sm">{title}</h3>
           <span className="bg-white/10 text-white/70 text-xs px-2 py-0.5 rounded-full font-bold">{columnOrders.length}</span>
@@ -198,7 +198,7 @@ export default function PedidosPage() {
   };
 
   return (
-    <div className="h-[calc(100vh-8rem)] flex flex-col animate-in fade-in duration-500">
+    <div className="flex flex-col animate-in fade-in duration-500 md:h-[calc(100vh-8rem)]">
       {/* Cabecera */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 shrink-0">
         <div>
@@ -235,7 +235,7 @@ export default function PedidosPage() {
       </div>
 
       {/* Tablero Kanban */}
-      <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-6 overflow-hidden min-h-0">
+      <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-6 md:overflow-hidden md:min-h-0">
          {renderColumn('RECIBIDO', 'Recibidos (Cola)', 'border-white/20 text-white/80')}
          {renderColumn('EN_PROCESO', 'En Proceso (Lavando)', 'border-warning/50 text-warning')}
          {renderColumn('LISTO', 'Listos (Por entregar)', 'border-success/50 text-success')}

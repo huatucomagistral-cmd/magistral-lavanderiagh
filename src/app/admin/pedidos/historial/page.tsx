@@ -128,7 +128,7 @@ export default function HistorialPage() {
       <div className="glass-card p-4 md:p-6 flex flex-col md:flex-row gap-4 items-end">
         <div className="flex-1 w-full">
           <label className="text-xs font-bold text-white/50 uppercase tracking-widest mb-2 block">
-            Buscar Cliente o Ticket
+            Buscar por Nombre, DNI o Ticket
           </label>
           <form onSubmit={handleSearch} className="relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -138,7 +138,7 @@ export default function HistorialPage() {
               type="text"
               value={searchString}
               onChange={(e) => setSearchString(e.target.value)}
-              placeholder="Ej. 70001010, Juan Pérez, 260401-001..."
+              placeholder=""
               className="block w-full pl-10 pr-3 py-3 border border-white/10 rounded-xl leading-5 bg-[#18181b] text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all"
             />
             <button

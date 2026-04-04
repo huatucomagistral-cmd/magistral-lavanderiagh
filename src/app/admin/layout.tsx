@@ -153,7 +153,11 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           {user.role === "ADMIN" && (
               <SidebarLink href="/admin/configuracion" icon={<Settings size={20} />} label="Configuración" />
           )}
-          <button onClick={handleLogout} className="flex items-center gap-3 px-3 py-2.5 w-full text-white/50 hover:text-error transition-all rounded-xl hover:bg-error/10 mt-2 font-medium">
+          {/* Email del usuario */}
+          <div className="px-3 py-2 mt-1">
+            <span className="text-xs text-white/30 truncate block">{user.email}</span>
+          </div>
+          <button onClick={handleLogout} className="flex items-center gap-3 px-3 py-2.5 w-full text-white/50 hover:text-error transition-all rounded-xl hover:bg-error/10 mt-1 font-medium">
             <LogOut size={20} />
             <span className="text-sm">Cerrar Sesión</span>
           </button>
@@ -162,53 +166,53 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-w-0 relative h-full">
-        {/* Top Header */}
         <header className="glass-header h-16 flex items-center justify-between px-4 lg:px-6 shrink-0 z-30 relative">
            
-           {/* Left side: Hamburger menu & Mobile Logo */}
-           <div className="flex items-center gap-3 md:hidden">
-              <button 
-                onClick={() => setIsMobileMenuOpen(true)}
-                className="p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
-                aria-label="Abrir menú"
-              >
-                <Menu size={24} />
-              </button>
-              
-              <div className="flex items-center gap-2">
-                {currentStore?.logoUrl ? (
-                  <img 
-                    src={currentStore.logoUrl} 
-                    alt={currentStore.name} 
-                    className="w-7 h-7 rounded object-contain bg-white" 
-                  />
-                ) : (
-                  <div className="w-7 h-7 rounded bg-gradient-to-tr from-primary to-accent flex items-center justify-center">
-                    <span className="font-bold text-white text-sm">
-                      {currentStore?.name ? currentStore.name.charAt(0).toUpperCase() : "M"}
-                    </span>
-                  </div>
-                )}
-                <span className="font-bold text-white text-sm truncate max-w-[100px]">
-                  {currentStore?.name || "Magistral"}
-                </span>
-              </div>
+           {/* Left side: Logo + Store Name (mobile) | empty (desktop) */}
+           <div className="flex items-center gap-2 md:hidden">
+             {currentStore?.logoUrl ? (
+               <img 
+                 src={currentStore.logoUrl} 
+                 alt={currentStore.name} 
+                 className="w-7 h-7 rounded object-contain bg-white" 
+               />
+             ) : (
+               <div className="w-7 h-7 rounded bg-gradient-to-tr from-primary to-accent flex items-center justify-center">
+                 <span className="font-bold text-white text-sm">
+                   {currentStore?.name ? currentStore.name.charAt(0).toUpperCase() : "M"}
+                 </span>
+               </div>
+             )}
+             <span className="font-bold text-white text-sm truncate max-w-[130px]">
+               {currentStore?.name || "Magistral"}
+             </span>
            </div>
 
            {/* Placeholder for desktop layout alignment */}
            <div className="hidden md:block"></div>
 
-           {/* Right side: User Profile */}
+           {/* Right side: Role + Hamburger (mobile) | Email + Role (desktop) */}
            <div className="flex items-center gap-3">
-              <div className="flex flex-col items-end">
-                  <span className="text-sm font-medium text-white truncate max-w-[120px] sm:max-w-[200px]">{user.email}</span>
+              {/* Desktop: email + role */}
+              <div className="hidden md:flex flex-col items-end">
+                  <span className="text-sm font-medium text-white truncate max-w-[200px]">{user.email}</span>
                   <span className="text-[10px] text-white/50 uppercase tracking-widest font-bold">{user.role}</span>
               </div>
-              <div className="w-8 h-8 rounded-full bg-surface border border-white/10 flex items-center justify-center text-sm font-bold text-primary uppercase shadow-lg">
-                {user.email.charAt(0)}
+
+              {/* Mobile: role label + hamburger */}
+              <div className="flex items-center gap-2 md:hidden">
+                <span className="text-[10px] text-white/50 uppercase tracking-widest font-bold">{user.role}</span>
+                <button 
+                  onClick={() => setIsMobileMenuOpen(true)}
+                  className="p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+                  aria-label="Abrir menú"
+                >
+                  <Menu size={24} />
+                </button>
               </div>
            </div>
         </header>
+
         
         <div className="flex-1 overflow-y-auto w-full">
           <div className="p-4 sm:p-6 lg:p-10 max-w-6xl mx-auto w-full min-h-full">

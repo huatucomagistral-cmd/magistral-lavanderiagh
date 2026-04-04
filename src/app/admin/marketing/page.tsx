@@ -101,7 +101,7 @@ export default function MarketingPage() {
     <div className="space-y-10 animate-in fade-in duration-500">
       <div>
         <h1 className="text-3xl font-bold text-white mb-2 flex items-center gap-3">
-          <Zap size={28} className="text-primary" /> Marketing & Growth
+          <Zap size={28} className="text-primary" /> Promociones
         </h1>
         <p className="text-white/60">Gestiona tus cupones de descuento y el QR de vitrina para captar clientes.</p>
       </div>
@@ -114,9 +114,6 @@ export default function MarketingPage() {
             <h2 className="text-lg font-bold text-white flex items-center gap-2 mb-1">
               <Ticket size={20} className="text-primary" /> Cupones de Descuento
             </h2>
-            <p className="text-sm text-white/50 mb-6">
-              Crea códigos promocionales para campañas de retención o bienvenida.
-            </p>
 
             {/* Formulario nuevo cupón */}
             <div className="space-y-2 mb-6">
@@ -193,16 +190,6 @@ export default function MarketingPage() {
               </div>
             )}
           </div>
-
-          {/* Tip de estrategia */}
-          <div className="glass-card p-6 border border-primary/20 bg-gradient-to-br from-primary/10 to-transparent">
-            <h3 className="font-bold text-white mb-2 flex items-center gap-2">💡 Estrategia Recomendada</h3>
-            <p className="text-sm text-white/70 leading-relaxed">
-              Crea el cupón <span className="font-mono font-bold text-primary">BIENVENIDO20</span> con un 20% de descuento y
-              compártelo en tu WhatsApp al momento de entregar el ticket al cliente. Según métricas de la industria,
-              los clientes que usan un cupón en su primera visita tienen <strong className="text-white">3× más probabilidades</strong> de regresar.
-            </p>
-          </div>
         </div>
 
         {/* ─── QR DE VITRINA (col-span 2) ─── */}
@@ -212,9 +199,6 @@ export default function MarketingPage() {
               <QrCode size={20} className="text-primary" />
             </div>
             <h2 className="text-lg font-bold text-white mb-1">QR de Vitrina</h2>
-            <p className="text-xs text-white/50 mb-6 max-w-[240px]">
-              Imprime este código y ponlo en tu mostrador. Tus clientes lo escanearán para ver el tarifario y calcular su precio.
-            </p>
 
             {slug ? (
               <>
@@ -234,9 +218,6 @@ export default function MarketingPage() {
                 >
                   <Download size={16} /> Descargar SVG
                 </button>
-                <p className="text-[10px] text-white/30 mt-3">
-                  El SVG es perfecto para imprimir en cualquier tamaño sin pérdida de calidad.
-                </p>
               </>
             ) : (
               <div className="text-center py-8">

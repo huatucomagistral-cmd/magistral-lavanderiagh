@@ -272,18 +272,18 @@ export default function NuevoPedidoPage() {
         <div className="space-y-6">
           
           <div className="glass-card p-6 border-l-4 border-l-primary/50">
-            <h2 className="text-sm font-bold text-white uppercase tracking-wider mb-4">1. Datos del Cliente (API Reniec)</h2>
+            <h2 className="text-sm font-bold text-white uppercase tracking-wider mb-4">1. Datos del Cliente</h2>
             <form onSubmit={handleSearchDNI} className="space-y-3">
               {/* Fila 1: DNI + búsqueda + Celular */}
               <div className="flex gap-2">
                 <input type="text" maxLength={8} value={dni} onChange={e => setDni(e.target.value.replace(/[^0-9]/g, ''))}
-                  placeholder="Número de DNI" className="w-36 bg-[#18181b] border border-white/10 rounded-xl px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-primary font-mono text-center"
+                  placeholder="DNI" className="flex-1 min-w-0 bg-[#18181b] border border-white/10 rounded-xl px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-primary font-mono text-center"
                 />
                 <button type="submit" disabled={isSearchingDNI || dni.length !== 8} className="bg-white/10 hover:bg-white/20 text-white font-bold px-4 py-2 rounded-xl transition-colors disabled:opacity-50 shrink-0">
                    {isSearchingDNI ? <span className="animate-spin border border-white/30 border-t-white rounded-full w-4 h-4 inline-block" /> : <Search size={18} />}
                 </button>
                 <input type="text" maxLength={9} value={customerPhone} onChange={e => setCustomerPhone(e.target.value.replace(/[^0-9]/g, ''))}
-                  placeholder="Celular (Opcional)" className="w-40 bg-[#18181b] border border-white/10 rounded-xl px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-primary font-mono text-center"
+                  placeholder="Celular" className="flex-1 min-w-0 bg-[#18181b] border border-white/10 rounded-xl px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-primary font-mono text-center"
                 />
               </div>
               {/* Fila 2: Nombre completo (ancho total) */}

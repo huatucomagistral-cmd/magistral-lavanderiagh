@@ -114,7 +114,6 @@ export default function ConfigPage() {
     <div className="space-y-8 animate-in fade-in duration-500">
       <div>
         <h1 className="text-3xl font-bold text-white mb-2">Configuración de Tienda</h1>
-        <p className="text-white/60">Actualiza los datos públicos y métodos de pago de tu lavandería.</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -145,7 +144,7 @@ export default function ConfigPage() {
                    />
                  </div>
                  
-                 <div className="grid grid-cols-2 gap-4">
+                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                    <div>
                      <label className="block text-sm font-medium text-white/70 mb-1">URL Pública (Slug)</label>
                      <div className="flex items-center">
