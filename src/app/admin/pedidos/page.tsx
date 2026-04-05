@@ -26,6 +26,7 @@ export default function PedidosPage() {
   const { user } = useStore();
   const [orders, setOrders] = useState<Order[]>([]);
   const [showHistory, setShowHistory] = useState(false);
+  const [previewVoucherOrder, setPreviewVoucherOrder] = useState<Order | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
 
@@ -60,7 +61,8 @@ export default function PedidosPage() {
       const orderRef = doc(db, `stores/${user.storeId}/orders`, id);
       const updates: any = { 
         paymentStatus: 'PAID',
-        payMethod: method
+        payMethod: method,
+        paymentDate: new Date().toISOString()
       };
       if (andDeliver) updates.status = 'ENTREGADO';
       await updateDoc(orderRef, updates);
@@ -111,77 +113,65 @@ export default function PedidosPage() {
                   <span className="font-mono bg-white/5 px-2 py-0.5 rounded text-white/70">S/ {Number(order.total).toFixed(2)}</span>
                 </div>
 
-                {/* Badge de Pago Pendiente (YAPE ONLINE) */}
+                {/* Bloque Superior: Avisos Activos de Deuda o Validación */}
                 {order.paymentStatus === 'PENDING_VERIFICATION' && (
                   <div className="mb-3 animate-pulse">
-                    <a 
-                      href={order.voucherUrl} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="flex items-center justify-center gap-2 bg-warning/20 text-warning border border-warning/30 py-2 rounded-lg text-[10px] font-black uppercase hover:bg-warning/30 transition-colors"
-                    >
-                      <Info size={12} /> Pago por Validar (Ver Voucher)
-                    </a>
+                    <button onClick={() => setPreviewVoucherOrder(order)} className="w-full flex items-center justify-center gap-2 bg-warning/20 text-warning border border-warning/30 py-2 rounded-lg text-[10px] font-black uppercase hover:bg-warning/30 transition-colors">
+                      <Info size={12} /> Pago por Validar
+                    </button>
                   </div>
                 )}
-
-                {/* Badge de Por Cobrar (EFECTIVO O AL RECOGER) */}
                 {order.paymentStatus === 'UNPAID' && (
-                  <div className="mb-3 px-3 py-2 bg-error/10 text-error border border-error/20 rounded-lg flex flex-col gap-2">
+                  <div className="mb-3 px-2 py-2 bg-error/10 text-error border border-error/20 rounded-lg flex flex-col gap-2">
                     <span className="text-[10px] font-black uppercase text-center flex items-center justify-center gap-1">
                       <Info size={12}/> Por Cobrar ❌
                     </span>
                     <div className="flex gap-1">
-                      <button onClick={() => confirmPayment(order.id, 'EFECTIVO', order.status === 'LISTO')} className="flex-1 bg-white/10 hover:bg-white/20 text-[9px] py-1 rounded font-bold transition-colors">💵 Efectivo</button>
-                      <button onClick={() => confirmPayment(order.id, 'YAPE', order.status === 'LISTO')} className="flex-1 bg-[#742284]/20 hover:bg-[#742284]/40 text-[9px] py-1 rounded font-bold text-[#742284] border border-[#742284]/20 transition-colors">🟣 Yape</button>
+                      <button onClick={() => confirmPayment(order.id, 'EFECTIVO', order.status === 'LISTO')} className="flex-1 bg-white/10 hover:bg-white/20 text-[9px] py-1.5 rounded font-bold transition-colors">💵 Efectivo</button>
+                      <button onClick={() => confirmPayment(order.id, 'YAPE', order.status === 'LISTO')} className="flex-1 bg-[#742284]/20 hover:bg-[#742284]/40 text-[9px] py-1.5 rounded font-bold text-[#742284] border border-[#742284]/20 transition-colors">🟣 Yape</button>
                     </div>
                   </div>
                 )}
 
-                {/* Confirmado */}
-                {order.paymentStatus === 'PAID' && (
-                  <div className="mb-3 px-3 py-1 bg-success/10 text-success border border-success/20 rounded-lg text-center">
-                    <span className="text-[10px] font-bold uppercase flex items-center justify-center gap-1">
-                      <CheckCircle size={10}/> Pagado / Cancelado
-                    </span>
+                {/* Fila Inferior (Siempre visible): Estado de Pago + Estado de Lavandería */}
+                <div className="flex gap-2 mt-2 pt-3 border-t border-white/5">
+                  {/* Columna Izquierda: Estado de Pago */}
+                  <div className="flex-1 flex flex-col justify-center">
+                     {order.paymentStatus === 'PAID' && (
+                       <div className="bg-success/10 text-success border border-success/20 rounded-md flex items-center justify-center shrink-0 w-full h-[34px]">
+                         <span className="text-[10px] font-black uppercase flex items-center gap-1"><CheckCircle size={10}/> Pagado</span>
+                       </div>
+                     )}
+                     {order.paymentStatus === 'PENDING_VERIFICATION' && (
+                        <button onClick={async () => { if (!user?.storeId) return; const orderRef = doc(db, `stores/${user.storeId}/orders`, order.id); await updateDoc(orderRef, { paymentStatus: 'PAID', payMethod: 'YAPE', paymentDate: new Date().toISOString() }); }} className="w-full bg-success text-white hover:bg-success/80 rounded-md text-[10px] font-black transition-colors shadow-lg shrink-0 h-[34px] shadow-success/20 uppercase flex items-center justify-center gap-1">
+                          Aprobar ✅
+                        </button>
+                     )}
+                     {order.paymentStatus === 'UNPAID' && (
+                        <div className="bg-white/5 text-white/30 rounded-md flex items-center justify-center shrink-0 w-full h-[34px]">
+                           <span className="text-[9px] uppercase font-bold text-center leading-tight">Debe<br/>Pagar</span>
+                        </div>
+                     )}
                   </div>
-                )}
 
-                {/* Status Action Buttons */}
-                <div className="flex gap-2 mt-2 pt-3 border-t border-white/5 opacity-0 group-hover:opacity-100 transition-opacity">
-                  {order.paymentStatus === 'PENDING_VERIFICATION' ? (
-                    <button 
-                      onClick={async () => {
-                        if (!user?.storeId) return;
-                        const orderRef = doc(db, `stores/${user.storeId}/orders`, order.id);
-                        await updateDoc(orderRef, { paymentStatus: 'PAID', payMethod: 'YAPE' });
-                      }}
-                      className="flex-1 bg-success text-white hover:bg-success/80 py-1.5 rounded text-xs font-bold transition-colors shadow-lg shadow-success/20"
-                    >
-                      Confirmar Pago ✅
-                    </button>
-                  ) : (
-                    <>
-                      {status === 'RECIBIDO' && (
-                        <button onClick={() => updateStatus(order.id, 'EN_PROCESO')} className="flex-1 bg-warning/20 text-warning hover:bg-warning/30 py-1.5 rounded text-xs font-bold transition-colors">
-                          A Proceso
-                        </button>
-                      )}
-                      {status === 'EN_PROCESO' && (
-                        <button onClick={() => updateStatus(order.id, 'LISTO')} className="flex-1 bg-success/20 text-success hover:bg-success/30 py-1.5 rounded text-xs font-bold transition-colors">
-                          Marcar Listo
-                        </button>
-                      )}
-                      {status === 'LISTO' && order.paymentStatus === 'PAID' && (
-                        <button onClick={() => updateStatus(order.id, 'ENTREGADO')} className="flex-1 bg-primary/20 text-primary hover:bg-primary/30 py-1.5 rounded text-xs font-bold transition-colors">
-                          Entregar
-                        </button>
-                      )}
-                    </>
-                  )}
-                  <button className="p-1.5 text-white/50 hover:text-white hover:bg-white/10 rounded transition-colors">
-                    <MoreVertical size={16} />
-                  </button>
+                  {/* Columna Derecha: Acción para avanzar Workflow */}
+                  <div className="flex-1 flex gap-1 items-stretch">
+                    {status === 'RECIBIDO' && (
+                      <button onClick={() => updateStatus(order.id, 'EN_PROCESO')} className="flex-1 bg-warning/20 text-warning hover:bg-warning/30 rounded-md text-xs font-bold transition-colors">
+                        A Proceso
+                      </button>
+                    )}
+                    {status === 'EN_PROCESO' && (
+                      <button onClick={() => updateStatus(order.id, 'LISTO')} className="flex-1 bg-info/20 text-info hover:bg-info/30 rounded-md text-xs font-bold transition-colors">
+                        Listo
+                      </button>
+                    )}
+                    {status === 'LISTO' && (
+                      <button onClick={() => { if(order.paymentStatus === 'PAID') updateStatus(order.id, 'ENTREGADO'); else alert('Debe cobrar el pago antes de entregar la ropa.'); }} className={`flex-1 rounded-md text-xs font-bold transition-colors ${order.paymentStatus === 'PAID' ? 'bg-primary/20 text-primary hover:bg-primary/30' : 'bg-white/5 text-white/10 cursor-not-allowed'}`}>
+                        Entregar
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
@@ -309,6 +299,58 @@ export default function PedidosPage() {
             </div>
           </div>
         </>
+      )}
+
+      {/* Voucher Validation Modal */}
+      {previewVoucherOrder && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-[#1a1a1a] sm:border border-white/10 sm:rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col h-full sm:h-auto sm:max-h-[90vh]">
+            
+            <div className="flex-1 overflow-y-auto min-h-0 bg-black relative">
+               {previewVoucherOrder.voucherUrl ? (
+                   // eslint-disable-next-line @next/next/no-img-element
+                  <img src={previewVoucherOrder.voucherUrl} alt="Comprobante de Pago" className="w-full h-auto block" />
+               ) : (
+                  <div className="flex items-center justify-center h-full min-h-[200px]">
+                     <p className="text-white/50 text-sm">No hay imagen adjunta</p>
+                  </div>
+               )}
+            </div>
+
+            <div className="p-5 border-t border-white/10 bg-[#222] shrink-0">
+               <div className="flex justify-between items-end mb-4">
+                  <div>
+                    <p className="text-sm text-white/50 mb-1">Ticket a Validar</p>
+                    <p className="text-white font-bold text-xl">{previewVoucherOrder.ticketNumber || (previewVoucherOrder.id.slice(0,6).toUpperCase())}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm text-white/50 mb-1">Monto Cobrado</p>
+                    <p className="text-[#00E5C0] font-bold text-3xl font-mono tracking-tighter leading-none">S/ {Number(previewVoucherOrder.total).toFixed(2)}</p>
+                  </div>
+               </div>
+
+               <div className="flex gap-3">
+                 <button 
+                   onClick={() => setPreviewVoucherOrder(null)} 
+                   className="flex-1 bg-white/5 hover:bg-white/10 text-white py-4 rounded-xl font-bold transition-all active:scale-95 border border-white/5 text-sm"
+                 >
+                   Cancelar
+                 </button>
+                 <button 
+                   onClick={(e) => {
+                      e.stopPropagation();
+                      confirmPayment(previewVoucherOrder.id, 'YAPE');
+                      setPreviewVoucherOrder(null);
+                   }} 
+                   className="flex-[2] bg-[#00E5C0] hover:bg-[#00E5C0]/80 text-[#004d40] py-4 rounded-xl font-black text-sm flex items-center justify-center gap-2 transition-all active:scale-95 shadow-[0_0_20px_rgba(0,229,192,0.3)]"
+                 >
+                   APROBAR PAGO YAPE <CheckCircle size={18} />
+                 </button>
+               </div>
+            </div>
+
+          </div>
+        </div>
       )}
     </div>
   );

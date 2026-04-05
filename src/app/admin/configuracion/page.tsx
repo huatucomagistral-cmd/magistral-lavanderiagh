@@ -18,9 +18,6 @@ export default function ConfigPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
 
-  const [yapeQrFile, setYapeQrFile] = useState<File | null>(null);
-  const [yapeQrPreview, setYapeQrPreview] = useState<string | null>(null);
-
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
 
@@ -36,7 +33,7 @@ export default function ConfigPage() {
           setColor(data.color || "#3b82f6");
           setYapeNumber(data.yapeNumber || "");
           setYapeName(data.yapeName || "");
-          if (data.yapeQrUrl) setYapeQrPreview(data.yapeQrUrl);
+          setYapeName(data.yapeName || "");
           if (data.logoUrl) setLogoPreview(data.logoUrl);
         }
       } catch (err) {
@@ -47,14 +44,6 @@ export default function ConfigPage() {
     };
     fetchConfig();
   }, [user?.storeId]);
-
-  const handleYapeQrChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      const file = e.target.files[0];
-      setYapeQrFile(file);
-      setYapeQrPreview(URL.createObjectURL(file));
-    }
-  };
 
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -68,7 +57,6 @@ export default function ConfigPage() {
     e.preventDefault();
     setIsLoading(true);
     try {
-      let uploadedQrUrl = yapeQrPreview; // Mantiene el previo si existe
       let uploadedLogoUrl = logoPreview;
 
       if (!user?.storeId) throw new Error("Store ID missing");
@@ -80,20 +68,12 @@ export default function ConfigPage() {
         uploadedLogoUrl = await getDownloadURL(logoRef);
       }
 
-      if (yapeQrFile) {
-        const fileExt = yapeQrFile.name.split(".").pop();
-        const storageRef = ref(storage, `stores/${user.storeId}/config/yapeQr_${Date.now()}.${fileExt}`);
-        await uploadBytes(storageRef, yapeQrFile);
-        uploadedQrUrl = await getDownloadURL(storageRef);
-      }
-
       await setDoc(doc(db, "stores", user.storeId), {
         storeName,
         slug,
         color,
         yapeNumber,
         yapeName,
-        yapeQrUrl: uploadedQrUrl,
         logoUrl: uploadedLogoUrl,
         updatedAt: new Date().toISOString()
       }, { merge: true });
@@ -117,8 +97,8 @@ export default function ConfigPage() {
         <h1 className="text-3xl font-bold text-white mb-2">Configuración de Tienda</h1>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <form onSubmit={handleSave} className="lg:col-span-2 space-y-6">
+      <div className="max-w-3xl">
+        <form onSubmit={handleSave} className="space-y-6">
           
           {/* Datos Generales */}
           <section className="glass-card p-6 space-y-6">
@@ -185,26 +165,10 @@ export default function ConfigPage() {
                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-[#742284]"
                    />
                  </div>
-                 
-                 <div className="md:col-span-2">
-                   <label className="block text-sm font-medium text-white/70 mb-2">Imagen QR Oficial (Yape/Plin)</label>
-                   <div className="flex items-center gap-4">
-                      {yapeQrPreview && (
-                        <div className="w-24 h-24 rounded-xl border border-white/10 overflow-hidden shrink-0 bg-white items-center flex justify-center">
-                           <img src={yapeQrPreview} alt="QR Preview" className="w-full h-full object-contain" />
-                        </div>
-                      )}
-                      <label className="flex-1 border-2 border-dashed border-white/10 hover:border-[#742284]/50 bg-black/20 rounded-xl px-4 py-6 text-center cursor-pointer transition-colors group">
-                         <ImageIcon size={24} className="text-white/30 group-hover:text-[#742284] mx-auto mb-2" />
-                         <span className="text-white/70 text-sm font-medium">Toca aquí para seleccionar tu QR</span>
-                         <input type="file" accept="image/*" className="hidden" onChange={handleYapeQrChange} />
-                      </label>
-                   </div>
-                 </div>
-            </div>
-            <p className="text-xs text-warning/80 bg-warning/10 p-3 rounded-lg border border-warning/20">
-              Estos datos junto con el QR se usarán para la pantalla de cobro que verán tus clientes.
-            </p>
+             </div>
+             <p className="text-xs text-warning/80 bg-warning/10 p-3 rounded-lg border border-warning/20">
+               Estos datos se usarán para la pantalla de cobro integrada mediante Yape.
+             </p>
           </section>
 
           <div className="flex justify-end">
@@ -215,36 +179,6 @@ export default function ConfigPage() {
           </div>
         </form>
 
-         {/* Preview Panel */}
-         <div className="lg:col-span-1 hidden lg:block">
-            <div className="glass-card p-6 sticky top-24">
-              <h3 className="text-white font-medium mb-4 text-center">Vista Previa (Tema)</h3>
-              <div className="aspect-[9/16] bg-black rounded-3xl border-[6px] border-white/10 overflow-hidden relative shadow-2xl">
-                 {/* Header Mock */}
-                 <div className="h-16 flex items-center px-4 z-10 relative gap-3" style={{ background: `linear-gradient(135deg, ${color}, #0a0a0a)` }}>
-                    {logoPreview ? (
-                       <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center overflow-hidden shrink-0 border border-white/20">
-                          <img src={logoPreview} alt="Preview" className="w-full h-full object-contain" />
-                       </div>
-                    ) : (
-                       <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center font-bold text-white text-xs shrink-0">L</div>
-                    )}
-                    <span className="text-white font-bold text-sm truncate">{storeName || 'Tienda'}</span>
-                 </div>
-                 {/* Body Mock */}
-                 <div className="p-4 relative">
-                    <div className="absolute top-0 right-[-50px] w-32 h-32 blur-[40px] opacity-30 rounded-full pointer-events-none" style={{ backgroundColor: color }} />
-                    <div className="h-6 w-3/4 bg-white/10 rounded mb-4" />
-                    <div className="h-20 w-full bg-white/5 rounded-xl border border-white/5 mb-2" />
-                    <div className="h-20 w-full bg-white/5 rounded-xl border border-white/5" />
-                    
-                    <div className="mt-8 mx-auto w-24 h-24 bg-white rounded-xl flex items-center justify-center p-2">
-                       <div className="w-full h-full bg-[#742284]/20 rounded-lg border border-[#742284]/30" />
-                    </div>
-                 </div>
-              </div>
-            </div>
-         </div>
       </div>
     </div>
   );

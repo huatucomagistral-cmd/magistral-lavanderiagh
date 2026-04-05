@@ -20,10 +20,14 @@ export default function AdminDashboard() {
         const dateObj = raw.date?.toDate ? raw.date.toDate() : new Date(raw.date);
         const todayStr = new Date().toISOString().slice(0, 10);
         const orderDateStr = isNaN(dateObj.getTime()) ? '' : dateObj.toISOString().slice(0, 10);
+        const paymentDateObj = raw.paymentDate ? new Date(raw.paymentDate) : null;
+        const paymentDateStr = paymentDateObj && !isNaN(paymentDateObj.getTime()) ? paymentDateObj.toISOString().slice(0, 10) : '';
+        
         return {
           id: d.id,
           ...raw,
           _isToday: orderDateStr === todayStr,
+          _isPaidToday: (paymentDateStr === todayStr) || (!raw.paymentDate && orderDateStr === todayStr && raw.paymentStatus === 'PAID'),
           _dateObj: dateObj
         };
       });
@@ -35,8 +39,8 @@ export default function AdminDashboard() {
 
   // Cálculos dinámicos
   const todayOrders = orders.filter(o => o._isToday);
-  const ingresosHoy = todayOrders
-    .filter(o => o.status === 'ENTREGADO')
+  const ingresosHoy = orders
+    .filter(o => o._isPaidToday)
     .reduce((acc, o) => acc + (Number(o.total) || 0), 0);
   
   const pedidosNuevos = todayOrders.length;

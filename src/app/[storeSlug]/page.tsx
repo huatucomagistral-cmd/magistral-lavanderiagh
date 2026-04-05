@@ -1,11 +1,12 @@
 "use client";
 
-import { use, useState, useEffect } from "react";
-import { Search, ChevronRight, Package, CheckCircle, Clock, Plus } from "lucide-react";
+import { use, useState, useEffect, useRef } from "react";
+import { Search, ChevronRight, Package, CheckCircle, Clock, Plus, Copy, UploadCloud, ChevronDown } from "lucide-react";
 import { toast } from "react-hot-toast";
 import Link from "next/link";
-import { collection, query, where, getDocs } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { doc, updateDoc, collection, query, where, getDocs } from "firebase/firestore";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { db, storage } from "@/lib/firebase";
 
 interface PublicPageProps {
   params: Promise<{ storeSlug: string }>;
@@ -34,6 +35,13 @@ export default function StorefrontPage({ params }: PublicPageProps) {
   const [services, setServices] = useState<any[]>([]);
   const [calcItems, setCalcItems] = useState<Record<string, number>>({});
   const [storeId, setStoreId] = useState<string | null>(null);
+  const [storeData, setStoreData] = useState<any>(null);
+  
+  // Yape Inline State
+  const [showPayment, setShowPayment] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [file, setFile] = useState<File | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     const fetchStore = async () => {
@@ -43,6 +51,7 @@ export default function StorefrontPage({ params }: PublicPageProps) {
         if (!storeSnap.empty) {
           const id = storeSnap.docs[0].id;
           setStoreId(id);
+          setStoreData(storeSnap.docs[0].data());
           
           // Fetch services
           const servSnap = await getDocs(collection(db, `stores/${id}/services`));
@@ -109,6 +118,47 @@ export default function StorefrontPage({ params }: PublicPageProps) {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     executeSearch(searchQuery);
+  };
+
+  const handleCopy = () => {
+    if (!storeData?.yapeNumber) return;
+    navigator.clipboard.writeText(storeData.yapeNumber);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleSubmitVoucher = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!file || !result || !storeId) {
+      return toast.error("Faltan datos para subir el comprobante.");
+    }
+    
+    setIsSubmitting(true);
+    try {
+      const extension = file.name.split('.').pop();
+      const fileName = `${result.ticket}_${Date.now()}.${extension}`;
+      const storageRef = ref(storage, `stores/${storeId}/vouchers/${fileName}`);
+      
+      const uploadResult = await uploadBytes(storageRef, file);
+      const downloadURL = await getDownloadURL(uploadResult.ref);
+
+      await updateDoc(doc(db, `stores/${storeId}/orders`, (result as any).rawTicket), {
+        voucherUrl: downloadURL,
+        paymentStatus: "PENDING_VERIFICATION",
+        paymentMethod: "YAPE"
+      });
+
+      // Update local state to show success immediately
+      setResult(prev => prev ? {...prev, paymentStatus: 'PENDING_VERIFICATION'} : null);
+      setShowPayment(false);
+      setFile(null);
+      toast.success("Comprobante enviado. En breve lo validaremos.");
+    } catch (error) {
+      console.error("Upload error", error);
+      toast.error("Error al subir el comprobante. Intenta de nuevo.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   // Buscar auto-mágicamente si venimos de la emisión (QR scan)
@@ -202,15 +252,76 @@ export default function StorefrontPage({ params }: PublicPageProps) {
 
              {/* CTA Pago (Si no está pagado ni en verificación) */}
              {result.paymentStatus === 'UNPAID' && (
-               <div className="mt-8 pt-6 border-t border-dashed border-white/20 text-center relative z-10">
-                  <h3 className="text-lg font-bold text-white mb-2">
-                    {result.status === 'LISTO' ? '¡Tu ropa ya está lista! ✨' : 'Adelanta tu pago ✨'}
-                  </h3>
-                  <p className="text-sm text-white/60 mb-6">Paga ahora con Yape y ahorra tiempo al recoger tu orden en la sucursal.</p>
+               <div className="mt-8 pt-6 border-t border-dashed border-white/20 relative z-10 w-full overflow-hidden">
                   
-                  <Link href={`/${storeSlug}/yape/${(result as any).rawTicket}`} className="bg-[#742284] hover:bg-[#742284]/80 active:scale-95 text-white w-full sm:w-auto px-8 mx-auto font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-[#742284]/20">
-                    Ir a Pago con Yape <ChevronRight size={18} />
-                  </Link>
+                  {!showPayment ? (
+                      <div className="text-center">
+                         <h3 className="text-lg font-bold text-white mb-2">
+                           {result.status === 'LISTO' ? '¡Tu ropa ya está lista! ✨' : '¿Quieres recoger tu ropa más rápido? ⚡'}
+                         </h3>
+                         <p className="text-sm text-white/60 mb-6">Deja tu pago listo por Yape desde aquí mismo y ahorra tiempo.</p>
+                         
+                         <button onClick={() => setShowPayment(true)} className="bg-[#742284] hover:bg-[#742284]/80 active:scale-95 text-white w-full sm:w-auto px-8 mx-auto font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-[#742284]/20">
+                           Pagar con Yape <ChevronDown size={18} />
+                         </button>
+                      </div>
+                  ) : (
+                      <div className="bg-[#111111]/90 rounded-2xl p-5 border border-white/10 mt-2 slide-in-from-top-4 animate-in fade-in relative shadow-2xl">
+                         <div className="flex justify-between items-start mb-4 border-b border-white/10 pb-4">
+                           <div>
+                              <h4 className="text-white font-bold text-lg flex items-center gap-2">
+                                <span className="w-6 h-6 rounded-md bg-[#742284] text-white flex items-center justify-center text-xs font-sans tracking-tighter shadow-md">Y</span> Yape
+                              </h4>
+                              <p className="text-primary font-mono text-xl mt-1 font-bold">S/ {result.total.toFixed(2)}</p>
+                           </div>
+                           <button onClick={() => {setShowPayment(false); setFile(null);}} className="text-white/40 hover:text-white text-sm px-2 py-1 bg-white/5 rounded-lg active:scale-95">Cerrar</button>
+                         </div>
+
+                         {/* Paso 1: Copiar Numero */}
+                         <div className="mb-6 bg-black/40 p-4 rounded-xl border border-white/5">
+                            <span className="text-[#00E5C0] font-bold text-xs uppercase tracking-wider mb-2 block">Paso 1</span>
+                            <p className="text-sm text-white/80 mb-3">Copia el número y envía el Yape a nombre de <strong className="text-white">{storeData?.yapeName || "la tienda"}</strong>.</p>
+                            
+                            {storeData?.yapeNumber ? (
+                              <button 
+                                onClick={handleCopy} 
+                                type="button"
+                                className="w-full bg-gradient-to-r from-[#742284] to-[#B03BBF] hover:shadow-[0_0_15px_rgba(116,34,132,0.4)] text-white px-4 py-3 rounded-lg font-bold flex items-center justify-center gap-2 active:scale-95 transition-all shadow-md"
+                              >
+                                 {copied ? "¡Copiado!" : <>Copiar número: {storeData.yapeNumber} <Copy size={16} /></>}
+                              </button>
+                            ) : (
+                              <p className="text-white/50 text-xs italic text-center p-2 bg-white/5 rounded-lg">El administrador aún no ha configurado su número oficial.</p>
+                            )}
+                         </div>
+
+                         {/* Paso 2: Subir Captura */}
+                         <div className="bg-black/40 p-4 rounded-xl border border-white/5">
+                            <span className="text-[#00E5C0] font-bold text-xs uppercase tracking-wider mb-2 block">Paso 2</span>
+                            <p className="text-sm text-white/80 mb-3">Sube aquí la captura de pantalla de tu depósito para validarlo.</p>
+                            
+                            <form onSubmit={handleSubmitVoucher}>
+                              <label htmlFor="file-upload" className={`w-full border-2 ${file ? 'border-[#00E5C0]/50 bg-[#00E5C0]/10' : 'border-dashed border-white/20 hover:border-[#742284]/50 bg-black/50'} rounded-xl px-4 py-6 text-center cursor-pointer flex flex-col items-center justify-center transition-all group`}>
+                                {file ? (
+                                  <CheckCircle size={28} className="text-[#00E5C0] mb-2" />
+                                ) : (
+                                  <UploadCloud size={28} className="text-white/30 group-hover:text-[#742284] mb-2 transition-colors" />
+                                )}
+                                <span className={`font-medium text-sm line-clamp-1 break-all px-2 ${file ? 'text-[#00E5C0]' : 'text-white/70'}`}>
+                                  {file ? file.name : "Toca para abrir tu galería"}
+                                </span>
+                              </label>
+                              <input id="file-upload" type="file" accept="image/png, image/jpeg, application/pdf" className="hidden" onChange={(e) => {
+                                  if (e.target.files && e.target.files.length > 0) setFile(e.target.files[0]);
+                              }} />
+                              
+                              <button type="submit" disabled={isSubmitting || !file} className="w-full bg-white hover:bg-gray-200 text-black font-extrabold py-3 rounded-xl flex items-center justify-center gap-2 transition-transform active:scale-95 disabled:opacity-30 mt-4 disabled:pointer-events-none text-sm">
+                                {isSubmitting ? <span className="animate-spin border-2 border-black/30 border-t-black rounded-full w-4 h-4" /> : "Enviar Comprobante"}
+                              </button>
+                            </form>
+                         </div>
+                      </div>
+                  )}
                </div>
              )}
 

@@ -203,7 +203,7 @@ export default function TicketViewPage({
     setFont(20, "900");
     ctx.fillStyle = stampColor;
     ctx.textAlign = "center";
-    ctx.fillText(isPaid ? "CANCELADO" : "POR COBRAR", 0, 7);
+    ctx.fillText(isPaid ? "PAGADO" : "POR COBRAR", 0, 7);
     ctx.restore();
     y += 48;
 
@@ -344,7 +344,7 @@ export default function TicketViewPage({
          </table>
 
          <div className={`my-4 border-4 p-2 text-center font-black text-xl uppercase tracking-widest -rotate-2 ${ticketData.paymentStatus === 'PAID' ? 'border-green-600 text-green-600' : 'border-red-600 text-red-600'}`}>
-            {ticketData.paymentStatus === 'PAID' ? 'CANCELADO' : 'POR COBRAR'}
+            {ticketData.paymentStatus === 'PAID' ? 'PAGADO' : 'POR COBRAR'}
          </div>
 
          <div className="text-right mb-6 text-sm">

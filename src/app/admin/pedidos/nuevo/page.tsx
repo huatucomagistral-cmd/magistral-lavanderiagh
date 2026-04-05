@@ -214,7 +214,8 @@ export default function NuevoPedidoPage() {
         total,
         payMethod,
         status: "RECIBIDO",
-        paymentStatus: payMethod === "LUEGO" ? "UNPAID" : (payMethod === "YAPE" ? "PENDING_VERIFICATION" : "PAID")
+        paymentStatus: payMethod === "LUEGO" ? "UNPAID" : (payMethod === "YAPE" ? "PENDING_VERIFICATION" : "PAID"),
+        ...(payMethod === "EFECTIVO" ? { paymentDate: new Date().toISOString() } : {})
       };
 
       const docRef = await addDoc(ordersRef, orderData);

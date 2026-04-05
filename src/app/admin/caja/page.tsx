@@ -25,10 +25,14 @@ export default function CajaPage() {
         const dateObj = raw.date?.toDate ? raw.date.toDate() : new Date(raw.date);
         const todayStr = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
         const orderDateStr = isNaN(dateObj.getTime()) ? '' : dateObj.toISOString().slice(0, 10);
+        const paymentDateObj = raw.paymentDate ? new Date(raw.paymentDate) : null;
+        const paymentDateStr = paymentDateObj && !isNaN(paymentDateObj.getTime()) ? paymentDateObj.toISOString().slice(0, 10) : '';
+        
         return {
           id: d.id,
           ...raw,
           _isToday: orderDateStr === todayStr,
+          _isPaidToday: (paymentDateStr === todayStr) || (!raw.paymentDate && orderDateStr === todayStr && raw.paymentStatus === 'PAID'),
         };
       });
       setOrders(data);
@@ -37,8 +41,8 @@ export default function CajaPage() {
     return () => unsub();
   }, []);
 
-  // Misma lógica que el panel "Entregados Hoy": pedidos con ENTREGADO de hoy
-  const todayOrders = orders.filter(o => o._isToday && o.status === 'ENTREGADO');
+  // Solo sumar a la caja los pedidos que fueron pagados hoy (ya sea por creación o porque se cobraron posteriormente).
+  const todayOrders = orders.filter(o => o._isPaidToday);
 
   const stats = todayOrders.reduce((acc, order) => {
     if(order.payMethod === "EFECTIVO") acc.efectivo += Number(order.total) || 0;
