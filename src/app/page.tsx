@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowRight, CheckCircle2, Shield, Zap, TrendingUp } from "lucide-react";
+import { InstallPWAButton } from "@/components/InstallPWAButton";
 
   export default function LandingPage() {
     return (
@@ -16,12 +17,7 @@ import { ArrowRight, CheckCircle2, Shield, Zap, TrendingUp } from "lucide-react"
             />
           </Link>
             <div className="flex items-center gap-4">
-              <Link href="/login" className="text-sm font-medium text-white/70 hover:text-white transition-colors">
-                Iniciar Sesión
-              </Link>
-              <Link href="/login" className="bg-primary hover:bg-primary-hover active:scale-95 transition-all px-4 py-2 rounded-lg text-sm font-bold shadow-lg shadow-primary/20">
-                Crear Tienda
-              </Link>
+              <InstallPWAButton />
             </div>
           </div>
         </nav>
