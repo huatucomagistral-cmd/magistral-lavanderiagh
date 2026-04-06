@@ -138,6 +138,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             excludePaths={["/admin/pedidos/historial"]}
           />
           <SidebarLink href="/admin/pedidos/historial" icon={<ClipboardList size={20} />} label="Historial" />
+          <SidebarLink href="/admin/clientes" icon={<Users size={20} />} label="Clientes" />
           
           {user.role === "ADMIN" && (
             <>

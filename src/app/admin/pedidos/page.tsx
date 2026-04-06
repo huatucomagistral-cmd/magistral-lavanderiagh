@@ -2,12 +2,12 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Plus, Search, MoreVertical, MapPin, CheckCircle, PackageSearch, Loader2, Info, History, X, Check } from "lucide-react";
+import { Plus, Search, MoreVertical, MapPin, CheckCircle, PackageSearch, Loader2, Info, History, X, Check, Trash2 } from "lucide-react";
 import { collection, onSnapshot, doc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useStore } from "@/store/useStore";
 
-type OrderStatus = 'RECIBIDO' | 'EN_PROCESO' | 'LISTO' | 'ENTREGADO';
+type OrderStatus = 'RECIBIDO' | 'EN_PROCESO' | 'LISTO' | 'ENTREGADO' | 'CANCELADO';
 
 type Order = {
   id: string;
@@ -29,6 +29,8 @@ export default function PedidosPage() {
   const [previewVoucherOrder, setPreviewVoucherOrder] = useState<Order | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
+  const [orderToCancel, setOrderToCancel] = useState<Order | null>(null);
+  const [cancelReason, setCancelReason] = useState("");
 
   // Cargar orders en tiempo real desde Firebase
   useEffect(() => {
@@ -71,8 +73,24 @@ export default function PedidosPage() {
     }
   };
 
+  const cancelOrder = async (id: string, reason: string) => {
+    try {
+      if (!user?.storeId) throw new Error("Store ID missing");
+      const orderRef = doc(db, `stores/${user.storeId}/orders`, id);
+      await updateDoc(orderRef, { 
+        status: 'CANCELADO',
+        cancelReason: reason,
+        cancelledAt: new Date().toISOString()
+      });
+      setOrderToCancel(null);
+      setCancelReason("");
+    } catch(err) {
+      console.error("Error cancelling order: ", err);
+    }
+  };
+
   const filteredOrders = orders.filter(o => 
-    (o.status !== 'ENTREGADO') && (
+    (o.status !== 'ENTREGADO' && o.status !== 'CANCELADO') && (
       (o.ticketNumber || "").toLowerCase().includes(searchTerm.toLowerCase()) || 
       (o.customerName || "").toLowerCase().includes(searchTerm.toLowerCase())
     )
@@ -102,7 +120,18 @@ export default function PedidosPage() {
             {columnOrders.map(order => (
               <div key={order.id} className="bg-surface/50 p-4 hover:border-primary/50 transition-colors group border border-white/5 rounded-xl">
                 <div className="flex justify-between items-start mb-2">
-                  <Link href={`/admin/pedidos/ticket/${order.id}`} className="text-primary font-bold font-mono bg-primary/10 px-2 py-0.5 rounded-md text-sm hover:underline">{order.ticketNumber || order.id.slice(0, 6).toUpperCase()}</Link>
+                  <div className="flex items-center gap-2">
+                    <Link href={`/admin/pedidos/ticket/${order.id}`} className="text-primary font-bold font-mono bg-primary/10 px-2 py-0.5 rounded-md text-sm hover:underline">{order.ticketNumber || order.id.slice(0, 6).toUpperCase()}</Link>
+                    {user?.role === 'ADMIN' && (
+                      <button 
+                        onClick={() => setOrderToCancel(order)}
+                        className="text-white/20 hover:text-error transition-colors p-1 rounded-md hover:bg-error/10"
+                        title="Cancelar Pedido"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    )}
+                  </div>
                   <span className="text-white/40 text-xs">{order.date}</span>
                 </div>
                 
@@ -143,8 +172,8 @@ export default function PedidosPage() {
                        </div>
                      )}
                      {order.paymentStatus === 'PENDING_VERIFICATION' && (
-                        <button onClick={async () => { if (!user?.storeId) return; const orderRef = doc(db, `stores/${user.storeId}/orders`, order.id); await updateDoc(orderRef, { paymentStatus: 'PAID', payMethod: 'YAPE', paymentDate: new Date().toISOString() }); }} className="w-full bg-success text-white hover:bg-success/80 rounded-md text-[10px] font-black transition-colors shadow-lg shrink-0 h-[34px] shadow-success/20 uppercase flex items-center justify-center gap-1">
-                          Aprobar ✅
+                        <button onClick={() => setPreviewVoucherOrder(order)} className="w-full bg-warning text-white hover:bg-warning/80 rounded-md text-[10px] font-black transition-colors shadow-lg shrink-0 h-[34px] shadow-warning/20 uppercase flex items-center justify-center gap-1">
+                          Validar
                         </button>
                      )}
                      {order.paymentStatus === 'UNPAID' && (
@@ -304,8 +333,16 @@ export default function PedidosPage() {
       {/* Voucher Validation Modal */}
       {previewVoucherOrder && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-[#1a1a1a] sm:border border-white/10 sm:rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col h-full sm:h-auto sm:max-h-[90vh]">
+          <div className="bg-[#1a1a1a] sm:border border-white/10 sm:rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col h-full sm:h-auto sm:max-h-[90vh] relative">
             
+            {/* Close Button */}
+            <button 
+                onClick={() => setPreviewVoucherOrder(null)} 
+                className="absolute top-4 right-4 z-10 bg-black/50 hover:bg-black/80 backdrop-blur-md text-white p-2 rounded-full transition-colors"
+            >
+               <X size={20} />
+            </button>
+
             <div className="flex-1 overflow-y-auto min-h-0 bg-black relative">
                {previewVoucherOrder.voucherUrl ? (
                    // eslint-disable-next-line @next/next/no-img-element
@@ -331,10 +368,16 @@ export default function PedidosPage() {
 
                <div className="flex gap-3">
                  <button 
-                   onClick={() => setPreviewVoucherOrder(null)} 
-                   className="flex-1 bg-white/5 hover:bg-white/10 text-white py-4 rounded-xl font-bold transition-all active:scale-95 border border-white/5 text-sm"
+                   onClick={async (e) => {
+                      e.stopPropagation();
+                      if (!user?.storeId) return;
+                      const orderRef = doc(db, `stores/${user.storeId}/orders`, previewVoucherOrder.id);
+                      await updateDoc(orderRef, { paymentStatus: 'UNPAID', voucherUrl: null });
+                      setPreviewVoucherOrder(null);
+                   }}
+                   className="flex-1 bg-white/5 hover:bg-error/20 text-white hover:text-error py-4 rounded-xl font-bold transition-all active:scale-95 border border-white/5 hover:border-error/30 text-sm"
                  >
-                   Cancelar
+                   Rechazar
                  </button>
                  <button 
                    onClick={(e) => {
@@ -349,6 +392,45 @@ export default function PedidosPage() {
                </div>
             </div>
 
+          </div>
+        </div>
+      )}
+      {/* Cancellation Reason Modal */}
+      {orderToCancel && (
+        <div className="fixed inset-0 z-[130] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-[#1a1a1a] border border-white/10 rounded-3xl w-full max-w-md shadow-2xl overflow-hidden p-6">
+            <h3 className="text-xl font-bold text-white mb-2">Cancelar Pedido</h3>
+            <p className="text-white/50 text-sm mb-6">
+              Estás por cancelar el ticket <span className="text-primary font-mono font-bold">#{orderToCancel.ticketNumber}</span>. 
+              Por favor, indica el motivo de la cancelación.
+            </p>
+
+            <textarea
+              value={cancelReason}
+              onChange={(e) => setCancelReason(e.target.value)}
+              placeholder="Ej: El cliente se arrepintió, error en el pedido..."
+              className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white text-sm focus:border-primary/50 outline-none transition-all h-32 mb-6 resize-none"
+              autoFocus
+            />
+
+            <div className="flex gap-3">
+              <button 
+                onClick={() => {
+                  setOrderToCancel(null);
+                  setCancelReason("");
+                }} 
+                className="flex-1 bg-white/5 hover:bg-white/10 text-white py-3 rounded-xl font-bold transition-all"
+              >
+                Cerrar
+              </button>
+              <button 
+                onClick={() => cancelOrder(orderToCancel.id, cancelReason)}
+                disabled={!cancelReason.trim()}
+                className="flex-[2] bg-error/20 hover:bg-error/30 text-error py-3 rounded-xl font-bold transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                Confirmar Cancelación
+              </button>
+            </div>
           </div>
         </div>
       )}

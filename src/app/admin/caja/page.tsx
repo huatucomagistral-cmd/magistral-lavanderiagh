@@ -45,13 +45,15 @@ export default function CajaPage() {
   const todayOrders = orders.filter(o => o._isPaidToday);
 
   const stats = todayOrders.reduce((acc, order) => {
-    if(order.payMethod === "EFECTIVO") acc.efectivo += Number(order.total) || 0;
-    if(order.payMethod === "YAPE") acc.yape += Number(order.total) || 0;
-    if(order.payMethod === "TRANSFERENCIA") acc.transferencia += Number(order.total) || 0;
+    const total = Number(order.total) || 0;
+    if(order.payMethod === "EFECTIVO") acc.efectivo += total;
+    if(order.payMethod === "YAPE") acc.yape += total;
+    if(order.payMethod === "TRANSFERENCIA") acc.transferencia += total;
     acc.cobrados += 1;
     return acc;
   }, { efectivo: 0, yape: 0, transferencia: 0, cobrados: 0 });
 
+  const totalIngresos = stats.efectivo + stats.yape + stats.transferencia;
   const currentInitial = globalInitialCash || 0;
 
   const handleOpenCaja = async (e: React.FormEvent) => {
@@ -148,9 +150,9 @@ export default function CajaPage() {
               <div className="absolute top-0 right-0 p-6 opacity-[0.03] pointer-events-none">
                  <Wallet size={120} />
               </div>
-              <h3 className="text-white/70 font-medium mb-1 relative z-10">Total Efectivo en Caja</h3>
+              <h3 className="text-white/70 font-medium mb-1 relative z-10">Total de Ingresos</h3>
               <p className="text-4xl font-black text-white tracking-tight relative z-10 font-mono">
-                S/ {(currentInitial + stats.efectivo).toFixed(2)}
+                S/ {totalIngresos.toFixed(2)}
               </p>
               
               <div className="mt-6 flex flex-col gap-2 relative z-10">
@@ -159,8 +161,8 @@ export default function CajaPage() {
                   <span className="text-white font-medium">S/ {currentInitial.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-white/50">Cobros Efectivo:</span>
-                  <span className="text-success font-medium">+ S/ {stats.efectivo.toFixed(2)}</span>
+                  <span className="text-white/50">Pedidos Cobrados:</span>
+                  <span className="text-success font-medium">{stats.cobrados} pagos</span>
                 </div>
               </div>
 
@@ -178,6 +180,13 @@ export default function CajaPage() {
              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="glass-card p-5">
                    <div className="flex items-center gap-3 mb-2">
+                     <div className="w-8 h-8 rounded-full bg-success/20 flex items-center justify-center text-success"><DollarSign size={16}/></div>
+                     <span className="text-white/70 font-medium text-sm">Cobros Efectivo</span>
+                   </div>
+                   <p className="text-2xl font-bold text-white font-mono">S/ {stats.efectivo.toFixed(2)}</p>
+                </div>
+                <div className="glass-card p-5">
+                   <div className="flex items-center gap-3 mb-2">
                      <div className="w-8 h-8 rounded-full bg-[#742284]/20 flex items-center justify-center text-[#742284]"><DollarSign size={16}/></div>
                      <span className="text-white/70 font-medium text-sm">Cobros Yape</span>
                    </div>
@@ -189,13 +198,6 @@ export default function CajaPage() {
                      <span className="text-white/70 font-medium text-sm">Transferencias</span>
                    </div>
                    <p className="text-2xl font-bold text-white font-mono">S/ {stats.transferencia.toFixed(2)}</p>
-                </div>
-                <div className="glass-card p-5">
-                   <div className="flex items-center gap-3 mb-2">
-                     <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white"><Ticket size={16}/></div>
-                     <span className="text-white/70 font-medium text-sm">Pedidos Cobrados</span>
-                   </div>
-                   <p className="text-2xl font-bold text-white font-mono">{stats.cobrados} pagos</p>
                 </div>
              </div>
 

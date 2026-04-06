@@ -9,9 +9,10 @@ import Link from "next/link";
 
 const OrderStatus = {
   RECIBIDO: "Recibido",
-  PROCESANDO: "En Proceso",
+  EN_PROCESO: "En Proceso",
   LISTO: "Listo para Entregar",
   ENTREGADO: "Entregado",
+  CANCELADO: "Cancelado",
 };
 
 export default function HistorialPage() {
@@ -95,9 +96,10 @@ export default function HistorialPage() {
   const getStatusColor = (status: string) => {
     const colors: any = {
       "RECIBIDO": "bg-primary/20 text-primary border-primary/20",
-      "PROCESANDO": "bg-yellow-500/20 text-yellow-500 border-yellow-500/20",
+      "EN_PROCESO": "bg-yellow-500/20 text-yellow-500 border-yellow-500/20",
       "LISTO": "bg-success/20 text-success border-success/20",
       "ENTREGADO": "bg-white/10 text-white/50 border-white/10",
+      "CANCELADO": "bg-error/20 text-error border-error/20",
     };
     return colors[status] || "bg-white/10 text-white";
   };
@@ -204,6 +206,18 @@ export default function HistorialPage() {
                         <span className={`px-2 py-1 rounded-full text-xs font-bold border ${getStatusColor(order.status)}`}>
                           {OrderStatus[order.status as keyof typeof OrderStatus] || order.status}
                         </span>
+                        {order.status === 'CANCELADO' && order.cancelReason && (
+                          <div className="mt-1 flex flex-col">
+                             <span className="text-[10px] text-error font-medium italic break-words max-w-[200px]">
+                               Motivo: {order.cancelReason}
+                             </span>
+                             {order.cancelledAt && (
+                               <span className="text-[9px] text-white/30 uppercase mt-0.5">
+                                 {new Date(order.cancelledAt).toLocaleString([], { dateStyle: 'short', timeStyle: 'short'})}
+                               </span>
+                             )}
+                          </div>
+                        )}
                       </td>
                       <td className="p-4 align-middle">
                         {order.paymentStatus === "PAID" ? (

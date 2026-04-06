@@ -2,7 +2,7 @@
 
 import { use, useEffect, useState } from "react";
 import Link from "next/link";
-import { Printer, ArrowLeft, Copy, Share2, Loader2 } from "lucide-react";
+import { Printer, ArrowLeft, Copy, Share2, Loader2, AlertTriangle } from "lucide-react";
 import { QRCodeCanvas } from "qrcode.react";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -20,6 +20,7 @@ export default function TicketViewPage({
   const [dateStr, setDateStr] = useState("");
   const [loading, setLoading] = useState(true);
   const [storeSlug, setStoreSlug] = useState<string>("");
+  const [storeData, setStoreData] = useState<any>(null);
 
   useEffect(() => {
     async function fetchTicket() {
@@ -33,9 +34,11 @@ export default function TicketViewPage({
           setDateStr(date.toLocaleString());
         }
         // Obtener el slug real de la tienda
-        const storeDoc = await getDoc(doc(db, "stores", user.storeId));
+         const storeDoc = await getDoc(doc(db, "stores", user.storeId));
         if (storeDoc.exists()) {
-          setStoreSlug(storeDoc.data().slug || user.storeId);
+          const sd = storeDoc.data();
+          setStoreData(sd);
+          setStoreSlug(sd.slug || user.storeId);
         } else {
           setStoreSlug(user.storeId);
         }
@@ -76,34 +79,33 @@ export default function TicketViewPage({
   const handleCopyImage = () => {
     if (!ticketData) return;
 
-    const W = 380;
-    const PAD = 24;
-    const LINE = 20;
+    const W = 280;
+    const PAD = 10;
+    const LINE = 14;
 
     // Obtener instancia del QR para dibujarla
     const qrEl = document.querySelector("#ticket-content canvas") as HTMLCanvasElement;
-    const QR_SIZE = qrEl ? 120 : 0;
+    const QR_SIZE = qrEl ? 70 : 0;
     
-    // Obtener imagen del logo o en su defecto solo texto
-    // ── First pass: measure height ────────────────────────────────────────────
     const items: any[] = ticketData.items || [];
     const ticketNum = ticketData.ticketNumber || ticketId.slice(0, 8).toUpperCase();
     const isPaid = ticketData.paymentStatus === "PAID";
+    const atendidoPor = ticketData.createdByEmail ? ticketData.createdByEmail.split('@')[0] : '';
+
     const totalH =
       PAD +           
-      60 +            // store name
+      24 +            // store name
       LINE * 2 +      // address + ruc
-      16 +            // gap
-      LINE * 4 +      // date/ticket/client/dni
-      16 +            
+      4 +             // gap
+      LINE * 5 +      // date/ticket/client/dni/atendido
+      4 +             
       LINE +          // table header
       items.length * LINE +
-      16 +            
-      60 +            // status stamp
+      4 +             
+      24 +            // status stamp
       LINE * 2 +      // total/pay
-      32 +            // gap pre-QR
-      (QR_SIZE > 0 ? QR_SIZE + 40 : 0) + // QR area
-      LINE +          // footer
+      6 +             // gap pre-QR
+      (QR_SIZE > 0 ? QR_SIZE + 16 : 0) + // QR area
       PAD;            
 
     const canvas = document.createElement("canvas");
@@ -134,52 +136,52 @@ export default function TicketViewPage({
 
     let y = PAD;
 
-    // ── Header ────────────────────────────────────────────────────────────────
+     // ── Header ────────────────────────────────────────────────────────────────
     ctx.fillStyle = "#000";
     ctx.textAlign = "center";
-    setFont(26, "900");
-    ctx.fillText("LAVANDERÍA MAGISTRAL", W / 2, y + 24); y += 38;
-    setFont(12, "bold");
-    ctx.fillText("Av. Principal 123 - Sede Central", W / 2, y); y += LINE - 4;
-    setFont(12);
-    ctx.fillText("RUC: 20123456789", W / 2, y); y += LINE;
-    dashed(y); y += 16;
+    setFont(16, "900");
+    ctx.fillText(storeData?.storeName || "LAVANDERÍA MAGISTRAL", W / 2, y + 16); y += 22;
+    setFont(9, "bold");
+    ctx.fillText(storeData?.address || "Av. Principal 123", W / 2, y); y += LINE - 2;
+    setFont(9);
+    ctx.fillText(storeData?.ruc ? `RUC: ${storeData.ruc}` : "RUC: 20123456789", W / 2, y); y += LINE;
+    y += 1;
 
     // ── Info block ────────────────────────────────────────────────────────────
     ctx.textAlign = "left";
-    setFont(12, "bold");
+    setFont(9, "bold");
     ctx.fillStyle = "#000";
     ctx.fillText(`FECHA: ${dateStr}`, PAD, y); y += LINE;
     
     // TICKET badge
     ctx.fillText("TICKET:", PAD, y);
     const tw = ctx.measureText("TICKET:").width;
-    ctx.fillStyle = "#000";
-    ctx.fillRect(PAD + tw + 6, y - 14, 110, LINE + 2);
-    ctx.fillStyle = "#fff";
-    setFont(14, "900");
-    ctx.fillText(ticketNum, PAD + tw + 12, y + 2);
+    setFont(10, "900");
+    ctx.fillText(ticketNum, PAD + tw + 6, y);
     y += LINE;
     
     ctx.fillStyle = "#000";
-    setFont(12, "bold");
+    setFont(9, "bold");
     ctx.fillText(`CLIENTE: ${ticketData.customerName || "Cliente"}`, PAD, y); y += LINE;
     if (ticketData.customerDni && ticketData.customerDni !== "0") {
       ctx.fillText(`DNI: ${ticketData.customerDni}`, PAD, y); y += LINE;
     }
-    y += 4;
-    solid(y); y += 6;
+    if (atendidoPor) {
+      ctx.fillText(`ATENDIDO POR: ${atendidoPor}`, PAD, y); y += LINE;
+    }
+    y += 1;
+    solid(y, 1); y += 2;
 
     // ── Table header ─────────────────────────────────────────────────────────
-    setFont(11, "900");
-    ctx.fillText("CANT DESC", PAD, y + LINE - 6);
+    setFont(9, "900");
+    ctx.fillText("CANT DESC", PAD, y + LINE - 4);
     ctx.textAlign = "right";
-    ctx.fillText("IMP", W - PAD, y + LINE - 6);
+    ctx.fillText("IMP", W - PAD, y + LINE - 4);
     y += LINE;
-    solid(y, 1); y += 8;
+    solid(y, 1); y += 2;
 
     // ── Rows ─────────────────────────────────────────────────────────────────
-    setFont(12, "bold");
+    setFont(9, "bold");
     for (const ci of items) {
       const price = (ci.item.price * ci.qty).toFixed(2);
       ctx.textAlign = "left";
@@ -189,53 +191,50 @@ export default function TicketViewPage({
       ctx.fillText(price, W - PAD, y + LINE - 4);
       y += LINE;
     }
-    y += 8;
-    solid(y); y += 24;
+    y += 2;
+    solid(y, 1); y += 10;
 
     // ── Status stamp (Rotated) ───────────────────────────────────────────────
     const stampColor = isPaid ? "#16a34a" : "#dc2626";
     ctx.save();
-    ctx.translate(W / 2, y + 15);
+    ctx.translate(W / 2, y + 4);
     ctx.rotate(-2 * Math.PI / 180);
     ctx.strokeStyle = stampColor;
-    ctx.lineWidth = 3;
-    ctx.strokeRect(-120, -18, 240, 36);
-    setFont(20, "900");
+    ctx.lineWidth = 2;
+    ctx.strokeRect(-50, -8, 100, 16);
+    setFont(10, "900");
     ctx.fillStyle = stampColor;
     ctx.textAlign = "center";
-    ctx.fillText(isPaid ? "PAGADO" : "POR COBRAR", 0, 7);
+    ctx.fillText(isPaid ? "PAGADO" : "POR COBRAR", 0, 3);
     ctx.restore();
-    y += 48;
+    y += 20;
 
     // ── Total ─────────────────────────────────────────────────────────────────
     ctx.textAlign = "right";
-    setFont(16, "900");
+    setFont(12, "900");
     ctx.fillStyle = "#000";
     ctx.fillText(`TOTAL: S/ ${Number(ticketData.total).toFixed(2)}`, W - PAD, y); y += LINE;
-    setFont(10, "bold");
+    setFont(8, "bold");
     const payLabel = ticketData.payMethod === "LUEGO" ? "PENDIENTE (Al recoger)" : ticketData.payMethod;
     ctx.fillText(`Medio de Pago: ${payLabel}`, W - PAD, y); y += LINE + 4;
 
-    dashed(y); y += 24;
+    y += 1;
 
     // ── QR Code ──────────────────────────────────────────────────────────────
     if (qrEl) {
       ctx.textAlign = "center";
-      setFont(10, "bold");
-      ctx.fillText("ESCANEA PARA RASTREAR TU PEDIDO", W / 2, y);
-      y += 10;
-      ctx.drawImage(qrEl, W / 2 - 60, y, 120, 120);
-      y += 140;
+      setFont(8, "bold");
+      ctx.fillText("¿En qué estado está tu ropa?", W / 2, y);
+      y += 4;
+      ctx.drawImage(qrEl, W / 2 - (QR_SIZE/2), y, QR_SIZE, QR_SIZE);
+      y += QR_SIZE + 10;
     }
 
     // ── Footer ────────────────────────────────────────────────────────────────
     ctx.textAlign = "center";
-    setFont(10);
+    setFont(9);
     ctx.fillStyle = "#333";
     ctx.fillText("¡Gracias por su preferencia!", W / 2, y);
-    y += 12;
-    setFont(9);
-    ctx.fillText("Sistemas Magistral - SaaS", W / 2, y);
 
     // ── Copy to Clipboard ───────────────────────────────────────────────────
     canvas.toBlob(async (blob) => {
@@ -306,30 +305,47 @@ export default function TicketViewPage({
       </div>
 
       {/* Papel del Ticket Físico (Termal) */}
-      <div id="ticket-content" className="ticket-print-area bg-white text-black p-6 w-full max-w-[320px] shadow-2xl mx-auto md:mx-0 font-mono text-sm relative print:shadow-none print:m-0 print:p-0">
+      <div id="ticket-content" className="ticket-print-area bg-white text-black p-4 w-full max-w-[280px] shadow-xl mx-auto md:mx-0 font-mono text-[10px] relative print:shadow-none print:m-0 print:p-0 leading-tight">
          
-         {/* Corte dentado (decorativo web) */}
-         <div className="absolute -top-1 left-0 w-full h-2 bg-background flex print:hidden" style={{ backgroundImage: "radial-gradient(circle, #09090b 4px, transparent 5px)", backgroundSize: "10px 10px" }} />
-         
-         <div className="text-center mb-6 border-b-2 border-dashed border-black/30 pb-4">
-            <h1 className="text-2xl font-black uppercase leading-none mb-2">Lavandería Magistral</h1>
-            <p className="text-xs font-semibold">Av. Principal 123 - Sede Central</p>
-            <p className="text-xs">RUC: 20123456789</p>
+          {/* Corte dentado (decorativo web) */}
+          <div className="absolute -top-1 left-0 w-full h-2 bg-background flex print:hidden" style={{ backgroundImage: "radial-gradient(circle, #09090b 4px, transparent 5px)", backgroundSize: "10px 10px" }} />
+          
+          {ticketData.status === 'CANCELADO' && (
+            <div className="mb-6 p-4 bg-red-50 border-2 border-red-600 rounded-lg flex flex-col gap-2 items-center text-center print:border-black">
+              <div className="flex items-center gap-2 text-red-600 font-black uppercase text-sm print:text-black">
+                <AlertTriangle size={20} /> PEDIDO ANULADO / CANCELADO
+              </div>
+              <div className="text-[11px] text-red-800 font-bold bg-red-100 px-3 py-2 rounded border border-red-200 w-full print:bg-white print:text-black print:border-black">
+                MOTIVO: {ticketData.cancelReason || 'No especificado'}
+              </div>
+              {ticketData.cancelledAt && (
+                <span className="text-[9px] text-red-400 font-bold uppercase print:text-black">
+                  Fecha: {new Date(ticketData.cancelledAt).toLocaleString()}
+                </span>
+              )}
+            </div>
+          )}
+
+          <div className="text-center mb-1 pb-1">
+            <h1 className="text-lg font-black leading-none mb-1">{storeData?.storeName || "Lavandería Magistral"}</h1>
+            <p className="text-[10px] font-semibold">{storeData?.address || "Av. Principal 123"}</p>
+            <p className="text-[10px]">{storeData?.ruc ? `RUC: ${storeData.ruc}` : "RUC: 20123456789"}</p>
          </div>
 
-         <div className="mb-4 text-xs font-bold leading-relaxed space-y-1">
+         <div className="mb-2 text-[10px] font-bold leading-tight space-y-0.5">
             <p>FECHA: {dateStr}</p>
-            <p>TICKET: <span className="text-lg bg-black text-white px-2 py-0.5 ml-1">{ticketData.ticketNumber || ticketId.slice(0, 6).toUpperCase()}</span></p>
+            <p>TICKET: <span className="text-[11px] font-black ml-1">{ticketData.ticketNumber || ticketId.slice(0, 6).toUpperCase()}</span></p>
             <p>CLIENTE: {ticketData.customerName || "Cliente"}</p>
             {ticketData.customerDni && ticketData.customerDni !== "0" && <p>DNI: {ticketData.customerDni}</p>}
+            {ticketData.createdByEmail && <p>ATENDIDO POR: {ticketData.createdByEmail.split('@')[0]}</p>}
          </div>
 
-         <table className="w-full text-xs font-bold mb-4 border-t-2 border-b-2 border-black py-2">
+         <table className="w-full text-[10px] font-bold mb-1 border-t border-b border-black py-0.5">
             <thead>
               <tr className="border-b border-black">
-                <th className="text-left pb-1 pt-2">CANT</th>
-                <th className="text-left pb-1 pt-2">DESC</th>
-                <th className="text-right pb-1 pt-2">IMP</th>
+                <th className="text-left pb-0.5 pt-0.5">CANT</th>
+                <th className="text-left pb-0.5 pt-0.5">DESC</th>
+                <th className="text-right pb-0.5 pt-0.5">IMP</th>
               </tr>
             </thead>
             <tbody>
@@ -343,20 +359,19 @@ export default function TicketViewPage({
             </tbody>
          </table>
 
-         <div className={`my-4 border-4 p-2 text-center font-black text-xl uppercase tracking-widest -rotate-2 ${ticketData.paymentStatus === 'PAID' ? 'border-green-600 text-green-600' : 'border-red-600 text-red-600'}`}>
+         <div className={`my-1 border-2 p-0.5 text-center font-black text-xs uppercase tracking-widest -rotate-2 ${ticketData.paymentStatus === 'PAID' ? 'border-green-600 text-green-600' : 'border-red-600 text-red-600'}`}>
             {ticketData.paymentStatus === 'PAID' ? 'PAGADO' : 'POR COBRAR'}
          </div>
 
-         <div className="text-right mb-6 text-sm">
-           <p className="font-black text-base">TOTAL: S/ {Number(ticketData.total).toFixed(2)}</p>
-           <p className="text-[10px] mt-1">Medio de Pago: {ticketData.payMethod === 'LUEGO' ? 'PENDIENTE (Al recoger)' : ticketData.payMethod}</p>
+         <div className="text-right mb-2">
+           <p className="font-black text-sm">TOTAL: S/ {Number(ticketData.total).toFixed(2)}</p>
+           <p className="text-[8px] mt-0.5">Medio de Pago: {ticketData.payMethod === 'LUEGO' ? 'PENDIENTE (Al recoger)' : ticketData.payMethod}</p>
          </div>
 
-         <div className="flex flex-col items-center justify-center text-center mt-6 pt-6 border-t-2 border-dashed border-black/30">
-            <p className="text-[10px] font-bold mb-2 uppercase">Escanea para rastrear tu pedido</p>
-            <QRCodeCanvas value={`${typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000'}/${storeSlug || user?.storeId}?ticket=${ticketData.ticketNumber || ticketId}`} size={100} level="M" />
-            <p className="text-[10px] mt-3 font-semibold">¡Gracias por su preferencia!</p>
-            <p className="text-[9px] mt-1">Sistemas Magistral - SaaS</p>
+         <div className="flex flex-col items-center justify-center text-center mt-1 pt-1">
+            <p className="text-[8px] font-bold mb-1 uppercase">¿En qué estado está tu ropa?</p>
+            <QRCodeCanvas value={`${typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000'}/${storeSlug || user?.storeId}?ticket=${ticketData.ticketNumber || ticketId}`} size={70} level="M" />
+            <p className="text-[8px] mt-2 font-semibold">¡Gracias por su preferencia!</p>
          </div>
 
          {/* Corte dentado bottom */}

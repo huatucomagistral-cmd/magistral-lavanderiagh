@@ -2,12 +2,12 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { ArrowLeft, Search, Plus, Minus, CreditCard, DollarSign, PackageSearch } from "lucide-react";
+import { ArrowLeft, Search, Plus, Minus, CreditCard, DollarSign, PackageSearch, Award } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/store/useStore";
 import { toast } from "react-hot-toast";
 import { searchDNI } from "@/app/actions/reniec";
-import { collection, onSnapshot, addDoc, runTransaction, doc, getDoc, getDocs, query, where, setDoc, increment } from "firebase/firestore";
+import { collection, onSnapshot, addDoc, runTransaction, doc, getDoc, getDocs, query, where, setDoc, increment, orderBy } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
 export type CatalogItem = {
@@ -31,7 +31,7 @@ export default function NuevoPedidoPage() {
   const [loadingServices, setLoadingServices] = useState(true);
   const [catalogDb, setCatalogDb] = useState<CatalogItem[]>([]);
 
-  // CRM CRM & Rewards State
+  // CRM & Rewards State
   const [clientProfile, setClientProfile] = useState<{ dni: string, name: string, phone: string, totalKgAccumulated: number } | null>(null);
   const [useReward, setUseReward] = useState(false);
   
@@ -39,6 +39,10 @@ export default function NuevoPedidoPage() {
   const [couponCode, setCouponCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<{ code: string, type: string, value: number } | null>(null);
   const [isValidatingCoupon, setIsValidatingCoupon] = useState(false);
+
+  // Autocomplete State
+  const [allClients, setAllClients] = useState<{ id: string, dni: string, name: string, phone: string, totalKgAccumulated: number }[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   // Escuchar Servicios Reales de Firebase
   useEffect(() => {
@@ -49,7 +53,38 @@ export default function NuevoPedidoPage() {
       setLoadingServices(false);
     });
     return () => unsub();
-  }, []);
+  }, [user]);
+
+  // Cargar Clientes para Autocomplete
+  useEffect(() => {
+    if (!user?.storeId) return;
+    const q = query(collection(db, `stores/${user.storeId}/clients`), orderBy("name", "asc"));
+    const unsub = onSnapshot(q, (snap) => {
+      const data = snap.docs.map(d => ({ id: d.id, ...d.data() })) as any[];
+      setAllClients(data);
+    });
+    return () => unsub();
+  }, [user]);
+
+  const selectClient = (client: any) => {
+    setDni(client.dni || "");
+    setCustomerName(client.name || "");
+    setCustomerPhone(client.phone || "");
+    setClientProfile({ 
+      dni: client.dni, 
+      name: client.name, 
+      phone: client.phone, 
+      totalKgAccumulated: client.totalKgAccumulated || 0 
+    });
+    setShowSuggestions(false);
+    setUseReward(false);
+  };
+
+  const filteredSuggestions = allClients.filter(c => {
+    const nameMatch = (c.name || "").toLowerCase().includes(customerName.toLowerCase());
+    const dniMatch = (c.dni || "").includes(dni);
+    return nameMatch && dniMatch;
+  }).slice(0, 5);
 
   const handleSearchDNI = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,7 +100,7 @@ export default function NuevoPedidoPage() {
       toast.error(result.error || "No se encontró el DNI en RENIEC.");
     }
 
-    // CRM: Buscar si el cliente ya existe en nuestra DB Local (sobreescribe nombre/telefono si ya los teníamos)
+    // CRM: Buscar si el cliente ya existe en nuestra DB Local
     if (user?.storeId) {
       const clientRef = doc(db, `stores/${user.storeId}/clients/${dni}`);
       const clientSnap = await getDoc(clientRef);
@@ -83,6 +118,7 @@ export default function NuevoPedidoPage() {
     }
     
     setIsSearchingDNI(false);
+    setShowSuggestions(false);
   };
 
   const addToCart = (item: CatalogItem) => {
@@ -109,7 +145,6 @@ export default function NuevoPedidoPage() {
   // Calcular deducciones (Loyalty)
   let rewardDiscount = 0;
   if (useReward && clientProfile && clientProfile.totalKgAccumulated >= 10) {
-     // Buscar cuánto cuesta 1KG en el catálogo para descontarlo
      const kgItem = catalogDb.find(c => c.type === 'KG');
      if (kgItem) rewardDiscount = kgItem.price;
   }
@@ -127,7 +162,6 @@ export default function NuevoPedidoPage() {
   let total = subtotal - rewardDiscount - couponDiscount;
   if (total < 0) total = 0;
 
-  // Lógica para validar cupones
   const handleValidateCoupon = async () => {
      if(!couponCode) return;
      if(!user?.storeId) return;
@@ -163,39 +197,29 @@ export default function NuevoPedidoPage() {
       let ticketNumber = "";
       let newDocId = "";
 
-      // Obtener la fecha actual en formato YYMMDD (hora local del negocio)
       const now = new Date();
       const yy = String(now.getFullYear()).slice(2);
       const mm = String(now.getMonth() + 1).padStart(2, "0");
       const dd = String(now.getDate()).padStart(2, "0");
-      const todayStr = `${yy}${mm}${dd}`; // ej. "260401"
+      const todayStr = `${yy}${mm}${dd}`;
 
       await runTransaction(db, async (transaction) => {
         const counterSnap = await transaction.get(counterRef);
-        
         let dailyCount = 1;
         if (counterSnap.exists()) {
           const data = counterSnap.data();
           const lastDate = data.lastDate ?? "";
           const currentDailyCount = data.dailyCount ?? 0;
-
           if (lastDate === todayStr) {
-            // Mismo día: incrementar el contador diario
             dailyCount = currentDailyCount + 1;
           } else {
-            // Nuevo día: reiniciar a 001
             dailyCount = 1;
           }
         }
-
-        // Formato YYMMDD-NNN  → ej. 260401-015
         ticketNumber = `${todayStr}-${String(dailyCount).padStart(3, "0")}`;
-
-        // Actualizar el contador con la fecha y el contador del día
         transaction.set(counterRef, { 
           lastDate: todayStr, 
           dailyCount,
-          // Mantener compatibilidad con el campo anterior
           ordersCount: (counterSnap.exists() ? (counterSnap.data().ordersCount ?? 0) : 0) + 1
         }, { merge: true });
       });
@@ -215,7 +239,8 @@ export default function NuevoPedidoPage() {
         payMethod,
         status: "RECIBIDO",
         paymentStatus: payMethod === "LUEGO" ? "UNPAID" : (payMethod === "YAPE" ? "PENDING_VERIFICATION" : "PAID"),
-        ...(payMethod === "EFECTIVO" ? { paymentDate: new Date().toISOString() } : {})
+        ...(payMethod === "EFECTIVO" ? { paymentDate: new Date().toISOString() } : {}),
+        createdByEmail: user?.email || "Desconocido"
       };
 
       const docRef = await addDoc(ordersRef, orderData);
@@ -224,22 +249,17 @@ export default function NuevoPedidoPage() {
       // Actualizar CRM del Cliente
       if (dni && dni.length === 8 && user?.storeId) {
          const clientRef = doc(db, `stores/${user.storeId}/clients/${dni}`);
-         
-         // Cuántos kg lleva este nuevo pedido
          const kgsInThisOrder = cart.filter(c => c.item.type === 'KG').reduce((acc, c) => acc + c.qty, 0);
-         
-         // Cuántos kgs se gastó en recompensa (si usó)
          const kgsSpent = useReward ? 10 : 0;
          const netKgsChange = kgsInThisOrder - kgsSpent;
 
-         // Insertar o actualizar
-         if (clientProfile) { // Ya existía
+         if (clientProfile) {
             await setDoc(clientRef, {
                name: customerName,
                phone: customerPhone,
                totalKgAccumulated: increment(netKgsChange)
             }, { merge: true });
-         } else { // Crear nuevo
+         } else {
             await setDoc(clientRef, {
                dni,
                name: customerName,
@@ -258,7 +278,7 @@ export default function NuevoPedidoPage() {
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500 pb-10">
+    <div className="space-y-6 animate-in fade-in duration-500 pb-10" onClick={() => setShowSuggestions(false)}>
       <div className="flex items-center gap-4">
         <Link href="/admin/pedidos" className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-white transition-colors">
           <ArrowLeft size={20} />
@@ -273,14 +293,20 @@ export default function NuevoPedidoPage() {
         {/* Columna Izquierda: Cliente & Catálogo */}
         <div className="space-y-6">
           
-          <div className="glass-card p-6 border-l-4 border-l-primary/50">
+          <div className="glass-card p-6 border-l-4 border-l-primary/50 overflow-visible relative z-10" onClick={(e) => e.stopPropagation()}>
             <h2 className="text-sm font-bold text-white uppercase tracking-wider mb-4">1. Datos del Cliente</h2>
             <form onSubmit={handleSearchDNI} className="space-y-3">
-              {/* Fila 1: DNI + búsqueda + Celular */}
               <div className="flex gap-2">
-                <input type="text" maxLength={8} value={dni} onChange={e => setDni(e.target.value.replace(/[^0-9]/g, ''))}
-                  placeholder="DNI" className="flex-1 min-w-0 bg-[#18181b] border border-white/10 rounded-xl px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-primary font-mono text-center"
-                />
+                <div className="flex-1 relative">
+                  <input type="text" maxLength={8} value={dni} 
+                    onChange={e => {
+                      setDni(e.target.value.replace(/[^0-9]/g, ''));
+                      setShowSuggestions(true);
+                    }}
+                    onFocus={() => setShowSuggestions(true)}
+                    placeholder="DNI" className="w-full bg-[#18181b] border border-white/10 rounded-xl px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-primary font-mono text-center"
+                  />
+                </div>
                 <button type="submit" disabled={isSearchingDNI || dni.length !== 8} className="bg-white/10 hover:bg-white/20 text-white font-bold px-4 py-2 rounded-xl transition-colors disabled:opacity-50 shrink-0">
                    {isSearchingDNI ? <span className="animate-spin border border-white/30 border-t-white rounded-full w-4 h-4 inline-block" /> : <Search size={18} />}
                 </button>
@@ -288,17 +314,48 @@ export default function NuevoPedidoPage() {
                   placeholder="Celular" className="flex-1 min-w-0 bg-[#18181b] border border-white/10 rounded-xl px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-primary font-mono text-center"
                 />
               </div>
-              {/* Fila 2: Nombre completo (ancho total) */}
-              <input type="text" value={customerName} onChange={e => setCustomerName(e.target.value)}
-                placeholder="Nombre Completo" className="w-full bg-[#18181b] border border-white/10 rounded-xl px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-primary"
-              />
+              
+              <div className="relative">
+                <input type="text" value={customerName} 
+                  onChange={e => {
+                    setCustomerName(e.target.value);
+                    setShowSuggestions(true);
+                  }}
+                  onFocus={() => setShowSuggestions(true)}
+                  placeholder="Nombre Completo" className="w-full bg-[#18181b] border border-white/10 rounded-xl px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+                
+                {/* Lista Desplegable de Sugerencias */}
+                {showSuggestions && (customerName.length > 1 || dni.length > 2) && filteredSuggestions.length > 0 && (
+                  <div className="absolute z-50 left-0 right-0 mt-1 bg-[#1a1a1a] border border-white/10 rounded-xl shadow-2xl overflow-hidden animate-in slide-in-from-top-2 duration-200">
+                    {filteredSuggestions.map(client => (
+                      <button
+                        key={client.id}
+                        type="button"
+                        onClick={() => selectClient(client)}
+                        className="w-full px-4 py-3 text-left hover:bg-primary/10 border-b border-white/5 last:border-0 transition-colors group"
+                      >
+                        <div className="flex justify-between items-center">
+                          <div>
+                            <p className="text-white font-bold text-sm group-hover:text-primary transition-colors">{client.name}</p>
+                            <p className="text-white/40 text-xs mt-0.5">DNI: {client.dni} • Tel: {client.phone || "---"}</p>
+                          </div>
+                          <div className="bg-white/5 px-2 py-0.5 rounded text-[10px] text-white/40 font-mono">
+                            {client.totalKgAccumulated || 0} KG
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </form>
             
             {clientProfile && (
-              <div className="mt-4 bg-primary/10 border border-primary/20 rounded-xl p-3 flex items-center justify-between">
+              <div className="mt-4 bg-primary/10 border border-primary/20 rounded-xl p-3 flex items-center justify-between animate-in zoom-in duration-300">
                  <div>
                    <p className="text-primary font-bold text-sm flex items-center gap-1">🎟️ Perfil de Fidelidad</p>
-                   <p className="text-white/60 text-xs">Kilos Acumulados Históricamente: <span className="font-bold text-white">{clientProfile.totalKgAccumulated} kg</span></p>
+                   <p className="text-white/60 text-xs">Kilos Acumulados: <span className="font-bold text-white">{clientProfile.totalKgAccumulated} kg</span></p>
                  </div>
                  {clientProfile.totalKgAccumulated >= 10 && (
                    <button 
@@ -372,7 +429,6 @@ export default function NuevoPedidoPage() {
              </div>
 
              <div className="p-4 bg-[#18181b] border-t border-b border-white/5 space-y-3">
-               {/* Cupones */}
                <div className="flex gap-2">
                  <input type="text" value={couponCode} onChange={e => setCouponCode(e.target.value)} placeholder="Código de Cupón" className="flex-1 bg-background border border-white/10 text-white text-sm px-3 py-2 rounded-lg uppercase placeholder:normal-case"/>
                  <button onClick={handleValidateCoupon} disabled={isValidatingCoupon || !couponCode} className="bg-white/10 hover:bg-white/20 text-white text-xs font-bold px-3 py-2 rounded-lg transition-colors">Validar</button>

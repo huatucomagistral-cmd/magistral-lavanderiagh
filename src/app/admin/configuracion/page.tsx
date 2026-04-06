@@ -13,6 +13,8 @@ export default function ConfigPage() {
   const [storeName, setStoreName] = useState("Lavandería Sol");
   const [slug, setSlug] = useState("lavanderia-sol");
   const [color, setColor] = useState("#3b82f6");
+  const [address, setAddress] = useState("");
+  const [ruc, setRuc] = useState("");
   const [yapeNumber, setYapeNumber] = useState("");
   const [yapeName, setYapeName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -31,8 +33,9 @@ export default function ConfigPage() {
           setStoreName(data.storeName || "Lavandería Magistral");
           setSlug(data.slug || "demo-store");
           setColor(data.color || "#3b82f6");
+          setAddress(data.address || "");
+          setRuc(data.ruc || "");
           setYapeNumber(data.yapeNumber || "");
-          setYapeName(data.yapeName || "");
           setYapeName(data.yapeName || "");
           if (data.logoUrl) setLogoPreview(data.logoUrl);
         }
@@ -72,6 +75,8 @@ export default function ConfigPage() {
         storeName,
         slug,
         color,
+        address,
+        ruc,
         yapeNumber,
         yapeName,
         logoUrl: uploadedLogoUrl,
@@ -143,6 +148,23 @@ export default function ConfigPage() {
                        />
                        <span className="text-white/50 text-sm uppercase font-mono">{color}</span>
                      </div>
+                   </div>
+                 </div>
+
+                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4 pt-4 border-t border-white/5">
+                   <div>
+                     <label className="block text-sm font-medium text-white/70 mb-1">Dirección (para el Ticket)</label>
+                     <input type="text" value={address} onChange={(e) => setAddress(e.target.value)}
+                       placeholder="Ej. Calle Principal 123"
+                       className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-primary"
+                     />
+                   </div>
+                   <div>
+                     <label className="block text-sm font-medium text-white/70 mb-1">RUC/Identificación</label>
+                     <input type="text" value={ruc} onChange={(e) => setRuc(e.target.value)}
+                       placeholder="Ej. 20123456789"
+                       className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-primary"
+                     />
                    </div>
                  </div>
                </div>

@@ -96,7 +96,7 @@ export default function StaffPage() {
       setPassword("");
     } catch (err: any) {
       console.error(err);
-      setMessage({ text: "Error al crear empleado: " + err.message, type: "error" });
+      setMessage({ text: "Error al crear personal: " + err.message, type: "error" });
     } finally {
       setIsInviting(false);
     }
@@ -138,7 +138,7 @@ export default function StaffPage() {
                <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary">
                  <UserPlus size={18} />
                </div>
-               <h2 className="text-lg font-bold text-white leading-tight">Crear Empleado</h2>
+               <h2 className="text-lg font-bold text-white leading-tight">Crear Personal</h2>
              </div>
 
              {message.text && (
@@ -152,7 +152,7 @@ export default function StaffPage() {
                   <label className="block text-sm font-medium text-white/70 mb-1">Correo (Usuario)</label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" size={16} />
-                    <input type="email" value={email} onChange={e => setEmail(e.target.value)} required placeholder="empleado@magistral.pe"
+                    <input type="email" value={email} onChange={e => setEmail(e.target.value)} required placeholder="personal@magistral.pe"
                       className="w-full bg-white/5 border border-white/10 rounded-xl pl-9 pr-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-primary"
                     />
                   </div>
@@ -192,7 +192,7 @@ export default function StaffPage() {
                  </div>
                  <div>
                    <h3 className="text-white font-bold mb-0.5 flex items-center gap-2">
-                     {person.role === "ADMIN" ? "Propietario" : "Empleado"}
+                     {person.role === "ADMIN" ? "Propietario" : "Personal"}
                      {person.role === "ADMIN" && (
                        <span className="text-[10px] font-bold uppercase tracking-wider bg-primary/20 text-primary px-2 py-0.5 rounded-full">ADMIN</span>
                      )}
