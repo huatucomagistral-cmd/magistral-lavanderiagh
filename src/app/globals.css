@@ -1,19 +1,19 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary: #38bdf8; /* sky-400 */
-  --color-primary-hover: #0284c7; /* sky-600 */
-  --color-accent: #22d3ee; /* cyan-400 */
+  --color-primary: #1693a5; /* Sidebar main color */
+  --color-primary-hover: #0d7b8a;
+  --color-accent: #38bdf8;
   
-  --color-background: #020617; /* Very deep slate-950 (Midnight) */
-  --color-foreground: #f8fafc; /* slate-50 */
-  --color-surface: #0f172a; /* slate-900 (Water depth) */
-  --color-surface-hover: #1e293b; /* slate-800 */
-  --color-border: rgba(255, 255, 255, 0.08); /* Subtle border */
+  --color-background: #c7ede8; /* Light Aqua/Mint Background */
+  --color-foreground: #0f172a; /* Dark Slate for readability */
+  --color-surface: #ffffff;    /* White cards for light theme */
+  --color-surface-hover: #f1f5f9;
+  --color-border: rgba(0, 0, 0, 0.08); /* Darker border for light theme */
   
-  --color-success: #10b981;
-  --color-warning: #f59e0b;
-  --color-error: #ef4444;
+  --color-success: #059669;
+  --color-warning: #d97706;
+  --color-error: #dc2626;
 
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
@@ -21,34 +21,34 @@
 
 @layer base {
   :root {
-    color-scheme: dark;
-    --background: #020617;
-    --foreground: #f8fafc;
+    color-scheme: light;
+    --background: #c7ede8;
+    --foreground: #0f172a;
   }
 
   body {
     background-color: var(--background);
     color: var(--foreground);
-    color-scheme: dark;
+    color-scheme: light;
     @apply antialiased min-h-screen selection:bg-primary/30;
   }
 }
 
 @layer utilities {
   .glass {
-    @apply bg-black/40 backdrop-blur-xl border border-white/10 shadow-2xl;
+    @apply bg-white/80 backdrop-blur-xl border border-white/60 shadow-xl;
   }
   
   .glass-card {
-    @apply bg-surface/50 backdrop-blur-lg border border-white/5 rounded-2xl shadow-xl transition-all duration-300 hover:border-white/20;
+    @apply bg-white/90 backdrop-blur-lg border border-white/80 rounded-2xl shadow-sm shadow-black/5 transition-all duration-300 hover:border-primary/40 hover:shadow-md;
   }
   
   .glass-button {
-    @apply bg-white/5 hover:bg-white/10 backdrop-blur-lg border border-white/10 rounded-xl transition-all duration-300 active:scale-95;
+    @apply bg-white/40 hover:bg-white/60 backdrop-blur-lg border border-white/40 rounded-xl transition-all duration-300 active:scale-95;
   }
   
   .glass-header {
-    @apply sticky top-0 z-50 bg-background/80 backdrop-blur-2xl border-b border-white/10;
+    @apply sticky top-0 z-50 bg-[#c7ede8]/80 backdrop-blur-2xl border-b border-black/5;
   }
   
   .text-gradient {

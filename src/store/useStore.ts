@@ -10,11 +10,14 @@ interface User {
 interface LaundryStore {
   id: string;
   name: string;
+  storeName?: string;
   slug: string;
   logoUrl?: string;
   yapeNumber?: string;
   yapeName?: string;
   themeColor?: string;
+  address?: string;
+  ruc?: string;
 }
 
 interface CartItem {

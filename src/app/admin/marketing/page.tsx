@@ -101,10 +101,10 @@ export default function MarketingPage() {
   return (
     <div className="space-y-10 animate-in fade-in duration-500">
       <div>
-        <h1 className="text-3xl font-bold text-white mb-2 flex items-center gap-3">
+        <h1 className="text-3xl font-bold text-foreground mb-2 flex items-center gap-3">
           <Zap size={28} className="text-primary" /> Promociones
         </h1>
-        <p className="text-white/60">Gestiona tus cupones de descuento y el QR de vitrina para captar clientes.</p>
+        <p className="text-foreground/60">Gestiona tus cupones de descuento y el QR de vitrina para captar clientes.</p>
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-5 gap-8">
@@ -112,7 +112,7 @@ export default function MarketingPage() {
         {/* ─── CUPONES (col-span 3) ─── */}
         <div className="xl:col-span-3 space-y-6">
           <div className="glass-card p-6">
-            <h2 className="text-lg font-bold text-white flex items-center gap-2 mb-1">
+            <h2 className="text-lg font-bold text-foreground flex items-center gap-2 mb-1">
               <Ticket size={20} className="text-primary" /> Cupones de Descuento
             </h2>
 
@@ -124,14 +124,14 @@ export default function MarketingPage() {
                 value={newCode}
                 onChange={(e) => setNewCode(e.target.value.toUpperCase())}
                 placeholder="CÓDIGO (ej. VERANO24)"
-                className="w-full bg-background border border-white/10 rounded-xl px-4 py-2.5 text-white font-mono uppercase focus:outline-none focus:ring-2 focus:ring-primary"
+                className="w-full bg-white/50 border border-black/10 rounded-xl px-4 py-2.5 text-foreground font-mono uppercase focus:outline-none focus:ring-2 focus:ring-primary shadow-sm"
               />
               {/* Fila 2: Tipo + Valor + Botón */}
               <div className="flex gap-2">
                 <select
                   value={newType}
                   onChange={(e) => setNewType(e.target.value as CouponType)}
-                  className="flex-1 bg-background border border-white/10 rounded-xl px-3 py-2.5 text-white min-w-0"
+                  className="flex-1 bg-white/50 border border-black/10 rounded-xl px-3 py-2.5 text-foreground min-w-0 shadow-sm"
                 >
                   <option value="PERCENTAGE">% Porcentaje</option>
                   <option value="FIXED">S/ Monto fijo</option>
@@ -141,12 +141,12 @@ export default function MarketingPage() {
                   value={newVal}
                   onChange={(e) => setNewVal(e.target.value)}
                   placeholder="Valor"
-                  className="w-20 shrink-0 bg-background border border-white/10 rounded-xl px-3 py-2.5 text-white text-center focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="w-20 shrink-0 bg-white/50 border border-black/10 rounded-xl px-3 py-2.5 text-foreground text-center focus:outline-none focus:ring-2 focus:ring-primary shadow-sm"
                 />
                 <button
                   onClick={handleAddCoupon}
                   disabled={isAdding || !newCode}
-                  className="shrink-0 bg-primary hover:bg-primary-hover active:scale-95 text-white font-bold disabled:opacity-50 px-5 rounded-xl flex items-center justify-center gap-1 transition-all"
+                  className="shrink-0 bg-primary hover:bg-primary-hover active:scale-95 text-white font-bold disabled:opacity-50 px-5 rounded-xl flex items-center justify-center gap-1 transition-all shadow-sm active:scale-95 transition-all"
                 >
                   <Plus size={18} /> Crear
                 </button>
@@ -155,25 +155,25 @@ export default function MarketingPage() {
 
             {/* Lista de cupones */}
             {coupons.length === 0 ? (
-              <div className="text-center py-12 bg-white/3 rounded-2xl border border-dashed border-white/10">
-                <Tag size={32} className="text-white/20 mx-auto mb-3" />
-                <p className="text-white/40 text-sm">No hay cupones activos aún.</p>
-                <p className="text-white/25 text-xs mt-1">Crea tu primer cupón arriba para comenzar.</p>
+              <div className="text-center py-12 bg-black/5 border-black/10 border-dashed border">
+                <Tag size={32} className="text-foreground/20 mx-auto mb-3" />
+                <p className="text-foreground/40 text-sm">No hay cupones activos aún.</p>
+                <p className="text-foreground/25 text-xs mt-1">Crea tu primer cupón arriba para comenzar.</p>
               </div>
             ) : (
               <div className="space-y-2">
                 {coupons.map((c) => (
                   <div
                     key={c.id}
-                    className="flex items-center justify-between bg-white/5 border border-white/5 hover:border-white/10 rounded-xl px-4 py-3 transition-colors group"
+                    className="flex items-center justify-between bg-white/60 border-black/5 border hover:border-black/10 rounded-xl px-4 py-3 shadow-sm transition-colors group"
                   >
                     <div className="flex items-center gap-4">
                       <div className="w-10 h-10 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
                         <Ticket size={16} className="text-primary" />
                       </div>
                       <div>
-                        <p className="font-mono font-bold text-white tracking-wider">{c.code}</p>
-                        <p className="text-xs text-white/40 uppercase mt-0.5">
+                        <p className="font-mono font-bold text-foreground tracking-wider">{c.code}</p>
+                        <p className="text-xs text-foreground/40 uppercase mt-0.5">
                           {c.type === "PERCENTAGE"
                             ? `${c.discount}% de descuento`
                             : `S/ ${c.discount.toFixed(2)} de descuento`}
@@ -182,7 +182,7 @@ export default function MarketingPage() {
                     </div>
                     <button
                       onClick={() => handleDeleteCoupon(c.id)}
-                      className="w-8 h-8 rounded-lg bg-transparent text-white/20 hover:bg-error/10 hover:text-error flex items-center justify-center transition-all opacity-0 group-hover:opacity-100"
+                      className="w-8 h-8 rounded-lg bg-transparent text-foreground/20 hover:bg-error/10 hover:text-error flex items-center justify-center transition-all opacity-0 group-hover:opacity-100"
                     >
                       <Trash2 size={14} />
                     </button>
@@ -199,7 +199,7 @@ export default function MarketingPage() {
             <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center mb-4">
               <QrCode size={20} className="text-primary" />
             </div>
-            <h2 className="text-lg font-bold text-white mb-1">QR de Vitrina</h2>
+            <h2 className="text-lg font-bold text-foreground mb-1">QR de Vitrina</h2>
 
             {slug ? (
               <>
@@ -212,18 +212,18 @@ export default function MarketingPage() {
                     includeMargin={false}
                   />
                 </div>
-                <p className="text-[10px] text-white/25 font-mono break-all mb-6">{qrUrl}</p>
+                <p className="text-[10px] text-foreground/25 font-mono break-all mb-6">{qrUrl}</p>
                 <button
                   onClick={handleDownloadQR}
-                  className="bg-primary hover:bg-primary-hover active:scale-95 transition-all text-white font-bold rounded-xl px-6 py-3 flex items-center gap-2 w-full justify-center"
+                  className="bg-primary hover:bg-primary-hover active:scale-95 transition-all text-foreground font-bold rounded-xl px-6 py-3 flex items-center gap-2 w-full justify-center"
                 >
                   <Download size={16} /> Descargar SVG
                 </button>
               </>
             ) : (
               <div className="text-center py-8">
-                <p className="text-sm text-white/40">
-                  Configura el <strong className="text-white">Slug de tu tienda</strong> en la sección de{" "}
+                <p className="text-sm text-foreground/40">
+                  Configura el <strong className="text-foreground">Slug de tu tienda</strong> en la sección de{" "}
                   <span className="text-primary">Configuración</span> para generar el QR.
                 </p>
               </div>

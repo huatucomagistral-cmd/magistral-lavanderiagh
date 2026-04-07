@@ -163,10 +163,10 @@ export default function ReportesPage() {
       {/* Header y Exportar */}
       <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-white flex items-center gap-2">
+          <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
             <TrendingUp className="text-primary" /> Reportes Financieros
           </h1>
-          <p className="text-white/50 text-sm mt-1">Analíticas confidenciales y flujos de caja del negocio.</p>
+          <p className="text-foreground/50 text-sm mt-1">Analíticas confidenciales y flujos de caja del negocio.</p>
         </div>
         
         <button 
@@ -182,12 +182,12 @@ export default function ReportesPage() {
       <div className="glass-card p-4">
         <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
           
-          <div className="flex bg-[#18181b] p-1 rounded-xl border border-white/5 w-full md:w-auto overflow-x-auto">
+          <div className="flex bg-white/40 p-1 rounded-xl border border-black/5 w-full md:w-auto overflow-x-auto">
             {["HOY", "SEMANA", "MES", "CUSTOM"].map((f) => (
                <button 
                  key={f}
                  onClick={() => setFilterType(f as ReportFilter)}
-                 className={`px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-colors ${filterType === f ? 'bg-primary text-white shadow-lg' : 'text-white/50 hover:text-white hover:bg-white/5'}`}
+                 className={`px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-colors ${filterType === f ? 'bg-primary text-white shadow-lg' : 'text-foreground/50 hover:text-foreground hover:bg-black/5'}`}
                >
                  {f === "CUSTOM" ? "Personalizado" : f}
                </button>
@@ -196,9 +196,9 @@ export default function ReportesPage() {
 
           {filterType === "CUSTOM" && (
             <div className="flex items-center gap-2 w-full md:w-auto">
-               <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="bg-[#18181b] border border-white/10 text-white text-sm rounded-lg px-3 py-2 w-full" />
-               <span className="text-white/30">-</span>
-               <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="bg-[#18181b] border border-white/10 text-white text-sm rounded-lg px-3 py-2 w-full" />
+               <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="bg-white/50 border border-black/10 text-foreground text-sm rounded-lg px-3 py-2 w-full" />
+               <span className="text-foreground/30">-</span>
+               <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="bg-white/50 border border-black/10 text-foreground text-sm rounded-lg px-3 py-2 w-full" />
                <button onClick={fetchReportData} className="bg-primary px-4 py-2 rounded-lg font-bold text-white text-sm">Filtrar</button>
             </div>
           )}
@@ -206,7 +206,7 @@ export default function ReportesPage() {
       </div>
 
       {loading ? (
-        <div className="h-64 flex flex-col items-center justify-center text-white/50">
+        <div className="h-64 flex flex-col items-center justify-center text-foreground/40">
           <Loader2 className="animate-spin mb-4" size={40} />
           <p>Calculando reportes y leyendo base de datos...</p>
         </div>
@@ -215,55 +215,55 @@ export default function ReportesPage() {
           
           {/* Tarjetas Financieras */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="glass-card p-6 border-t-4 border-t-success flex flex-col gap-2">
-               <span className="text-sm font-medium text-white/50">Total Real Ingresado (Pagado)</span>
-               <h3 className="text-4xl font-black text-white">S/ {totalPagado.toFixed(2)}</h3>
+            <div className="glass-card p-6 border-t-4 border-t-success flex flex-col gap-2 bg-white/60">
+               <span className="text-sm font-medium text-foreground/50">Total Real Ingresado (Pagado)</span>
+               <h3 className="text-4xl font-black text-foreground">S/ {totalPagado.toFixed(2)}</h3>
                <div className="flex items-center gap-4 mt-2 pt-2 border-t border-white/5 text-xs font-medium">
                   <span className="text-white/70">Efectivo: <b className="text-white">S/ {totalEfectivo.toFixed(2)}</b></span>
                   <span className="text-[#742284] px-2 py-0.5 rounded bg-[#742284]/10">Yape: <b>S/ {totalYape.toFixed(2)}</b></span>
                </div>
             </div>
 
-            <div className="glass-card p-6 border-t-4 border-t-error flex flex-col gap-2">
-               <span className="text-sm font-medium text-white/50">Cuentas por Cobrar (Deuda)</span>
+            <div className="glass-card p-6 border-t-4 border-t-error flex flex-col gap-2 bg-white/60">
+               <span className="text-sm font-medium text-foreground/50">Cuentas por Cobrar (Deuda)</span>
                <h3 className="text-4xl font-black text-error">S/ {totalCuentasCobrar.toFixed(2)}</h3>
-               <p className="text-xs text-white/40 mt-auto">Dinero bloqueado en pedidos pendientes de pago.</p>
+               <p className="text-xs text-foreground/40 mt-auto">Dinero bloqueado en órdenes pendientes de pago.</p>
             </div>
 
-            <div className="glass-card p-6 border-t-4 border-t-primary flex flex-col gap-2">
-               <span className="text-sm font-medium text-white/50">Volumen Operativo</span>
-               <h3 className="text-4xl font-black text-white">{orders.length}</h3>
-               <p className="text-xs text-white/40 mt-auto">Pedidos gestionados en este rango de tiempo.</p>
+            <div className="glass-card p-6 border-t-4 border-t-primary flex flex-col gap-2 bg-white/60">
+               <span className="text-sm font-medium text-foreground/50">Volumen Operativo</span>
+               <h3 className="text-4xl font-black text-foreground">{orders.length}</h3>
+               <p className="text-xs text-foreground/40 mt-auto">Órdenes gestionadas en este rango de tiempo.</p>
             </div>
           </div>
 
           {/* Ranking de Servicios */}
-          <div className="glass-card p-6">
-             <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+          <div className="glass-card p-6 bg-white/60">
+             <h2 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
                 <BarChart2 className="text-primary" /> Servicios Más Vendidos
              </h2>
              
              {topServices.length === 0 ? (
-                <div className="text-center py-8 text-white/30 text-sm italic">
+                <div className="text-center py-8 text-foreground/30 text-sm italic">
                   No hay ventas registradas en este periodo.
                 </div>
              ) : (
                <div className="overflow-x-auto">
                  <table className="w-full text-left">
                     <thead>
-                       <tr className="border-b border-white/10 text-xs font-bold text-white/50 uppercase">
+                       <tr className="border-b border-black/5 text-xs font-bold text-foreground/50 uppercase">
                           <th className="pb-3 pl-2">Servicio</th>
                           <th className="pb-3 text-center">Tipo</th>
                           <th className="pb-3 text-right">Cantidad Vendida</th>
                           <th className="pb-3 text-right pr-2">Ingreso Generado</th>
                        </tr>
                     </thead>
-                    <tbody className="divide-y divide-white/5">
+                    <tbody className="divide-y divide-black/5">
                        {topServices.map((srv, i) => (
-                         <tr key={i} className="hover:bg-white/5">
-                            <td className="py-3 pl-2 text-sm font-medium text-white">{srv.name}</td>
-                            <td className="py-3 text-center text-[10px] text-white/40 uppercase tracking-widest">{srv.type}</td>
-                            <td className="py-3 text-right font-mono text-sm text-white/80">{srv.qty} <span className="text-[10px] text-white/30">{srv.type === 'KG' ? 'Kilos' : 'Unids'}</span></td>
+                         <tr key={i} className="hover:bg-black/5">
+                            <td className="py-3 pl-2 text-sm font-medium text-foreground">{srv.name}</td>
+                            <td className="py-3 text-center text-[10px] text-foreground/40 uppercase tracking-widest">{srv.type}</td>
+                            <td className="py-3 text-right font-mono text-sm text-foreground/80">{srv.qty} <span className="text-[10px] text-foreground/30">{srv.type === 'KG' ? 'Kilos' : 'Unids'}</span></td>
                             <td className="py-3 text-right pr-2 font-mono font-bold text-primary">S/ {srv.revenue.toFixed(2)}</td>
                          </tr>
                        ))}

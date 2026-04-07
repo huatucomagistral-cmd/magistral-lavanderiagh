@@ -96,32 +96,32 @@ export default function HistorialPage() {
   const getStatusColor = (status: string) => {
     const colors: any = {
       "RECIBIDO": "bg-primary/20 text-primary border-primary/20",
-      "EN_PROCESO": "bg-yellow-500/20 text-yellow-500 border-yellow-500/20",
+      "EN_PROCESO": "bg-warning/20 text-warning border-warning/20",
       "LISTO": "bg-success/20 text-success border-success/20",
-      "ENTREGADO": "bg-white/10 text-white/50 border-white/10",
+      "ENTREGADO": "bg-black/5 text-foreground/40 border-black/5",
       "CANCELADO": "bg-error/20 text-error border-error/20",
     };
-    return colors[status] || "bg-white/10 text-white";
+    return colors[status] || "bg-black/5 text-foreground";
   };
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-10">
       <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
             <History className="text-primary" /> Historial Inteligente
           </h1>
-          <p className="text-white/50 text-sm mt-1">Busca cualquier pedido por DNI, Nombre o Ticket.</p>
+          <p className="text-foreground/50 text-sm mt-1">Busca cualquier orden por DNI, Nombre o Ticket.</p>
         </div>
       </div>
 
       {user?.role === "PERSONAL" && (
-        <div className="bg-[#18181b] border border-white/10 p-3 rounded-lg flex items-start gap-3">
+        <div className="bg-primary/10 border border-primary/20 p-3 rounded-lg flex items-start gap-3">
           <Info className="text-primary shrink-0 mt-0.5" size={18} />
-          <p className="text-sm text-white/70">
-            Estás en <strong className="text-white">Modo Personal</strong>. 
-            Solo ves los pedidos de las últimas 48 horas de forma automática.
-            Para buscar pedidos antiguos, utiliza el buscador.
+          <p className="text-sm text-foreground/70">
+            Estás en <strong className="text-foreground">Modo Personal</strong>. 
+            Solo ves las órdenes de las últimas 48 horas de forma automática.
+            Para buscar órdenes antiguas, utiliza el buscador.
           </p>
         </div>
       )}
@@ -129,19 +129,19 @@ export default function HistorialPage() {
       {/* Buscador */}
       <div className="glass-card p-4 md:p-6 flex flex-col md:flex-row gap-4 items-end">
         <div className="flex-1 w-full">
-          <label className="text-xs font-bold text-white/50 uppercase tracking-widest mb-2 block">
+          <label className="text-xs font-bold text-foreground/50 uppercase tracking-widest mb-2 block">
             Buscar por Nombre, DNI o Ticket
           </label>
           <form onSubmit={handleSearch} className="relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search className="h-5 w-5 text-white/40" />
+              <Search className="h-5 w-5 text-foreground/40" />
             </div>
             <input
               type="text"
               value={searchString}
               onChange={(e) => setSearchString(e.target.value)}
-              placeholder=""
-              className="block w-full pl-10 pr-3 py-3 border border-white/10 rounded-xl leading-5 bg-[#18181b] text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+              placeholder="Ej: 260407-001 o Juana..."
+              className="block w-full pl-10 pr-3 py-3 border border-black/10 rounded-xl leading-5 bg-white/50 text-foreground placeholder-foreground/30 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all shadow-sm"
             />
             <button
               type="submit"
@@ -157,50 +157,50 @@ export default function HistorialPage() {
       {/* Lista de Historial */}
       <div className="glass-card p-0 overflow-hidden">
         {loading ? (
-          <div className="flex flex-col justify-center items-center h-64 text-white/50">
+          <div className="flex flex-col justify-center items-center h-64 text-foreground/40">
             <Loader2 className="animate-spin mb-2" size={32} />
             <p>Cargando datos...</p>
           </div>
         ) : orders.length === 0 ? (
-          <div className="flex flex-col justify-center items-center h-64 text-white/30 p-6 text-center">
+          <div className="flex flex-col justify-center items-center h-64 text-foreground/30 p-6 text-center">
             <History size={48} className="mb-4 opacity-20" />
-            <p className="text-lg font-medium text-white/50">No se encontraron pedidos</p>
+            <p className="text-lg font-medium text-foreground/50">No se encontraron órdenes</p>
             <p className="text-sm mt-1">Intenta con otro término de búsqueda.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse min-w-[800px]">
               <thead>
-                <tr className="bg-surface border-b border-white/5">
-                  <th className="p-4 text-xs font-bold text-white/50 uppercase tracking-wider">Fecha</th>
-                  <th className="p-4 text-xs font-bold text-white/50 uppercase tracking-wider">Ticket</th>
-                  <th className="p-4 text-xs font-bold text-white/50 uppercase tracking-wider">Cliente</th>
-                  <th className="p-4 text-xs font-bold text-white/50 uppercase tracking-wider">Total</th>
-                  <th className="p-4 text-xs font-bold text-white/50 uppercase tracking-wider">Estado Operativo</th>
-                  <th className="p-4 text-xs font-bold text-white/50 uppercase tracking-wider">Pago</th>
-                  <th className="p-4 text-xs font-bold text-white/50 uppercase tracking-wider text-right">Recibo</th>
+                <tr className="bg-black/5 border-b border-black/5">
+                  <th className="p-4 text-xs font-bold text-foreground/50 uppercase tracking-wider">Fecha</th>
+                  <th className="p-4 text-xs font-bold text-foreground/50 uppercase tracking-wider">Ticket</th>
+                  <th className="p-4 text-xs font-bold text-foreground/50 uppercase tracking-wider">Cliente</th>
+                  <th className="p-4 text-xs font-bold text-foreground/50 uppercase tracking-wider">Total</th>
+                  <th className="p-4 text-xs font-bold text-foreground/50 uppercase tracking-wider">Estado Operativo</th>
+                  <th className="p-4 text-xs font-bold text-foreground/50 uppercase tracking-wider">Pago</th>
+                  <th className="p-4 text-xs font-bold text-foreground/50 uppercase tracking-wider text-right">Recibo</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
                 {orders.map((order) => {
                   const dateObj = new Date(order.date);
                   return (
-                    <tr key={order.id} className="hover:bg-white/5 transition-colors">
+                    <tr key={order.id} className="hover:bg-black/5 transition-colors border-b border-black/5">
                       <td className="p-4 align-middle">
-                        <p className="text-sm text-white font-medium">{dateObj.toLocaleDateString()}</p>
-                        <p className="text-xs text-white/40">{dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                        <p className="text-sm text-foreground font-medium">{dateObj.toLocaleDateString()}</p>
+                        <p className="text-xs text-foreground/40">{dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                       </td>
                       <td className="p-4 align-middle">
-                        <span className="font-mono text-sm bg-[#18181b] border border-white/10 px-2 py-1 rounded">
+                        <span className="font-mono text-sm bg-black/5 border border-black/5 px-2 py-1 rounded text-foreground">
                           {order.ticketNumber || order.id.slice(0, 6)}
                         </span>
                       </td>
                       <td className="p-4 align-middle">
-                        <p className="text-sm text-white font-bold">{order.customerName}</p>
-                        {order.customerDni !== "0" && <p className="text-xs text-white/40">{order.customerDni}</p>}
+                        <p className="text-sm text-foreground font-bold">{order.customerName}</p>
+                        {order.customerDni !== "0" && <p className="text-xs text-foreground/40">{order.customerDni}</p>}
                       </td>
                       <td className="p-4 align-middle">
-                        <p className="text-sm text-white font-mono font-bold">S/ {Number(order.total).toFixed(2)}</p>
+                        <p className="text-sm text-foreground font-mono font-bold">S/ {Number(order.total).toFixed(2)}</p>
                       </td>
                       <td className="p-4 align-middle">
                         <span className={`px-2 py-1 rounded-full text-xs font-bold border ${getStatusColor(order.status)}`}>
@@ -227,12 +227,12 @@ export default function HistorialPage() {
                         ) : (
                           <span className="text-error text-xs font-bold bg-error/10 px-2 py-1 rounded">DEBE</span>
                         )}
-                        <p className="text-[10px] text-white/40 mt-1 uppercase">{order.payMethod}</p>
+                        <p className="text-[10px] text-foreground/40 mt-1 uppercase">{order.payMethod}</p>
                       </td>
                       <td className="p-4 align-middle text-right">
                         <Link 
                           href={`/admin/pedidos/ticket/${order.id}`}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/10 text-white text-xs font-medium rounded-lg transition-colors border border-white/10"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-black/5 hover:bg-black/10 text-foreground text-xs font-medium rounded-lg transition-colors border border-black/5"
                         >
                           Ver <ArrowRight size={14} />
                         </Link>

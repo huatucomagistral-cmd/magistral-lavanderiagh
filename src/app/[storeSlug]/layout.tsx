@@ -20,7 +20,7 @@ export default async function PublicLayout({ children, params }: PublicLayoutPro
     if (!snap.empty) {
       const data = snap.docs[0].data();
       storeData = {
-        name: data.storeName || "Lavandería Magistral",
+        name: data.storeName || "Nuestra Lavandería",
         color: data.color || "#3b82f6",
         logoUrl: data.logoUrl || null,
       };
@@ -33,10 +33,10 @@ export default async function PublicLayout({ children, params }: PublicLayoutPro
   if (!storeData) {
     return (
       <div className="flex flex-col min-h-screen bg-background text-foreground justify-center p-4 text-center items-center">
-        <h1 className="text-6xl font-black text-white/20 mb-2">404</h1>
-        <h2 className="text-2xl font-bold text-white mb-2">Tienda no encontrada</h2>
-        <p className="text-white/50 max-w-sm mx-auto">
-          No hemos encontrado ninguna lavandería con el enlace <b className="text-white">/{storeSlug}</b>. Verifica la URL e inténtalo nuevamente.
+        <h1 className="text-6xl font-black text-black/5 mb-2">404</h1>
+        <h2 className="text-2xl font-bold text-foreground mb-2">Tienda no encontrada</h2>
+        <p className="text-foreground/50 max-w-sm mx-auto">
+          No hemos encontrado ninguna lavandería con el enlace <b className="text-foreground">/{storeSlug}</b>. Verifica la URL e inténtalo nuevamente.
         </p>
       </div>
     );
@@ -56,19 +56,19 @@ export default async function PublicLayout({ children, params }: PublicLayoutPro
           ) : (
              <div 
                 className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg text-white shadow-lg shrink-0"
-                style={{ background: `linear-gradient(135deg, ${storeData.color}, #0a0a0a)` }}
+                style={{ background: `linear-gradient(135deg, ${storeData.color}, ${storeData.color}88)` }}
              >
                {storeData.name.charAt(0).toUpperCase()}
              </div>
           )}
-          <span className="font-bold text-lg tracking-tight text-white hidden sm:block truncate max-w-[200px]">
+          <span className="font-bold text-lg tracking-tight text-foreground hidden sm:block truncate max-w-[200px]">
              {storeData.name}
           </span>
         </div>
 
         {/* Header Actions */}
         <div className="flex items-center gap-3">
-           <button className="glass-button w-10 h-10 flex items-center justify-center rounded-full text-white/70 hover:text-white">
+           <button className="glass-button w-10 h-10 flex items-center justify-center rounded-full text-foreground/70 hover:text-foreground">
              <Search size={18} />
            </button>
         </div>
@@ -85,13 +85,13 @@ export default async function PublicLayout({ children, params }: PublicLayoutPro
       </main>
 
       {/* Footer Público */}
-      <footer className="mt-auto border-t border-white/5 bg-surface/30 p-8 text-center backdrop-blur-sm">
-        <div className="flex justify-center gap-6 mb-4 text-white/50">
+      <footer className="mt-auto border-t border-black/5 bg-white/30 p-8 text-center backdrop-blur-sm">
+        <div className="flex justify-center gap-6 mb-4 text-foreground/50">
            <div className="flex items-center gap-2"><MapPin size={16}/> Lima, Perú</div>
            <div className="flex items-center gap-2"><Phone size={16}/> 987 654 321</div>
         </div>
-        <p className="text-white/30 text-sm font-medium">
-          Tecnología <span className="text-white/50">Magistral SaaS</span> &copy; 2026
+        <p className="text-foreground/30 text-sm font-medium">
+          Tecnología <span className="text-foreground/50">Magistral SaaS</span> &copy; 2026
         </p>
       </footer>
     </div>

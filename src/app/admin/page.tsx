@@ -7,7 +7,7 @@ import { db } from "@/lib/firebase";
 import { useStore } from "@/store/useStore";
 
 export default function AdminDashboard() {
-  const { user } = useStore();
+  const { user, currentStore } = useStore();
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -43,7 +43,7 @@ export default function AdminDashboard() {
     .filter(o => o._isPaidToday)
     .reduce((acc, o) => acc + (Number(o.total) || 0), 0);
   
-  const pedidosNuevos = todayOrders.length;
+  const ordenesNuevas = todayOrders.length;
   const enProceso = orders.filter(o => o.status !== 'ENTREGADO').length;
   
   // Clientes únicos hoy (aproximación rápida)
@@ -83,8 +83,8 @@ export default function AdminDashboard() {
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div>
-        <h1 className="text-3xl font-bold text-white mb-2">Panel de Control</h1>
-        <p className="text-white/60">Resumen de lavandería para Lavandería Magistral.</p>
+        <h1 className="text-3xl font-bold text-foreground mb-2">Panel de Control</h1>
+        <p className="text-foreground/60">Resumen de lavandería para {currentStore?.storeName || "tu negocio"}.</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -98,8 +98,8 @@ export default function AdminDashboard() {
           />
         )}
         <KpiCard 
-          title="Nuevos Pedidos"
-          value={pedidosNuevos.toString()}
+          title="Nuevas Órdenes"
+          value={ordenesNuevas.toString()}
           trend="+0%"
           trendUp={true}
           icon={<Activity className="text-accent" size={24} />}
@@ -123,18 +123,18 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Gráfico Semanal (Estructura preparada para datos reales en el futuro) */}
         {user?.role === "ADMIN" && (
-        <div className="lg:col-span-2 glass-card p-6 flex flex-col h-[400px]">
+        <div className="lg:col-span-2 glass-card p-6 flex flex-col h-[400px] bg-white/60">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-lg font-bold text-white">Ingresos Semanales</h2>
-            <div className="flex gap-4 text-xs font-bold text-white/50">
+            <h2 className="text-lg font-bold text-foreground">Ingresos Semanales</h2>
+            <div className="flex gap-4 text-xs font-bold text-foreground/50">
                <span className="flex items-center gap-1"><div className="w-3 h-3 rounded-sm bg-primary" /> Efectivo</span>
                <span className="flex items-center gap-1"><div className="w-3 h-3 rounded-sm bg-[#742284]" /> Yape</span>
             </div>
           </div>
           
-          <div className="flex-1 flex items-end justify-between gap-2 xl:gap-4 pb-2 border-b border-white/10 relative">
-             <div className="absolute top-0 w-full h-[1px] bg-white/5" />
-             <div className="absolute top-1/2 w-full h-[1px] bg-white/5" />
+          <div className="flex-1 flex items-end justify-between gap-2 xl:gap-4 pb-2 border-b border-black/5 relative">
+             <div className="absolute top-0 w-full h-[1px] bg-black/5" />
+             <div className="absolute top-1/2 w-full h-[1px] bg-black/5" />
 
              {/* Datos Grafico - Por ahora promediamos los datos para visualizar la estructura */}
              {[
@@ -160,7 +160,7 @@ export default function AdminDashboard() {
                           style={{ height: `${Math.max(5, (col.cash / 200) * 100)}%` }} 
                        />
                    </div>
-                   <span className="text-white/50 text-[10px] sm:text-xs font-medium">{col.day}</span>
+                   <span className="text-foreground/50 text-[10px] sm:text-xs font-medium">{col.day}</span>
                 </div>
              ))}
           </div>
@@ -170,20 +170,20 @@ export default function AdminDashboard() {
         {/* Business Intelligence (Admin Only) */}
         {user?.role === "ADMIN" && (
           <div className="glass-card p-6 overflow-hidden flex flex-col">
-            <h2 className="text-lg font-semibold text-white mb-2 flex items-center gap-2">
+            <h2 className="text-lg font-semibold text-foreground mb-2 flex items-center gap-2">
               <Award className="text-primary" /> Top 5 Clientes
             </h2>
-            <p className="text-xs text-white/50 mb-4 block">Total histórico acumulado: <strong className="text-primary tracking-widest text-sm">S/ {ingresosTotales.toFixed(2)}</strong></p>
+            <p className="text-xs text-foreground/50 mb-4 block">Total histórico acumulado: <strong className="text-primary tracking-widest text-sm">S/ {ingresosTotales.toFixed(2)}</strong></p>
             <div className="space-y-3 flex-1 overflow-y-auto pr-2 scrollbar-hide">
               {topCustomers.map((c, i) => (
-                <div key={i} className="flex justify-between items-center bg-white/5 p-3 rounded-lg border border-white/5">
+                <div key={i} className="flex justify-between items-center bg-black/5 p-3 rounded-lg border border-black/5">
                    <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-primary/20 text-primary font-black flex items-center justify-center text-xs">
                         {i + 1}
                       </div>
                       <div>
-                        <p className="text-xs font-bold text-white">{c.name}</p>
-                        <p className="text-[10px] text-white/40">{c.count} pedidos</p>
+                        <p className="text-xs font-bold text-foreground">{c.name}</p>
+                        <p className="text-[10px] text-foreground/40">{c.count} órdenes</p>
                       </div>
                    </div>
                    <div className="text-right">
@@ -192,26 +192,26 @@ export default function AdminDashboard() {
                 </div>
               ))}
               {topCustomers.length === 0 && (
-                <p className="text-white/30 text-sm text-center py-6 italic">No hay clientes frecuentes aún</p>
+                <p className="text-foreground/30 text-sm text-center py-6 italic">No hay clientes frecuentes aún</p>
               )}
             </div>
           </div>
         )}
 
         {/* Recent Activity Sincronizada */}
-        <div className="glass-card p-6 overflow-hidden flex flex-col">
-          <h2 className="text-lg font-semibold text-white mb-4">Actividad Reciente</h2>
+        <div className="glass-card p-6 overflow-hidden flex flex-col bg-white/60">
+          <h2 className="text-lg font-semibold text-foreground mb-4">Actividad Reciente</h2>
           <div className="space-y-4 flex-1 overflow-y-auto pr-2 scrollbar-hide">
             {orders.slice(0, 8).map((o) => (
               <ActivityItem 
                 key={o.id} 
-                text={`Pedido #${o.ticketNumber?.slice(-3) || o.id.slice(0,4)} - ${o.customerName}`}
+                text={`Orden #${o.ticketNumber?.slice(-3) || o.id.slice(0,4)} - ${o.customerName}`}
                 time={o.status === 'ENTREGADO' ? 'Entregado' : 'En proceso'}
                 status={o.status}
               />
             ))}
             {orders.length === 0 && (
-              <p className="text-white/30 text-sm text-center py-10 italic">Sin actividad registrada</p>
+              <p className="text-foreground/30 text-sm text-center py-10 italic">Sin actividad registrada</p>
             )}
           </div>
         </div>
@@ -223,17 +223,17 @@ export default function AdminDashboard() {
 function KpiCard({ title, value, trend, trendUp, icon }: any) {
   return (
     <div className="glass-card p-6 flex flex-col gap-4 relative overflow-hidden group">
-      <div className="absolute -right-4 -bottom-4 opacity-[0.03] group-hover:opacity-[0.06] transition-opacity duration-500 scale-150 transform">
+      <div className="absolute -right-4 -bottom-4 opacity-[0.05] group-hover:opacity-[0.08] transition-opacity duration-500 scale-150 transform">
         {icon}
       </div>
       <div className="flex justify-between items-start">
-        <span className="text-sm font-medium text-white/60">{title}</span>
-        <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center">
+        <span className="text-sm font-medium text-foreground/60">{title}</span>
+        <div className="w-10 h-10 rounded-full bg-black/5 flex items-center justify-center">
           {icon}
         </div>
       </div>
       <div>
-        <h3 className="text-3xl font-bold text-white tracking-tight">{value}</h3>
+        <h3 className="text-3xl font-bold text-foreground tracking-tight">{value}</h3>
         {trend && (
           <p className={`text-xs font-medium mt-1 ${trendUp ? 'text-success' : 'text-error'}`}>
              Dato en tiempo real
@@ -254,10 +254,10 @@ function ActivityItem({ text, time, status }: { text: string; time: string; stat
   return (
     <div className="flex gap-4 items-start relative pb-2">
       <div className={`w-2 h-2 rounded-full ${getStatusColor()} mt-2 flex-shrink-0 z-10 shadow-[0_0_8px_currentColor]`} />
-      <div className="absolute left-[3px] top-4 bottom-[-16px] w-[2px] bg-white/5 z-0" />
+      <div className="absolute left-[3px] top-4 bottom-[-16px] w-[2px] bg-black/5 z-0" />
       <div>
-        <p className="text-xs font-medium text-white/80 line-clamp-1">{text}</p>
-        <span className="text-[10px] text-white/40 uppercase tracking-wider">{time}</span>
+        <p className="text-xs font-medium text-foreground/80 line-clamp-1">{text}</p>
+        <span className="text-[10px] text-foreground/40 uppercase tracking-wider">{time}</span>
       </div>
     </div>
   );

@@ -71,18 +71,18 @@ export default function ClientesPage() {
     <div className="space-y-8 animate-in fade-in duration-500">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-white mb-2">Base de Clientes</h1>
-          <p className="text-white/60">Gestiona la información y fidelidad de tus clientes recurrentes.</p>
+          <h1 className="text-3xl font-bold text-foreground mb-2">Base de Clientes</h1>
+          <p className="text-foreground/60">Gestiona la información y fidelidad de tus clientes recurrentes.</p>
         </div>
         
         <div className="relative w-full sm:w-80">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" size={20} />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-foreground/40" size={20} />
           <input 
             type="text" 
             placeholder="Buscar por nombre, DNI o celular..." 
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
-            className="w-full bg-surface border border-white/10 rounded-xl pl-11 pr-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-primary shadow-lg"
+            className="w-full bg-white/50 border border-black/10 rounded-xl pl-11 pr-4 py-3 text-foreground focus:outline-none focus:ring-2 focus:ring-primary shadow-sm"
           />
         </div>
       </div>
@@ -91,11 +91,11 @@ export default function ClientesPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="border-b border-white/10 bg-white/[0.02]">
-                <th className="px-6 py-4 text-xs font-black text-white/40 uppercase tracking-widest">Cliente</th>
-                <th className="px-6 py-4 text-xs font-black text-white/40 uppercase tracking-widest">Identificación</th>
-                <th className="px-6 py-4 text-xs font-black text-white/40 uppercase tracking-widest text-center">Fidelidad (Kgs)</th>
-                <th className="px-6 py-4 text-xs font-black text-white/40 uppercase tracking-widest text-right">Acciones</th>
+              <tr className="border-b border-black/5 bg-black/[0.02]">
+                <th className="px-6 py-4 text-xs font-black text-foreground/40 uppercase tracking-widest">Cliente</th>
+                <th className="px-6 py-4 text-xs font-black text-foreground/40 uppercase tracking-widest">Identificación</th>
+                <th className="px-6 py-4 text-xs font-black text-foreground/40 uppercase tracking-widest text-center">Fidelidad (Kgs)</th>
+                <th className="px-6 py-4 text-xs font-black text-foreground/40 uppercase tracking-widest text-right">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
@@ -108,21 +108,21 @@ export default function ClientesPage() {
                 </tr>
               ) : filteredClients.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="px-6 py-12 text-center text-white/30">
+                  <td colSpan={4} className="px-6 py-12 text-center text-foreground/30">
                     No se encontraron clientes con esa búsqueda.
                   </td>
                 </tr>
               ) : (
                 filteredClients.map(client => (
-                  <tr key={client.id} className="hover:bg-white/[0.02] transition-colors group">
+                  <tr key={client.id} className="hover:bg-black/[0.02] transition-colors group border-b border-black/5">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
                           {client.name?.charAt(0).toUpperCase() || "?"}
                         </div>
                         <div>
-                          <p className="text-white font-bold group-hover:text-primary transition-colors">{client.name || "Sin nombre"}</p>
-                          <p className="text-white/40 text-xs flex items-center gap-1 mt-0.5">
+                          <p className="text-foreground font-bold group-hover:text-primary transition-colors">{client.name || "Sin nombre"}</p>
+                          <p className="text-foreground/60 text-xs flex items-center gap-1 mt-0.5">
                             <Phone size={12} /> {client.phone || "---"}
                           </p>
                         </div>
@@ -130,14 +130,14 @@ export default function ClientesPage() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex flex-col gap-1">
-                        <span className="text-white/70 text-sm font-mono flex items-center gap-1.5">
-                          <CreditCard size={14} className="text-white/20" /> {client.dni || "Sin ID"}
+                        <span className="text-foreground/70 text-sm font-mono flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-black/5 border border-black/5">
+                          <CreditCard size={14} className="text-foreground/20" /> {client.dni || "Sin ID"}
                         </span>
                       </div>
                     </td>
                     <td className="px-6 py-4 text-center">
                        <div className="flex flex-col items-center">
-                          <div className={`px-3 py-1 rounded-full flex items-center gap-1.5 text-xs font-black ${client.totalKgAccumulated >= 10 ? 'bg-success/20 text-success' : 'bg-white/10 text-white/50'}`}>
+                          <div className={`px-3 py-1 rounded-full flex items-center gap-1.5 text-xs font-black ${client.totalKgAccumulated >= 10 ? 'bg-success/20 text-success' : 'bg-black/5 text-foreground/50 border border-black/5'}`}>
                              <Award size={14} /> {client.totalKgAccumulated || 0} KG
                           </div>
                        </div>
@@ -145,7 +145,7 @@ export default function ClientesPage() {
                     <td className="px-6 py-4 text-right">
                       <button 
                         onClick={() => setEditingClient(client)}
-                        className="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white/50 hover:text-white transition-all border border-white/5"
+                        className="p-2.5 rounded-xl bg-black/5 hover:bg-black/10 text-foreground/50 hover:text-foreground transition-all border border-black/5"
                         title="Editar Datos"
                       >
                         <Edit2 size={18} />
@@ -162,14 +162,14 @@ export default function ClientesPage() {
       {/* Modal de Edición */}
       {editingClient && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-[#1a1a1a] border border-white/10 rounded-3xl w-full max-w-md shadow-2xl overflow-hidden animate-in zoom-in duration-300">
-            <div className="p-6 border-b border-white/5 flex items-center justify-between">
-              <h2 className="text-xl font-bold text-white flex items-center gap-2">
+          <div className="bg-white border border-black/10 rounded-3xl w-full max-w-md shadow-2xl overflow-hidden animate-in zoom-in duration-300">
+            <div className="p-6 border-b border-black/5 flex items-center justify-between">
+              <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
                 <User className="text-primary" size={24} /> Editar Cliente
               </h2>
               <button 
                 onClick={() => setEditingClient(null)}
-                className="p-2 hover:bg-white/5 rounded-full transition-colors text-white/50"
+                className="p-2 hover:bg-black/5 rounded-full transition-colors text-foreground/50"
               >
                 <X size={20} />
               </button>
@@ -177,29 +177,29 @@ export default function ClientesPage() {
 
             <form onSubmit={handleUpdateClient} className="p-6 space-y-4">
               <div>
-                <label className="block text-xs font-black text-white/30 uppercase tracking-widest mb-1.5 ml-1">Nombre Completo</label>
+                <label className="block text-xs font-black text-foreground/50 uppercase tracking-widest mb-1.5 ml-1">Nombre Completo</label>
                 <input 
                   type="text" required value={editingClient.name}
                   onChange={e => setEditingClient({...editingClient, name: e.target.value})}
-                  className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-primary outline-none"
+                  className="w-full bg-white border border-black/10 rounded-xl px-4 py-3 text-foreground focus:ring-2 focus:ring-primary outline-none shadow-sm"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-black text-white/30 uppercase tracking-widest mb-1.5 ml-1">DNI / ID</label>
+                  <label className="block text-xs font-black text-foreground/50 uppercase tracking-widest mb-1.5 ml-1">DNI / ID</label>
                   <input 
                     type="text" maxLength={8} value={editingClient.dni}
                     onChange={e => setEditingClient({...editingClient, dni: e.target.value.replace(/\D/g, '')})}
-                    className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white font-mono focus:ring-2 focus:ring-primary outline-none"
+                    className="w-full bg-white border border-black/10 rounded-xl px-4 py-3 text-foreground font-mono focus:ring-2 focus:ring-primary outline-none shadow-sm"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-black text-white/30 uppercase tracking-widest mb-1.5 ml-1">Celular</label>
+                  <label className="block text-xs font-black text-foreground/50 uppercase tracking-widest mb-1.5 ml-1">Celular</label>
                   <input 
                     type="text" maxLength={9} value={editingClient.phone}
                     onChange={e => setEditingClient({...editingClient, phone: e.target.value.replace(/\D/g, '')})}
-                    className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white font-mono focus:ring-2 focus:ring-primary outline-none"
+                    className="w-full bg-white border border-black/10 rounded-xl px-4 py-3 text-foreground font-mono focus:ring-2 focus:ring-primary outline-none shadow-sm"
                   />
                 </div>
               </div>
@@ -209,7 +209,7 @@ export default function ClientesPage() {
                   <Award size={20} />
                   <span className="text-sm font-bold">Kilos Acumulados</span>
                 </div>
-                <span className="text-xl font-black text-white font-mono">{editingClient.totalKgAccumulated} KG</span>
+                <span className="text-xl font-black text-primary font-mono">{editingClient.totalKgAccumulated} KG</span>
               </div>
 
               <button 

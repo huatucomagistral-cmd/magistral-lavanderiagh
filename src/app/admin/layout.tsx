@@ -97,7 +97,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       )}
 
       {/* Sidebar */}
-      <aside className={`fixed inset-y-0 left-0 z-50 w-64 glass border-r border-white/5 flex flex-col transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"}`}>
+      <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-primary border-r border-black/5 flex flex-col transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"}`}>
         <div className="p-6 border-b border-white/5 flex justify-between items-center">
           <div className="flex items-center gap-3">
             {currentStore?.logoUrl ? (
@@ -107,11 +107,11 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                 className="w-8 h-8 rounded-lg object-contain bg-white" 
               />
             ) : (
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-primary to-accent flex items-center justify-center">
-                <span className="font-bold text-white text-lg">
-                  {currentStore?.name ? currentStore.name.charAt(0).toUpperCase() : "M"}
-                </span>
-              </div>
+                <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center">
+                  <span className="font-bold text-white text-lg">
+                    {currentStore?.name ? currentStore.name.charAt(0).toUpperCase() : "M"}
+                  </span>
+                </div>
             )}
             <h1 className="font-bold text-xl tracking-tight text-white truncate max-w-[120px]">
               {currentStore?.name || "Magistral"}
@@ -123,7 +123,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           </button>
         </div>
         <div className="px-6 py-2">
-          <p className="text-[10px] text-white/50 uppercase tracking-widest font-bold">
+          <p className="text-[10px] text-white/70 uppercase tracking-widest font-black">
             {user.role === "ADMIN" ? "Panel Administrador" : "Panel Personal"}
           </p>
         </div>
@@ -134,7 +134,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           <SidebarLink
             href="/admin/pedidos"
             icon={<Package size={20} />}
-            label="Pedidos"
+            label="Órdenes"
             excludePaths={["/admin/pedidos/historial"]}
           />
           <SidebarLink href="/admin/pedidos/historial" icon={<ClipboardList size={20} />} label="Historial" />
@@ -144,21 +144,21 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             <>
               <SidebarLink href="/admin/servicios" icon={<Settings size={20} />} label="Servicios" />
               <SidebarLink href="/admin/staff" icon={<Users size={20} />} label="Personal" />
-              <SidebarLink href="/admin/reportes" icon={<TrendingUp size={20} />} label="Reportes Fin" />
+              <SidebarLink href="/admin/reportes" icon={<TrendingUp size={20} />} label="Reportes" />
               <SidebarLink href="/admin/marketing" icon={<Megaphone size={20} />} label="Marketing" />
             </>
           )}
         </nav>
 
-        <div className="p-4 border-t border-white/5 mt-auto">
+        <div className="p-4 border-t border-white/10 mt-auto">
           {user.role === "ADMIN" && (
               <SidebarLink href="/admin/configuracion" icon={<Settings size={20} />} label="Configuración" />
           )}
           {/* Email del usuario */}
           <div className="px-3 py-2 mt-1">
-            <span className="text-xs text-white/30 truncate block">{user.email}</span>
+            <span className="text-xs text-white/60 truncate block">{user.email}</span>
           </div>
-          <button onClick={handleLogout} className="flex items-center gap-3 px-3 py-2.5 w-full text-white/50 hover:text-error transition-all rounded-xl hover:bg-error/10 mt-1 font-medium">
+          <button onClick={handleLogout} className="flex items-center gap-3 px-3 py-2.5 w-full text-white/70 hover:text-white transition-all rounded-xl hover:bg-black/20 mt-1 font-medium">
             <LogOut size={20} />
             <span className="text-sm">Cerrar Sesión</span>
           </button>
@@ -197,7 +197,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               {/* Desktop: email + role */}
               <div className="hidden md:flex flex-col items-end">
                   <span className="text-sm font-medium text-white truncate max-w-[200px]">{user.email}</span>
-                  <span className="text-[10px] text-white/50 uppercase tracking-widest font-bold">{user.role}</span>
+                  <span className="text-[10px] text-foreground/50 uppercase tracking-widest font-bold">{user.role}</span>
               </div>
 
               {/* Mobile: role label + hamburger */}
@@ -236,7 +236,7 @@ function SidebarLink({
 }) {
   const pathname = usePathname();
 
-  // Excluir rutas hijas específicas (ej. Pedidos no debe activarse cuando es Historial)
+  // Excluir rutas hijas específicas (ej. Órdenes no debe activarse cuando es Historial)
   const isExcluded = excludePaths.some(p => pathname.startsWith(p));
   const isActive = !isExcluded && (
     exact ? pathname === href : pathname === href || pathname.startsWith(`${href}/`)
@@ -247,11 +247,11 @@ function SidebarLink({
       href={href}
       className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all group ${
         isActive 
-          ? "bg-primary/20 text-white shadow-inner shadow-primary/20 border border-primary/20" 
-          : "text-white/70 hover:text-white hover:bg-white/5"
+          ? "bg-white/20 text-white shadow-inner shadow-black/10 border border-white/20" 
+          : "text-white/70 hover:text-white hover:bg-white/10"
       }`}
     >
-      <div className={`${isActive ? "text-primary" : "text-white/50 group-hover:text-primary"} transition-colors`}>
+      <div className={`${isActive ? "text-white" : "text-white/60 group-hover:text-white"} transition-colors`}>
         {icon}
       </div>
       <span className="font-medium text-sm">{label}</span>

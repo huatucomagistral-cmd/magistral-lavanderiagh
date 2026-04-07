@@ -34,7 +34,7 @@ export default function TicketViewPage({
           setDateStr(date.toLocaleString());
         }
         // Obtener el slug real de la tienda
-         const storeDoc = await getDoc(doc(db, "stores", user.storeId));
+        const storeDoc = await getDoc(doc(db, "stores", user.storeId));
         if (storeDoc.exists()) {
           const sd = storeDoc.data();
           setStoreData(sd);
@@ -57,22 +57,23 @@ export default function TicketViewPage({
 
   const handleWhatsApp = () => {
     if (!ticketData) return;
-    
+
     // Crear el link de rastreo
     const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
     const slug = storeSlug || user?.storeId;
     const trackingLink = `${baseUrl}/${slug}?ticket=${ticketData.ticketNumber || ticketId}`;
-    
-    // Si tienes el nombre del comercio en algun config global, genial. Aquí hardcodeo 'Lavandería Magistral' por el momento.
-    const text = `Hola ${ticketData.customerName || ''}, gracias por confiar en Lavandería Magistral. Tu pedido #${ticketData.ticketNumber || ticketId.slice(0, 6).toUpperCase()} ha sido recibido.\n\nPuedes ver tu recibo digital y rastrear el estado de tus prendas en tiempo real aquí:\n${trackingLink}`;
-    
+
+    // Usar el nombre real de la tienda cargado desde Firebase
+    const storeName = storeData?.storeName || 'nuestra lavandería';
+    const text = `Hola ${ticketData.customerName || ''}, gracias por confiar en ${storeName}. Tu orden #${ticketData.ticketNumber || ticketId.slice(0, 6).toUpperCase()} ha sido recibida.\n\nPuedes ver tu recibo digital y rastrear el estado de tus prendas en tiempo real aquí:\n${trackingLink}`;
+
     // Si existe el teléfono del cliente lo abrimos en su chat directo, si no, que elija el contacto
     const phone = ticketData.customerPhone ? ticketData.customerPhone.replace(/\D/g, '') : '';
     const encodedText = encodeURIComponent(text);
-    
+
     // Usamos wa.me que abre WhatsApp en el fon (o WhatsApp Web si está en PC)
     const url = phone ? `https://wa.me/51${phone}?text=${encodedText}` : `https://wa.me/?text=${encodedText}`;
-    
+
     window.open(url, '_blank');
   };
 
@@ -86,27 +87,27 @@ export default function TicketViewPage({
     // Obtener instancia del QR para dibujarla
     const qrEl = document.querySelector("#ticket-content canvas") as HTMLCanvasElement;
     const QR_SIZE = qrEl ? 70 : 0;
-    
+
     const items: any[] = ticketData.items || [];
     const ticketNum = ticketData.ticketNumber || ticketId.slice(0, 8).toUpperCase();
     const isPaid = ticketData.paymentStatus === "PAID";
     const atendidoPor = ticketData.createdByEmail ? ticketData.createdByEmail.split('@')[0] : '';
 
     const totalH =
-      PAD +           
+      PAD +
       24 +            // store name
       LINE * 2 +      // address + ruc
       4 +             // gap
       LINE * 5 +      // date/ticket/client/dni/atendido
-      4 +             
+      4 +
       LINE +          // table header
       items.length * LINE +
-      4 +             
+      4 +
       24 +            // status stamp
       LINE * 2 +      // total/pay
       6 +             // gap pre-QR
       (QR_SIZE > 0 ? QR_SIZE + 16 : 0) + // QR area
-      PAD;            
+      PAD;
 
     const canvas = document.createElement("canvas");
     canvas.width = W;
@@ -136,11 +137,11 @@ export default function TicketViewPage({
 
     let y = PAD;
 
-     // ── Header ────────────────────────────────────────────────────────────────
+    // ── Header ────────────────────────────────────────────────────────────────
     ctx.fillStyle = "#000";
     ctx.textAlign = "center";
     setFont(16, "900");
-    ctx.fillText(storeData?.storeName || "LAVANDERÍA MAGISTRAL", W / 2, y + 16); y += 22;
+    ctx.fillText(storeData?.storeName?.toUpperCase() || "LAVANDERÍA", W / 2, y + 16); y += 22;
     setFont(9, "bold");
     ctx.fillText(storeData?.address || "Av. Principal 123", W / 2, y); y += LINE - 2;
     setFont(9);
@@ -152,14 +153,14 @@ export default function TicketViewPage({
     setFont(9, "bold");
     ctx.fillStyle = "#000";
     ctx.fillText(`FECHA: ${dateStr}`, PAD, y); y += LINE;
-    
+
     // TICKET badge
     ctx.fillText("TICKET:", PAD, y);
     const tw = ctx.measureText("TICKET:").width;
     setFont(10, "900");
     ctx.fillText(ticketNum, PAD + tw + 6, y);
     y += LINE;
-    
+
     ctx.fillStyle = "#000";
     setFont(9, "bold");
     ctx.fillText(`CLIENTE: ${ticketData.customerName || "Cliente"}`, PAD, y); y += LINE;
@@ -226,7 +227,7 @@ export default function TicketViewPage({
       setFont(8, "bold");
       ctx.fillText("¿En qué estado está tu ropa?", W / 2, y);
       y += 4;
-      ctx.drawImage(qrEl, W / 2 - (QR_SIZE/2), y, QR_SIZE, QR_SIZE);
+      ctx.drawImage(qrEl, W / 2 - (QR_SIZE / 2), y, QR_SIZE, QR_SIZE);
       y += QR_SIZE + 10;
     }
 
@@ -265,7 +266,7 @@ export default function TicketViewPage({
 
   if (loading) {
     return (
-      <div className="flex h-[60vh] flex-col items-center justify-center text-white/50">
+      <div className="flex h-[60vh] flex-col items-center justify-center text-foreground/40">
         <Loader2 className="animate-spin mb-4" size={40} />
         <p>Generando Ticket Electrónico...</p>
       </div>
@@ -274,108 +275,108 @@ export default function TicketViewPage({
 
   if (!ticketData) {
     return (
-      <div className="flex h-[60vh] flex-col items-center justify-center text-white/50">
+      <div className="flex h-[60vh] flex-col items-center justify-center text-foreground/40">
         <p>El ticket {ticketId} no existe o fue eliminado.</p>
-        <Link href="/admin/pedidos" className="mt-4 text-primary underline">Volver al Kanban</Link>
+        <Link href="/admin/pedidos" className="mt-4 text-primary underline">Volver a Órdenes</Link>
       </div>
     );
   }
 
   return (
     <div className="animate-in fade-in duration-500 pb-12 flex flex-col md:flex-row gap-8 items-start justify-center">
-      
+
       {/* Columna Acciones */}
       <div className="flex flex-col gap-4 w-full md:w-64 shrink-0 print:hidden">
-         <Link href="/admin/pedidos" className="text-white/50 hover:text-white transition-colors flex items-center gap-2 font-medium mb-4 w-fit">
-           <ArrowLeft size={18} /> Volver a Pedidos
-         </Link>
+        <Link href="/admin/pedidos" className="text-foreground/40 hover:text-foreground transition-colors flex items-center gap-2 font-medium mb-4 w-fit">
+          <ArrowLeft size={18} /> Volver a Órdenes
+        </Link>
 
-         <div className="glass-card p-6 flex flex-col gap-3">
-            <h2 className="text-white font-bold mb-2">Acciones de Emisión</h2>
-            <button onClick={handlePrint} className="bg-primary hover:bg-primary-hover active:scale-95 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-all">
-               <Printer size={18} /> Imprimir (80mm)
-            </button>
-            <button onClick={handleCopyImage} className="bg-white/5 hover:bg-white/10 active:scale-95 text-white font-medium py-3 rounded-xl flex items-center justify-center gap-2 transition-all border border-white/10">
-               <Copy size={18} /> Copiar Imagen
-            </button>
-            <button onClick={handleWhatsApp} className="bg-success/20 hover:bg-success/30 active:scale-95 text-success font-medium py-3 rounded-xl flex items-center justify-center gap-2 transition-all border border-success/30">
-               <Share2 size={18} /> Mandar por WhatsApp
-            </button>
-         </div>
+        <div className="glass-card p-6 flex flex-col gap-3">
+          <h2 className="text-foreground font-bold mb-2">Acciones de Emisión</h2>
+          <button onClick={handlePrint} className="bg-primary hover:bg-primary-hover active:scale-95 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-all">
+            <Printer size={18} /> Imprimir (80mm)
+          </button>
+          <button onClick={handleCopyImage} className="bg-black/5 hover:bg-black/10 active:scale-95 text-foreground font-medium py-3 rounded-xl flex items-center justify-center gap-2 transition-all border border-black/10">
+            <Copy size={18} /> Copiar Imagen
+          </button>
+          <button onClick={handleWhatsApp} className="bg-success/20 hover:bg-success/30 active:scale-95 text-success font-medium py-3 rounded-xl flex items-center justify-center gap-2 transition-all border border-success/30">
+            <Share2 size={18} /> Mandar por WhatsApp
+          </button>
+        </div>
       </div>
 
       {/* Papel del Ticket Físico (Termal) */}
       <div id="ticket-content" className="ticket-print-area bg-white text-black p-4 w-full max-w-[280px] shadow-xl mx-auto md:mx-0 font-mono text-[10px] relative print:shadow-none print:m-0 print:p-0 leading-tight">
-         
-          {/* Corte dentado (decorativo web) */}
-          <div className="absolute -top-1 left-0 w-full h-2 bg-background flex print:hidden" style={{ backgroundImage: "radial-gradient(circle, #09090b 4px, transparent 5px)", backgroundSize: "10px 10px" }} />
-          
-          {ticketData.status === 'CANCELADO' && (
-            <div className="mb-6 p-4 bg-red-50 border-2 border-red-600 rounded-lg flex flex-col gap-2 items-center text-center print:border-black">
-              <div className="flex items-center gap-2 text-red-600 font-black uppercase text-sm print:text-black">
-                <AlertTriangle size={20} /> PEDIDO ANULADO / CANCELADO
-              </div>
-              <div className="text-[11px] text-red-800 font-bold bg-red-100 px-3 py-2 rounded border border-red-200 w-full print:bg-white print:text-black print:border-black">
-                MOTIVO: {ticketData.cancelReason || 'No especificado'}
-              </div>
-              {ticketData.cancelledAt && (
-                <span className="text-[9px] text-red-400 font-bold uppercase print:text-black">
-                  Fecha: {new Date(ticketData.cancelledAt).toLocaleString()}
-                </span>
-              )}
+
+        {/* Corte dentado (decorativo web) */}
+        <div className="absolute -top-1 left-0 w-full h-2 bg-background flex print:hidden" style={{ backgroundImage: "radial-gradient(circle, #09090b 4px, transparent 5px)", backgroundSize: "10px 10px" }} />
+
+        {ticketData.status === 'CANCELADO' && (
+          <div className="mb-6 p-4 bg-red-50 border-2 border-red-600 rounded-lg flex flex-col gap-2 items-center text-center print:border-black">
+            <div className="flex items-center gap-2 text-red-600 font-black uppercase text-sm print:text-black">
+              <AlertTriangle size={20} /> ORDEN ANULADA / CANCELADA
             </div>
-          )}
+            <div className="text-[11px] text-red-800 font-bold bg-red-100 px-3 py-2 rounded border border-red-200 w-full print:bg-white print:text-black print:border-black">
+              MOTIVO: {ticketData.cancelReason || 'No especificado'}
+            </div>
+            {ticketData.cancelledAt && (
+              <span className="text-[9px] text-red-400 font-bold uppercase print:text-black">
+                Fecha: {new Date(ticketData.cancelledAt).toLocaleString()}
+              </span>
+            )}
+          </div>
+        )}
 
-          <div className="text-center mb-1 pb-1">
-            <h1 className="text-lg font-black leading-none mb-1">{storeData?.storeName || "Lavandería Magistral"}</h1>
-            <p className="text-[10px] font-semibold">{storeData?.address || "Av. Principal 123"}</p>
-            <p className="text-[10px]">{storeData?.ruc ? `RUC: ${storeData.ruc}` : "RUC: 20123456789"}</p>
-         </div>
+        <div className="text-center mb-1 pb-1">
+          <h1 className="text-lg font-black leading-none mb-1">{storeData?.storeName || "Cargando..."}</h1>
+          <p className="text-[10px] font-semibold">{storeData?.address || "Av. Principal 123"}</p>
+          <p className="text-[10px]">{storeData?.ruc ? `RUC: ${storeData.ruc}` : "RUC: 20123456789"}</p>
+        </div>
 
-         <div className="mb-2 text-[10px] font-bold leading-tight space-y-0.5">
-            <p>FECHA: {dateStr}</p>
-            <p>TICKET: <span className="text-[11px] font-black ml-1">{ticketData.ticketNumber || ticketId.slice(0, 6).toUpperCase()}</span></p>
-            <p>CLIENTE: {ticketData.customerName || "Cliente"}</p>
-            {ticketData.customerDni && ticketData.customerDni !== "0" && <p>DNI: {ticketData.customerDni}</p>}
-            {ticketData.createdByEmail && <p>ATENDIDO POR: {ticketData.createdByEmail.split('@')[0]}</p>}
-         </div>
+        <div className="mb-2 text-[10px] font-bold leading-tight space-y-0.5">
+          <p>FECHA: {dateStr}</p>
+          <p>TICKET: <span className="text-[11px] font-black ml-1">{ticketData.ticketNumber || ticketId.slice(0, 6).toUpperCase()}</span></p>
+          <p>CLIENTE: {ticketData.customerName || "Cliente"}</p>
+          {ticketData.customerDni && ticketData.customerDni !== "0" && <p>DNI: {ticketData.customerDni}</p>}
+          {ticketData.createdByEmail && <p>ATENDIDO POR: {ticketData.createdByEmail.split('@')[0]}</p>}
+        </div>
 
-         <table className="w-full text-[10px] font-bold mb-1 border-t border-b border-black py-0.5">
-            <thead>
-              <tr className="border-b border-black">
-                <th className="text-left pb-0.5 pt-0.5">CANT</th>
-                <th className="text-left pb-0.5 pt-0.5">DESC</th>
-                <th className="text-right pb-0.5 pt-0.5">IMP</th>
+        <table className="w-full text-[10px] font-bold mb-1 border-t border-b border-black py-0.5">
+          <thead>
+            <tr className="border-b border-black">
+              <th className="text-left pb-0.5 pt-0.5">CANT</th>
+              <th className="text-left pb-0.5 pt-0.5">DESCRIPCIÓN</th>
+              <th className="text-right pb-0.5 pt-0.5">IMP</th>
+            </tr>
+          </thead>
+          <tbody>
+            {ticketData.items?.map((cartItem: any, idx: number) => (
+              <tr key={idx}>
+                <td className="py-1 align-top">{cartItem.qty}</td>
+                <td className="py-1 align-top pr-1">{cartItem.item.name}</td>
+                <td className="text-right py-1 align-top">{(cartItem.item.price * cartItem.qty).toFixed(2)}</td>
               </tr>
-            </thead>
-            <tbody>
-              {ticketData.items?.map((cartItem: any, idx: number) => (
-                <tr key={idx}>
-                  <td className="py-1 align-top">{cartItem.qty}</td>
-                  <td className="py-1 align-top pr-1">{cartItem.item.name}</td>
-                  <td className="text-right py-1 align-top">{(cartItem.item.price * cartItem.qty).toFixed(2)}</td>
-                </tr>
-              ))}
-            </tbody>
-         </table>
+            ))}
+          </tbody>
+        </table>
 
-         <div className={`my-1 border-2 p-0.5 text-center font-black text-xs uppercase tracking-widest -rotate-2 ${ticketData.paymentStatus === 'PAID' ? 'border-green-600 text-green-600' : 'border-red-600 text-red-600'}`}>
-            {ticketData.paymentStatus === 'PAID' ? 'PAGADO' : 'POR COBRAR'}
-         </div>
+        <div className={`my-1 border-2 p-0.5 text-center font-black text-xs uppercase tracking-widest -rotate-2 ${ticketData.paymentStatus === 'PAID' ? 'border-green-600 text-green-600' : 'border-red-600 text-red-600'}`}>
+          {ticketData.paymentStatus === 'PAID' ? 'PAGADO' : 'POR COBRAR'}
+        </div>
 
-         <div className="text-right mb-2">
-           <p className="font-black text-sm">TOTAL: S/ {Number(ticketData.total).toFixed(2)}</p>
-           <p className="text-[8px] mt-0.5">Medio de Pago: {ticketData.payMethod === 'LUEGO' ? 'PENDIENTE (Al recoger)' : ticketData.payMethod}</p>
-         </div>
+        <div className="text-right mb-2">
+          <p className="font-black text-sm">TOTAL: S/ {Number(ticketData.total).toFixed(2)}</p>
+          <p className="text-[8px] mt-0.5">Medio de Pago: {ticketData.payMethod === 'LUEGO' ? 'PENDIENTE (Al recoger)' : ticketData.payMethod}</p>
+        </div>
 
-         <div className="flex flex-col items-center justify-center text-center mt-1 pt-1">
-            <p className="text-[8px] font-bold mb-1 uppercase">¿En qué estado está tu ropa?</p>
-            <QRCodeCanvas value={`${typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000'}/${storeSlug || user?.storeId}?ticket=${ticketData.ticketNumber || ticketId}`} size={70} level="M" />
-            <p className="text-[8px] mt-2 font-semibold">¡Gracias por su preferencia!</p>
-         </div>
+        <div className="flex flex-col items-center justify-center text-center mt-1 pt-1">
+          <p className="text-[8px] font-bold mb-1 uppercase">¿En qué estado está tu ropa?</p>
+          <QRCodeCanvas value={`${typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000'}/${storeSlug || user?.storeId}?ticket=${ticketData.ticketNumber || ticketId}`} size={70} level="M" />
+          <p className="text-[8px] mt-2 font-semibold">¡Gracias por su preferencia!</p>
+        </div>
 
-         {/* Corte dentado bottom */}
-         <div className="absolute -bottom-1 left-0 w-full h-2 bg-background flex print:hidden" style={{ backgroundImage: "radial-gradient(circle, #09090b 4px, transparent 5px)", backgroundSize: "10px 10px" }} />
+        {/* Corte dentado bottom */}
+        <div className="absolute -bottom-1 left-0 w-full h-2 bg-background flex print:hidden" style={{ backgroundImage: "radial-gradient(circle, #09090b 4px, transparent 5px)", backgroundSize: "10px 10px" }} />
       </div>
 
     </div>

@@ -50,18 +50,18 @@ export default function YapePaymentPage({
 
         setStore({
           id: realStoreId,
-          name: s.storeName || "Lavandería",
+          name: s.storeName || "Nuestra Lavandería",
           yapeNumber: s.yapeNumber || "999888777",
           yapeName: s.yapeName || "",
           yapeQrUrl: s.yapeQrUrl || ""
         });
 
-        // Cargar Pedido
+        // Cargar Orden
         const orderSnap = await getDoc(doc(db, `stores/${realStoreId}/orders`, ticket));
         if (orderSnap.exists()) {
           setOrder(orderSnap.data());
         } else {
-          toast.error("No encontramos ese pedido en nuestro sistema.");
+          toast.error("No encontramos esa orden en nuestro sistema.");
         }
       } catch (err) {
         console.error(err);
@@ -131,11 +131,11 @@ export default function YapePaymentPage({
          <div className="w-24 h-24 mb-6 text-success animate-bounce bg-success/10 rounded-full flex items-center justify-center mx-auto">
             <CheckCircle size={56} />
          </div>
-         <h1 className="text-3xl font-black text-white mb-4">Comprobante Enviado</h1>
-         <p className="text-white/60 max-w-sm mb-8">
+         <h1 className="text-3xl font-black text-foreground mb-4">Comprobante Enviado</h1>
+         <p className="text-foreground/60 max-w-sm mb-8">
            Recibimos tu voucher. El administrador validará el pago en unos minutos y el status pasará a "PAGADO" en el portal de rastreo.
          </p>
-         <Link href={`/${storeSlug}`} className="bg-primary hover:bg-primary/80 active:scale-95 px-8 flex font-bold py-4 text-white rounded-xl transition-all">
+         <Link href={`/${storeSlug}`} className="bg-primary hover:bg-primary-hover active:scale-95 px-8 flex font-bold py-4 text-white rounded-xl transition-all shadow-lg shadow-primary/20">
            Volver al Rastreo
          </Link>
       </div>
@@ -147,7 +147,7 @@ export default function YapePaymentPage({
   return (
     <div className="animate-in fade-in duration-500 pb-12 max-w-xl mx-auto mt-4 md:mt-8">
       
-      <Link href={`/${storeSlug}`} className="text-white/50 hover:text-white transition-colors flex items-center gap-2 font-medium mb-6 w-fit">
+      <Link href={`/${storeSlug}`} className="text-foreground/50 hover:text-foreground transition-colors flex items-center gap-2 font-medium mb-6 w-fit">
         <ArrowLeft size={18} /> Cancelar y Volver
       </Link>
 
@@ -155,23 +155,23 @@ export default function YapePaymentPage({
          <div className="w-16 h-16 rounded-3xl bg-gradient-to-tr from-[#742284] to-[#B03BBF] shadow-[0_0_30px_rgba(116,34,132,0.4)] flex items-center justify-center mx-auto mb-5 text-white">
            <span className="font-black text-3xl font-sans tracking-tighter shrink-0 pt-1">Y</span>
          </div>
-         <h1 className="text-2xl font-bold text-white mb-2">Pago Segúro por Yape</h1>
-         <p className="text-white/60 text-sm">Ticket <strong className="text-white">{order?.ticketNumber || "..."}</strong></p>
+         <h1 className="text-2xl font-bold text-foreground mb-2">Pago Segúro por Yape</h1>
+         <p className="text-foreground/60 text-sm">Ticket <strong className="text-foreground">{order?.ticketNumber || "..."}</strong></p>
       </div>
 
-      <div className="bg-[#111111]/80 backdrop-blur-2xl rounded-[2.5rem] border border-white/5 overflow-hidden shadow-2xl">
+      <div className="glass-card overflow-hidden shadow-2xl bg-white/80">
          
           <div className="p-8 pb-10 text-center flex flex-col items-center relative">
             
             {/* Soft glow behind the QR */}
-            <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-48 h-48 bg-[#742284]/20 blur-[80px] rounded-full pointer-events-none" />
+            <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-48 h-48 bg-[#742284]/10 blur-[80px] rounded-full pointer-events-none" />
 
             {store.yapeQrUrl ? (
-               <div className="w-full max-w-[260px] rounded-[2rem] shadow-[0_20px_50px_-15px_rgba(116,34,132,0.5)] mb-8 overflow-hidden border border-[#742284]/30 bg-[#742284] relative z-10 transition-transform hover:scale-[1.02] duration-500">
+               <div className="w-full max-w-[260px] rounded-[2rem] shadow-[0_20px_50px_-15px_rgba(116,34,132,0.3)] mb-8 overflow-hidden border border-[#742284]/30 bg-[#742284] relative z-10 transition-transform hover:scale-[1.02] duration-500">
                  <img src={store.yapeQrUrl} alt="QR Yape Oficial" className="w-full h-auto object-cover" />
                </div>
             ) : (
-               <div className="bg-white p-5 rounded-[2rem] shadow-[0_20px_50px_-15px_rgba(116,34,132,0.5)] mb-8 relative z-10">
+               <div className="bg-white p-5 rounded-[2rem] shadow-[0_20px_50px_-15px_rgba(116,34,132,0.3)] mb-8 relative z-10">
                  <QRCodeSVG 
                    value={`YAPE:${store.yapeNumber}?amount=${total}`} 
                    size={220}
@@ -182,8 +182,8 @@ export default function YapePaymentPage({
                </div>
             )}
             
-            <p className="text-5xl font-black text-[#00E5C0] font-sans tracking-tight mb-3">S/ {total.toFixed(2)}</p>
-            {store.yapeName && <p className="text-lg text-white font-medium tracking-tight bg-white/5 px-4 py-1.5 rounded-full inline-block mb-1">{store.yapeName}</p>}
+            <p className="text-5xl font-black text-primary font-sans tracking-tight mb-3">S/ {total.toFixed(2)}</p>
+            {store.yapeName && <p className="text-lg text-foreground font-medium tracking-tight bg-black/5 px-4 py-1.5 rounded-full inline-block mb-1">{store.yapeName}</p>}
             
             {store.yapeNumber && (
               <button 
@@ -194,31 +194,31 @@ export default function YapePaymentPage({
               </button>
             )}
             
-            <p className="text-white/40 text-xs mt-6 font-medium">Escanea o copia el número desde tu App Yape</p>
+            <p className="text-foreground/40 text-xs mt-6 font-medium">Escanea o copia el número desde tu App Yape</p>
           </div>
 
-         <div className="p-8 bg-[#0a0a0a] border-t border-white/5 relative z-10">
-            <h3 className="text-white font-bold mb-5 flex items-center gap-2">Paso 2: Adjunta tu voucher <Info size={16} className="text-white/30"/></h3>
+         <div className="p-8 bg-black/5 border-t border-black/5 relative z-10">
+            <h3 className="text-foreground font-bold mb-5 flex items-center gap-2">Paso 2: Adjunta tu voucher <Info size={16} className="text-foreground/30"/></h3>
             
             <form onSubmit={handleSubmit} className="space-y-4">
 
               <div>
-                 <label htmlFor="file-upload" className={`w-full border-2 ${file ? 'border-[#00E5C0]/50 bg-[#00E5C0]/5' : 'border-dashed border-white/10 hover:border-[#742284]/50 bg-white/5'} rounded-2xl px-4 py-10 text-center cursor-pointer flex flex-col items-center justify-center transition-all group`}>
+                 <label htmlFor="file-upload" className={`w-full border-2 ${file ? 'border-primary/50 bg-primary/5' : 'border-dashed border-black/10 hover:border-primary/50 bg-white/50'} rounded-2xl px-4 py-10 text-center cursor-pointer flex flex-col items-center justify-center transition-all group`}>
                    {file ? (
-                     <CheckCircle size={32} className="text-[#00E5C0] mb-3" />
+                     <CheckCircle size={32} className="text-primary mb-3" />
                    ) : (
-                     <UploadCloud size={32} className="text-white/20 group-hover:text-[#742284] mb-3 transition-colors" />
+                     <UploadCloud size={32} className="text-foreground/20 group-hover:text-primary mb-3 transition-colors" />
                    )}
-                   <span className={`font-medium mb-1 ${file ? 'text-[#00E5C0]' : 'text-white/80'}`}>
+                   <span className={`font-medium mb-1 ${file ? 'text-primary' : 'text-foreground/80'}`}>
                      {file ? file.name : "Toca para abrir galería"}
                    </span>
-                   {!file && <span className="text-white/40 text-xs font-medium">Soporta PNG o JPG</span>}
+                   {!file && <span className="text-foreground/40 text-xs font-medium">Soporta PNG o JPG</span>}
                  </label>
                  <input id="file-upload" type="file" accept="image/png, image/jpeg, application/pdf" className="hidden" onChange={handleFileChange} />
               </div>
 
-              <button type="submit" disabled={isSubmitting || !file} className="w-full bg-white hover:bg-gray-200 text-black font-extrabold py-4 rounded-2xl flex items-center justify-center gap-2 transition-transform active:scale-95 disabled:opacity-20 mt-6 disabled:pointer-events-none text-lg">
-                {isSubmitting ? <span className="animate-spin border-2 border-black/30 border-t-black rounded-full w-5 h-5" /> : "Validar mi Pago"}
+              <button type="submit" disabled={isSubmitting || !file} className="w-full bg-primary hover:bg-primary-hover text-white font-extrabold py-4 rounded-2xl flex items-center justify-center gap-2 transition-transform active:scale-95 disabled:opacity-20 mt-6 disabled:marker:pointer-events-none text-lg shadow-lg shadow-primary/20">
+                {isSubmitting ? <span className="animate-spin border-2 border-white/30 border-t-white rounded-full w-5 h-5" /> : "Validar mi Pago"}
               </button>
 
             </form>

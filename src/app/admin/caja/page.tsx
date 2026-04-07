@@ -79,7 +79,7 @@ export default function CajaPage() {
   };
 
   const handleCloseCaja = async () => {
-    if(confirm("Al cerrar caja se generará el reporte del día y no podrás cobrar más pedidos en esta sesión. ¿Continuar?")) {
+    if(confirm("Al cerrar caja se generará el reporte del día y no podrás cobrar más órdenes en esta sesión. ¿Continuar?")) {
       setIsProcessing(true);
       try {
         if (!user?.storeId) throw new Error("Store ID missing");
@@ -103,8 +103,8 @@ export default function CajaPage() {
     <div className="space-y-8 animate-in fade-in duration-500">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-white mb-2">Control de Caja</h1>
-          <p className="text-white/60">Abre tu turno con el sencillo en efectivo y monitorea tus ingresos.</p>
+          <h1 className="text-3xl font-bold text-foreground mb-2">Control de Caja</h1>
+          <p className="text-foreground/60">Abre tu turno con el sencillo en efectivo y monitorea tus ingresos.</p>
         </div>
         
         {/* Badge de Estado Global */}
@@ -120,16 +120,16 @@ export default function CajaPage() {
             <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center text-primary mx-auto mb-4">
               <DollarSign size={32} />
             </div>
-            <h2 className="text-2xl font-bold text-white">Apertura de Caja</h2>
-            <p className="text-white/50 text-sm">Ingresa el monto de efectivo con el que estás empezando este turno para poder cobrar pedidos.</p>
+            <h2 className="text-2xl font-bold text-foreground">Apertura de Caja</h2>
+            <p className="text-foreground/50 text-sm">Ingresa el monto de efectivo con el que estás empezando este turno para poder cobrar órdenes.</p>
             
             <div className="text-left mt-6">
-               <label className="block text-sm font-medium text-white/70 mb-2 text-center">Efectivo Inicial (Para Vuelto)</label>
+               <label className="block text-sm font-medium text-foreground/70 mb-2 text-center">Efectivo Inicial (Para Vuelto)</label>
                <div className="relative max-w-xs mx-auto">
-                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/50 font-bold">S/</span>
+                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-foreground/50 font-bold">S/</span>
                  <input 
                    type="number" step="0.10" min="0" value={initialCashInput} onChange={e => setInitialCashInput(e.target.value)} required
-                   className="w-full bg-black/40 border border-white/10 rounded-2xl pl-10 pr-4 py-4 text-white font-mono text-xl text-center focus:outline-none focus:ring-2 focus:ring-primary shadow-inner"
+                   className="w-full bg-white/50 border border-black/10 rounded-2xl pl-10 pr-4 py-4 text-foreground font-mono text-xl text-center focus:outline-none focus:ring-2 focus:ring-primary shadow-sm"
                    placeholder="0.00"
                  />
                </div>
@@ -146,27 +146,27 @@ export default function CajaPage() {
           
           {/* Resumen Principal (Efectivo Esperado) */}
           <div className="lg:col-span-1 space-y-6">
-            <div className="glass-card p-6 bg-gradient-to-br from-surface to-primary/10 border-primary/30 relative overflow-hidden">
-              <div className="absolute top-0 right-0 p-6 opacity-[0.03] pointer-events-none">
-                 <Wallet size={120} />
+            <div className="glass-card p-6 bg-white/80 border-primary/30 relative overflow-hidden">
+              <div className="absolute top-0 right-0 p-6 opacity-[0.05] pointer-events-none">
+                 <Wallet size={120} className="text-primary" />
               </div>
-              <h3 className="text-white/70 font-medium mb-1 relative z-10">Total de Ingresos</h3>
-              <p className="text-4xl font-black text-white tracking-tight relative z-10 font-mono">
+              <h3 className="text-foreground/70 font-medium mb-1 relative z-10">Total de Ingresos</h3>
+              <p className="text-4xl font-black text-foreground tracking-tight relative z-10 font-mono">
                 S/ {totalIngresos.toFixed(2)}
               </p>
               
               <div className="mt-6 flex flex-col gap-2 relative z-10">
                 <div className="flex justify-between text-sm">
-                  <span className="text-white/50">Base Inicial:</span>
-                  <span className="text-white font-medium">S/ {currentInitial.toFixed(2)}</span>
+                  <span className="text-foreground/50">Base Inicial:</span>
+                  <span className="text-foreground font-medium">S/ {currentInitial.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-white/50">Pedidos Cobrados:</span>
+                  <span className="text-foreground/50">Órdenes Cobradas:</span>
                   <span className="text-success font-medium">{stats.cobrados} pagos</span>
                 </div>
               </div>
 
-              <div className="mt-8 pt-6 border-t border-white/10 relative z-10">
+              <div className="mt-8 pt-6 border-t border-black/5 relative z-10">
                  <button onClick={handleCloseCaja} disabled={isProcessing} className="w-full bg-error hover:bg-error/80 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-transform active:scale-95">
                     {isProcessing ? <span className="animate-spin border-2 border-white/30 border-t-white rounded-full w-5 h-5" /> : <LockKeyhole size={20} />}
                     Realizar Cierre de Caja
@@ -181,36 +181,36 @@ export default function CajaPage() {
                 <div className="glass-card p-5">
                    <div className="flex items-center gap-3 mb-2">
                      <div className="w-8 h-8 rounded-full bg-success/20 flex items-center justify-center text-success"><DollarSign size={16}/></div>
-                     <span className="text-white/70 font-medium text-sm">Cobros Efectivo</span>
+                     <span className="text-foreground/70 font-medium text-sm">Cobros Efectivo</span>
                    </div>
-                   <p className="text-2xl font-bold text-white font-mono">S/ {stats.efectivo.toFixed(2)}</p>
+                   <p className="text-2xl font-bold text-foreground font-mono">S/ {stats.efectivo.toFixed(2)}</p>
                 </div>
                 <div className="glass-card p-5">
                    <div className="flex items-center gap-3 mb-2">
                      <div className="w-8 h-8 rounded-full bg-[#742284]/20 flex items-center justify-center text-[#742284]"><DollarSign size={16}/></div>
-                     <span className="text-white/70 font-medium text-sm">Cobros Yape</span>
+                     <span className="text-foreground/70 font-medium text-sm">Cobros Yape</span>
                    </div>
-                   <p className="text-2xl font-bold text-white font-mono">S/ {stats.yape.toFixed(2)}</p>
+                   <p className="text-2xl font-bold text-foreground font-mono">S/ {stats.yape.toFixed(2)}</p>
                 </div>
                 <div className="glass-card p-5">
                    <div className="flex items-center gap-3 mb-2">
                      <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center text-accent"><ArrowRightLeft size={16}/></div>
-                     <span className="text-white/70 font-medium text-sm">Transferencias</span>
+                     <span className="text-foreground/70 font-medium text-sm">Transferencias</span>
                    </div>
-                   <p className="text-2xl font-bold text-white font-mono">S/ {stats.transferencia.toFixed(2)}</p>
+                   <p className="text-2xl font-bold text-foreground font-mono">S/ {stats.transferencia.toFixed(2)}</p>
                 </div>
              </div>
 
               <div className="glass-card p-6">
-                <h3 className="text-lg font-bold text-white mb-4">Últimos Movimientos Pagados (Hoy)</h3>
+                <h3 className="text-lg font-bold text-foreground mb-4">Últimos Movimientos Pagados (Hoy)</h3>
                 
                 {loadingOrders ? (
-                   <div className="flex py-8 justify-center"><Loader2 className="animate-spin text-white/50" /></div>
+                   <div className="flex py-8 justify-center"><Loader2 className="animate-spin text-foreground/40" /></div>
                 ) : (
                   <div className="max-h-64 overflow-y-auto pr-2 scrollbar-hide">
                     <table className="w-full text-left border-collapse">
                       <thead>
-                        <tr className="border-b border-white/10 text-white/50 text-sm">
+                        <tr className="border-b border-black/5 text-foreground/40 text-sm">
                           <th className="pb-3 font-medium">Ticket</th>
                           <th className="pb-3 font-medium">Método</th>
                           <th className="pb-3 font-medium text-right">Monto</th>
@@ -218,16 +218,16 @@ export default function CajaPage() {
                       </thead>
                       <tbody className="text-sm">
                         {todayOrders.map((o) => (
-                          <tr key={o.id} className="border-b border-white/5">
+                          <tr key={o.id} className="border-b border-black/5">
                             <td className="py-3 font-mono">
                               <span className="text-primary font-bold">{o.ticketNumber || o.id.slice(0,6).toUpperCase()}</span>
-                              <span className="block text-white/40 text-[10px] font-sans normal-case">{o.customerName}</span>
+                              <span className="block text-foreground/40 text-[10px] font-sans normal-case">{o.customerName}</span>
                             </td>
                             <td className="py-3">
                               {o.payMethod === "YAPE" && <span className="px-2 py-1 rounded bg-[#742284]/20 text-[#742284] text-xs font-bold">YAPE</span>}
-                              {o.payMethod === "EFECTIVO" && <span className="px-2 py-1 rounded bg-white/10 text-white/70 text-xs font-bold">EFECTIVO</span>}
+                              {o.payMethod === "EFECTIVO" && <span className="px-2 py-1 rounded bg-black/5 text-foreground/70 text-xs font-bold">EFECTIVO</span>}
                               {o.payMethod === "TRANSFERENCIA" && <span className="px-2 py-1 rounded bg-accent/20 text-accent text-xs font-bold">TRANSFER</span>}
-                              {!o.payMethod && <span className="text-white/20 text-xs">—</span>}
+                              {!o.payMethod && <span className="text-foreground/20 text-xs">—</span>}
                             </td>
                             <td className="py-3 text-right text-success font-bold font-mono">+ {Number(o.total).toFixed(2)}</td>
                           </tr>

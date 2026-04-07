@@ -22,7 +22,7 @@ type Order = {
   payMethod?: string;
 };
 
-export default function PedidosPage() {
+export default function OrdenesPage() {
   const { user } = useStore();
   const [orders, setOrders] = useState<Order[]>([]);
   const [showHistory, setShowHistory] = useState(false);
@@ -109,37 +109,37 @@ export default function PedidosPage() {
     return (
       <div className="flex flex-col h-[420px] md:h-full glass-card p-4 overflow-hidden">
         <div className={`mb-4 flex items-center justify-between pb-2 border-b-2 ${colorClass}`}>
-          <h3 className="font-bold text-white uppercase tracking-wider text-sm">{title}</h3>
-          <span className="bg-white/10 text-white/70 text-xs px-2 py-0.5 rounded-full font-bold">{columnOrders.length}</span>
+          <h3 className="font-bold text-foreground uppercase tracking-wider text-sm">{title}</h3>
+          <span className="bg-primary/10 text-primary text-xs px-2 py-0.5 rounded-full font-bold">{columnOrders.length}</span>
         </div>
         
         {loading ? (
-          <div className="flex justify-center flex-1 items-center"><Loader2 className="animate-spin text-white/50" /></div>
+          <div className="flex justify-center flex-1 items-center"><Loader2 className="animate-spin text-primary/50" /></div>
         ) : (
           <div className="flex-1 space-y-3 overflow-y-auto pr-2 pb-4 scrollbar-hide">
             {columnOrders.map(order => (
-              <div key={order.id} className="bg-surface/50 p-4 hover:border-primary/50 transition-colors group border border-white/5 rounded-xl">
+              <div key={order.id} className="bg-white/80 p-4 hover:border-primary/50 transition-colors group border border-black/5 rounded-xl shadow-sm">
                 <div className="flex justify-between items-start mb-2">
                   <div className="flex items-center gap-2">
                     <Link href={`/admin/pedidos/ticket/${order.id}`} className="text-primary font-bold font-mono bg-primary/10 px-2 py-0.5 rounded-md text-sm hover:underline">{order.ticketNumber || order.id.slice(0, 6).toUpperCase()}</Link>
                     {user?.role === 'ADMIN' && (
                       <button 
                         onClick={() => setOrderToCancel(order)}
-                        className="text-white/20 hover:text-error transition-colors p-1 rounded-md hover:bg-error/10"
-                        title="Cancelar Pedido"
+                        className="text-foreground/20 hover:text-error transition-colors p-1 rounded-md hover:bg-error/10"
+                        title="Cancelar Orden"
                       >
                         <Trash2 size={14} />
                       </button>
                     )}
                   </div>
-                  <span className="text-white/40 text-xs">{order.date}</span>
+                  <span className="text-foreground/40 text-xs">{order.date}</span>
                 </div>
                 
-                <h4 className="text-white font-medium mb-1 line-clamp-1">{order.customerName}</h4>
+                <h4 className="text-foreground font-bold mb-1 line-clamp-1">{order.customerName}</h4>
                 
-                <div className="flex items-center gap-4 text-xs text-white/50 mb-3">
+                <div className="flex items-center gap-4 text-xs text-foreground/50 mb-3">
                   <span className="flex items-center gap-1"><PackageSearch size={14}/> {order.items?.length || 0} serv.</span>
-                  <span className="font-mono bg-white/5 px-2 py-0.5 rounded text-white/70">S/ {Number(order.total).toFixed(2)}</span>
+                  <span className="font-mono bg-primary/5 px-2 py-0.5 rounded text-primary font-bold">S/ {Number(order.total).toFixed(2)}</span>
                 </div>
 
                 {/* Bloque Superior: Avisos Activos de Deuda o Validación */}
@@ -163,7 +163,7 @@ export default function PedidosPage() {
                 )}
 
                 {/* Fila Inferior (Siempre visible): Estado de Pago + Estado de Lavandería */}
-                <div className="flex gap-2 mt-2 pt-3 border-t border-white/5">
+                <div className="flex gap-2 mt-2 pt-3 border-t border-black/5">
                   {/* Columna Izquierda: Estado de Pago */}
                   <div className="flex-1 flex flex-col justify-center">
                      {order.paymentStatus === 'PAID' && (
@@ -206,7 +206,7 @@ export default function PedidosPage() {
             ))}
 
             {columnOrders.length === 0 && (
-              <div className="text-center py-8 text-white/30 border border-dashed border-white/10 rounded-xl bg-white/[0.02]">
+              <div className="text-center py-8 text-foreground/30 border border-dashed border-black/10 rounded-xl bg-white/20">
                   <p className="text-sm">Sin tickets</p>
               </div>
             )}
@@ -221,21 +221,21 @@ export default function PedidosPage() {
       {/* Cabecera */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 shrink-0">
         <div>
-          <h1 className="text-3xl font-bold text-white mb-2">Pedidos</h1>
-          <p className="text-white/60">Gestiona el flujo de lavado e informa a tus clientes.</p>
+          <h1 className="text-3xl font-bold text-foreground mb-2">Órdenes</h1>
+          <p className="text-foreground/60">Gestiona el flujo de lavado e informa a tus clientes.</p>
         </div>
         
         <div className="flex items-center gap-3 w-full sm:w-auto">
           <div className="relative flex-1 sm:w-64">
-             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" size={18} />
+             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-foreground/40" size={18} />
              <input type="text" placeholder="Buscar ticket o cliente..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
-               className="w-full bg-[#18181b] border border-white/10 rounded-xl pl-10 pr-4 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+               className="w-full bg-white/50 border border-black/10 rounded-xl pl-10 pr-4 py-2 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary shadow-sm"
              />
           </div>
           
           <button 
             onClick={() => setShowHistory(true)}
-            className="bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-xl px-4 py-2 flex items-center justify-center gap-2 transition-all relative"
+            className="bg-white/20 hover:bg-white/40 text-foreground border border-black/10 rounded-xl px-4 py-2 flex items-center justify-center gap-2 transition-all relative"
           >
             <History size={18} />
             <span className="hidden sm:inline">Entregados</span>
@@ -248,7 +248,7 @@ export default function PedidosPage() {
 
           <Link href="/admin/pedidos/nuevo" className="bg-primary hover:bg-primary-hover active:scale-95 transition-all text-white font-bold rounded-xl px-4 py-2 flex items-center justify-center gap-2 shadow-lg shadow-primary/20 shrink-0">
             <Plus size={20} />
-            <span className="hidden sm:inline">Nuevo Ticket</span>
+            <span className="hidden sm:inline">Nueva Orden</span>
           </Link>
         </div>
       </div>
@@ -267,48 +267,48 @@ export default function PedidosPage() {
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] animate-in fade-in duration-300" onClick={() => setShowHistory(false)} />
           
           {/* Panel */}
-          <div className="fixed right-0 top-0 h-full w-full max-w-[400px] bg-[#09090b] border-l border-white/10 z-[101] shadow-2xl animate-in slide-in-from-right duration-300 flex flex-col">
-            <div className="p-6 border-b border-white/10 flex items-center justify-between bg-surface/30">
+          <div className="fixed right-0 top-0 h-full w-full max-w-[400px] bg-[#c7ede8] border-l border-black/10 z-[101] shadow-2xl animate-in slide-in-from-right duration-300 flex flex-col">
+            <div className="p-6 border-b border-black/10 flex items-center justify-between bg-white/40">
               <div>
-                <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
                   <History size={20} className="text-primary" /> Entregados Hoy
                 </h2>
-                <p className="text-white/40 text-xs">Cierre preliminar del día</p>
+                <p className="text-foreground/40 text-xs">Cierre preliminar del día</p>
               </div>
               <button 
                 onClick={() => setShowHistory(false)}
-                className="p-2 hover:bg-white/5 rounded-full transition-colors text-white/50 hover:text-white"
+                className="p-2 hover:bg-black/5 rounded-full transition-colors text-foreground/50 hover:text-foreground"
               >
                 <X size={20} />
               </button>
             </div>
 
-            <div className="p-6 bg-primary/5 border-b border-white/10 flex items-center justify-between">
+            <div className="p-6 bg-primary/5 border-b border-black/10 flex items-center justify-between">
               <div>
-                <span className="text-xs text-white/40 uppercase font-black">Cobrado del día</span>
+                <span className="text-xs text-foreground/40 uppercase font-black">Cobrado del día</span>
                 <div className="text-3xl font-black text-primary">S/ {totalDelivered.toFixed(2)}</div>
               </div>
               <div className="text-right">
-                <span className="text-xs text-white/40 uppercase font-black italic">Pedidos</span>
-                <div className="text-2xl font-black text-white">{deliveredToday.length}</div>
+                <span className="text-xs text-foreground/40 uppercase font-black italic">Órdenes</span>
+                <div className="text-2xl font-black text-foreground">{deliveredToday.length}</div>
               </div>
             </div>
 
             <div className="flex-1 overflow-y-auto p-4 space-y-3">
               {deliveredToday.length === 0 ? (
-                <div className="h-full flex flex-col items-center justify-center text-white/20 text-center px-10">
-                  <PackageSearch size={48} className="mb-4 opacity-5" />
-                  <p className="text-sm font-medium">Aún no se han entregado pedidos hoy.</p>
+                <div className="h-full flex flex-col items-center justify-center text-foreground/20 text-center px-10">
+                   <PackageSearch size={48} className="mb-4 opacity-5" />
+                   <p className="text-sm font-medium">Aún no se han entregado órdenes hoy.</p>
                 </div>
               ) : (
                 deliveredToday.map(order => (
-                  <div key={order.id} className="bg-white/[0.03] border border-white/5 p-4 rounded-2xl flex items-center justify-between group hover:border-primary/30 transition-all">
+                  <div key={order.id} className="bg-white/50 border border-black/5 p-4 rounded-2xl flex items-center justify-between group hover:border-primary/30 transition-all">
                     <div className="flex flex-col">
                       <span className="text-primary font-bold font-mono text-[10px] bg-primary/10 px-2 py-0.5 rounded-md self-start mb-1">{order.ticketNumber}</span>
-                      <span className="text-white font-medium text-sm line-clamp-1">{order.customerName}</span>
+                      <span className="text-foreground font-medium text-sm line-clamp-1">{order.customerName}</span>
                     </div>
                     <div className="text-right flex flex-col items-end">
-                      <span className="text-white font-bold text-sm">S/ {Number(order.total).toFixed(2)}</span>
+                      <span className="text-foreground font-bold text-sm">S/ {Number(order.total).toFixed(2)}</span>
                       <span className="flex items-center gap-1 text-[10px] text-success font-bold mt-1">
                         <Check size={12} /> {order.payMethod || 'Pagado'}
                       </span>
@@ -318,10 +318,10 @@ export default function PedidosPage() {
               )}
             </div>
 
-            <div className="p-6 border-t border-white/10 bg-surface/30">
+            <div className="p-6 border-t border-black/10 bg-white/20">
               <Link 
                 href="/admin/caja" 
-                className="w-full bg-white/5 hover:bg-white/10 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-all border border-white/10"
+                className="w-full bg-primary/10 hover:bg-primary/20 text-primary font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-all border border-primary/20"
               >
                 Ir a Caja Completa
               </Link>
@@ -332,13 +332,13 @@ export default function PedidosPage() {
 
       {/* Voucher Validation Modal */}
       {previewVoucherOrder && (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-[#1a1a1a] sm:border border-white/10 sm:rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col h-full sm:h-auto sm:max-h-[90vh] relative">
+        <div className="fixed inset-0 z-[120] flex items-center justify-center sm:p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white sm:border border-black/10 sm:rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col h-full sm:h-auto sm:max-h-[90vh] relative">
             
             {/* Close Button */}
             <button 
                 onClick={() => setPreviewVoucherOrder(null)} 
-                className="absolute top-4 right-4 z-10 bg-black/50 hover:bg-black/80 backdrop-blur-md text-white p-2 rounded-full transition-colors"
+                className="absolute top-4 right-4 z-10 bg-black/10 hover:bg-black/20 backdrop-blur-md text-foreground p-2 rounded-full transition-colors"
             >
                <X size={20} />
             </button>
@@ -354,42 +354,42 @@ export default function PedidosPage() {
                )}
             </div>
 
-            <div className="p-5 border-t border-white/10 bg-[#222] shrink-0">
+            <div className="p-5 border-t border-black/5 bg-white shrink-0">
                <div className="flex justify-between items-end mb-4">
                   <div>
-                    <p className="text-sm text-white/50 mb-1">Ticket a Validar</p>
-                    <p className="text-white font-bold text-xl">{previewVoucherOrder.ticketNumber || (previewVoucherOrder.id.slice(0,6).toUpperCase())}</p>
+                    <p className="text-sm text-foreground/40 mb-1">Ticket a Validar</p>
+                    <p className="text-foreground font-bold text-xl">{previewVoucherOrder.ticketNumber || (previewVoucherOrder.id.slice(0,6).toUpperCase())}</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm text-white/50 mb-1">Monto Cobrado</p>
-                    <p className="text-[#00E5C0] font-bold text-3xl font-mono tracking-tighter leading-none">S/ {Number(previewVoucherOrder.total).toFixed(2)}</p>
+                    <p className="text-sm text-foreground/40 mb-1">Monto Cobrado</p>
+                    <p className="text-primary font-bold text-3xl font-mono tracking-tighter leading-none">S/ {Number(previewVoucherOrder.total).toFixed(2)}</p>
                   </div>
                </div>
 
-               <div className="flex gap-3">
-                 <button 
-                   onClick={async (e) => {
-                      e.stopPropagation();
-                      if (!user?.storeId) return;
-                      const orderRef = doc(db, `stores/${user.storeId}/orders`, previewVoucherOrder.id);
-                      await updateDoc(orderRef, { paymentStatus: 'UNPAID', voucherUrl: null });
-                      setPreviewVoucherOrder(null);
-                   }}
-                   className="flex-1 bg-white/5 hover:bg-error/20 text-white hover:text-error py-4 rounded-xl font-bold transition-all active:scale-95 border border-white/5 hover:border-error/30 text-sm"
-                 >
-                   Rechazar
-                 </button>
-                 <button 
-                   onClick={(e) => {
-                      e.stopPropagation();
-                      confirmPayment(previewVoucherOrder.id, 'YAPE');
-                      setPreviewVoucherOrder(null);
-                   }} 
-                   className="flex-[2] bg-[#00E5C0] hover:bg-[#00E5C0]/80 text-[#004d40] py-4 rounded-xl font-black text-sm flex items-center justify-center gap-2 transition-all active:scale-95 shadow-[0_0_20px_rgba(0,229,192,0.3)]"
-                 >
-                   APROBAR PAGO YAPE <CheckCircle size={18} />
-                 </button>
-               </div>
+                <div className="flex gap-3">
+                  <button 
+                    onClick={async (e) => {
+                       e.stopPropagation();
+                       if (!user?.storeId) return;
+                       const orderRef = doc(db, `stores/${user.storeId}/orders`, previewVoucherOrder.id);
+                       await updateDoc(orderRef, { paymentStatus: 'UNPAID', voucherUrl: null });
+                       setPreviewVoucherOrder(null);
+                    }}
+                    className="flex-1 bg-black/5 hover:bg-error/10 text-foreground hover:text-error py-4 rounded-xl font-bold transition-all active:scale-95 border border-black/5 hover:border-error/20 text-sm"
+                  >
+                    Rechazar
+                  </button>
+                  <button 
+                    onClick={(e) => {
+                       e.stopPropagation();
+                       confirmPayment(previewVoucherOrder.id, 'YAPE');
+                       setPreviewVoucherOrder(null);
+                    }} 
+                    className="flex-[2] bg-[#742284] hover:bg-[#742284]/90 text-white py-4 rounded-xl font-black text-sm flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg shadow-[#742284]/20"
+                  >
+                    APROBAR PAGO YAPE <CheckCircle size={18} />
+                  </button>
+                </div>
             </div>
 
           </div>
@@ -398,9 +398,9 @@ export default function PedidosPage() {
       {/* Cancellation Reason Modal */}
       {orderToCancel && (
         <div className="fixed inset-0 z-[130] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-[#1a1a1a] border border-white/10 rounded-3xl w-full max-w-md shadow-2xl overflow-hidden p-6">
-            <h3 className="text-xl font-bold text-white mb-2">Cancelar Pedido</h3>
-            <p className="text-white/50 text-sm mb-6">
+          <div className="bg-white border border-black/10 rounded-3xl w-full max-w-md shadow-2xl overflow-hidden p-6">
+            <h3 className="text-xl font-bold text-foreground mb-2">Cancelar Orden</h3>
+            <p className="text-foreground/50 text-sm mb-6">
               Estás por cancelar el ticket <span className="text-primary font-mono font-bold">#{orderToCancel.ticketNumber}</span>. 
               Por favor, indica el motivo de la cancelación.
             </p>
@@ -408,8 +408,8 @@ export default function PedidosPage() {
             <textarea
               value={cancelReason}
               onChange={(e) => setCancelReason(e.target.value)}
-              placeholder="Ej: El cliente se arrepintió, error en el pedido..."
-              className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white text-sm focus:border-primary/50 outline-none transition-all h-32 mb-6 resize-none"
+              placeholder="Ej: El cliente se arrepintió, error en la orden..."
+              className="w-full bg-black/5 border border-black/10 rounded-xl p-4 text-foreground text-sm focus:border-primary/50 outline-none transition-all h-32 mb-6 resize-none"
               autoFocus
             />
 
@@ -419,7 +419,7 @@ export default function PedidosPage() {
                   setOrderToCancel(null);
                   setCancelReason("");
                 }} 
-                className="flex-1 bg-white/5 hover:bg-white/10 text-white py-3 rounded-xl font-bold transition-all"
+                className="flex-1 bg-black/5 hover:bg-black/10 text-foreground py-3 rounded-xl font-bold transition-all"
               >
                 Cerrar
               </button>

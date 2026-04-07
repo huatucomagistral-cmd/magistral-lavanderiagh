@@ -108,8 +108,8 @@ export default function RegisterPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="animate-spin text-white mb-4" size={40} />
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center">
+        <Loader2 className="animate-spin text-primary mb-4" size={40} />
       </div>
     );
   }
@@ -129,8 +129,8 @@ export default function RegisterPage() {
                className="h-12 w-auto object-contain" 
              />
            </div>
-           <h1 className="text-2xl font-bold text-white tracking-tight">Crea tu Entorno</h1>
-           <p className="text-white/50 text-sm mt-2">
+           <h1 className="text-2xl font-bold text-foreground tracking-tight">Crea tu Entorno</h1>
+           <p className="text-foreground/50 text-sm mt-2">
              {currentFbUser 
                ? "Completa los datos de tu lavandería para terminar el registro."
                : "Crea tu cuenta administradora gratuita en segundos."}
@@ -146,17 +146,17 @@ export default function RegisterPage() {
         <form onSubmit={handleSubmit} className="space-y-4">
           
           {!currentFbUser && (
-             <div className="flex flex-col items-center justify-center p-6 bg-white/5 rounded-xl border border-white/10 text-center mb-6">
-                <p className="text-white/70 mb-4 text-sm">Por seguridad, debes utilizar tu cuenta de Google para registrar tu negocio y evitar spam.</p>
-                <button type="button" onClick={() => router.push("/login")} className="bg-white text-black hover:bg-gray-100 font-bold px-6 py-2 rounded-lg text-sm transition-colors">Volver y Registrarse con Google</button>
+             <div className="flex flex-col items-center justify-center p-6 bg-black/5 rounded-xl border border-black/10 text-center mb-6">
+                <p className="text-foreground/70 mb-4 text-sm">Por seguridad, debes utilizar tu cuenta de Google para registrar tu negocio y evitar spam.</p>
+                <button type="button" onClick={() => router.push("/login")} className="bg-white text-foreground hover:bg-gray-50 font-bold px-6 py-2 rounded-lg text-sm border border-black/10 transition-colors shadow-sm">Volver y Registrarse con Google</button>
              </div>
           )}
 
           {currentFbUser && (
-            <div className="bg-white/5 border border-white/10 rounded-xl p-4 mb-4 flex justify-between items-center">
+            <div className="bg-black/5 border border-black/10 rounded-xl p-4 mb-4 flex justify-between items-center">
                <div>
-                 <p className="text-xs text-white/50">Logueado como</p>
-                 <p className="text-sm font-bold text-white truncate">{currentFbUser.email}</p>
+                 <p className="text-xs text-foreground/50">Logueado como</p>
+                 <p className="text-sm font-bold text-foreground truncate">{currentFbUser.email}</p>
                </div>
                <button type="button" onClick={handleLogout} className="p-2 bg-error/10 text-error hover:bg-error/20 rounded-lg transition-colors" title="Cambiar de cuenta">
                   <LogOut size={16} />
@@ -167,28 +167,28 @@ export default function RegisterPage() {
           {currentFbUser && (
             <>
               <div>
-                <label className="block text-sm font-medium text-white/70 mb-1">Nombre Comercial</label>
+                <label className="block text-sm font-medium text-foreground/70 mb-1">Nombre Comercial</label>
                 <div className="relative">
-                  <Store className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" size={18} />
+                  <Store className="absolute left-3 top-1/2 -translate-y-1/2 text-foreground/40" size={18} />
                   <input type="text" value={storeName} onChange={e => setStoreName(e.target.value)} required
-                    className="w-full bg-[#18181b] border border-white/10 rounded-xl pl-10 pr-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-primary transition-all"
+                    className="w-full bg-white border border-black/10 rounded-xl pl-10 pr-4 py-3 text-foreground focus:outline-none focus:ring-2 focus:ring-primary transition-all shadow-sm"
                     placeholder="Ej: Lavamatic Premium"
                   />
                 </div>
               </div>
 
-              <div>
-                 <label className="block text-sm font-medium text-white/70 mb-1">Enlace Personalizado</label>
+               <div>
+                 <label className="block text-sm font-medium text-foreground/70 mb-1">Enlace Personalizado</label>
                  <div className="relative flex items-stretch">
-                   <span className="bg-white/5 border border-white/10 border-r-0 rounded-l-xl px-3 flex items-center text-white/40 text-sm">
+                   <span className="bg-black/5 border border-black/10 border-r-0 rounded-l-xl px-3 flex items-center text-foreground/40 text-sm">
                      <LinkIcon size={14} className="mr-1" /> /
                    </span>
                    <input type="text" value={slug} onChange={e => handleSlugChange(e.target.value)} required
-                     className="flex-1 bg-[#18181b] border border-white/10 rounded-r-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-primary transition-all font-mono text-sm"
+                     className="flex-1 bg-white border border-black/10 rounded-r-xl px-4 py-3 text-foreground focus:outline-none focus:ring-2 focus:ring-primary transition-all font-mono text-sm shadow-sm"
                      placeholder="lavamatic"
                    />
                  </div>
-                 <p className="text-xs text-white/40 mt-2 font-mono">Tus clientes entrarán a: <br/>magistral.pe/<span className="text-primary">{slug || "lavamatic"}</span></p>
+                 <p className="text-xs text-foreground/40 mt-2 font-mono">Tus clientes entrarán a: <br/>magistral.pe/<span className="text-primary font-bold">{slug || "lavamatic"}</span></p>
               </div>
 
               <button type="submit" disabled={isSubmitting} className="w-full bg-primary hover:bg-primary-hover active:scale-95 transition-all text-white font-bold rounded-xl py-3.5 mt-6 flex items-center justify-center gap-2">

@@ -177,22 +177,22 @@ export default function StorefrontPage({ params }: PublicPageProps) {
     <div className="flex flex-col gap-10 animate-in slide-in-from-bottom-6 fade-in duration-700 pb-10">
       
       {/* Hero Section & Search */}
-      <section className="text-center py-12 px-4 rounded-3xl glass relative overflow-hidden flex flex-col items-center border border-white/10 mt-4 md:mt-8">
-        <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight mb-4 z-10">
+      <section className="text-center py-12 px-4 rounded-3xl glass relative overflow-hidden flex flex-col items-center border border-black/5 mt-4 md:mt-8 shadow-sm">
+        <h1 className="text-4xl md:text-5xl font-black text-foreground tracking-tight mb-4 z-10">
           ¿En qué estado está tu <span className="text-gradient">ropa</span>?
         </h1>
-        <p className="text-lg text-white/60 mb-8 max-w-lg mx-auto z-10">
+        <p className="text-lg text-foreground/60 mb-8 max-w-lg mx-auto z-10">
           Ingresa el número de tu ticket para rastrear el proceso de lavado, secado y planchado en tiempo real.
         </p>
 
-        <form onSubmit={handleSearch} className="w-full max-w-md bg-black/50 backdrop-blur-md rounded-2xl p-2 flex items-center border border-white/10 mx-auto z-10 shadow-2xl relative transition-all focus-within:ring-2 focus-within:ring-primary/50">
+        <form onSubmit={handleSearch} className="w-full max-w-md bg-white/80 backdrop-blur-md rounded-2xl p-2 flex items-center border border-black/10 mx-auto z-10 shadow-xl relative transition-all focus-within:ring-2 focus-within:ring-primary/50">
           <input 
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Nº de Ticket (ej. 260401-015)"
             disabled={isSearching}
-            className="flex-1 bg-transparent border-none appearance-none focus:outline-none focus:ring-0 text-white placeholder:text-white/30 px-4 py-3 uppercase"
+            className="flex-1 bg-transparent border-none appearance-none focus:outline-none focus:ring-0 text-foreground placeholder:text-foreground/30 px-4 py-3 uppercase"
           />
           <button type="submit" disabled={isSearching || !searchQuery} className="bg-primary hover:bg-primary-hover active:scale-95 disabled:opacity-50 text-white font-bold rounded-xl px-6 py-3 transition-all flex items-center gap-2">
             {isSearching ? <span className="animate-spin w-4 h-4 border-2 border-white/30 border-t-white rounded-full inline-block" /> : <Search size={18} />}
@@ -211,76 +211,76 @@ export default function StorefrontPage({ params }: PublicPageProps) {
 
              <div className="flex justify-between items-start mb-8 relative z-10">
                <div>
-                  <h2 className="text-2xl font-bold text-white uppercase flex items-center gap-2">Ticket {result.ticket}</h2>
-                  <p className="text-white/50 text-sm mt-1">Recibido: {result.date}</p>
+                  <h2 className="text-2xl font-bold text-foreground uppercase flex items-center gap-2">Ticket {result.ticket}</h2>
+                  <p className="text-foreground/50 text-sm mt-1">Recibido: {result.date}</p>
                </div>
                <div className="text-right">
                   <span className="font-mono text-xl font-bold text-primary">S/ {result.total.toFixed(2)}</span>
-                  <p className="text-white/50 text-xs mt-1">Total a pagar ({result.items} prendas)</p>
+                  <p className="text-foreground/60 text-xs mt-1">Total a pagar ({result.items} prendas)</p>
                </div>
              </div>
 
              {/* Tracking Visual */}
              <div className="relative mb-10 pt-4 z-10">
-               <div className="absolute top-8 left-0 w-full h-1 bg-white/10 rounded-full">
+               <div className="absolute top-8 left-0 w-full h-1 bg-black/5 rounded-full">
                   <div className={`h-full bg-primary rounded-full transition-all duration-1000 ${result.status === 'RECIBIDO' ? 'w-1/4' : result.status === 'EN_PROCESO' ? 'w-1/2' : 'w-full'}`} />
                </div>
 
                <div className="flex justify-between relative mt-2">
                  <div className="flex flex-col items-center gap-2">
-                   <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 z-10 bg-background transition-colors ${['RECIBIDO', 'EN_PROCESO', 'LISTO'].includes(result.status) ? 'border-primary text-primary' : 'border-white/20 text-white/30'}`}>
+                   <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 z-10 bg-background transition-colors ${['RECIBIDO', 'EN_PROCESO', 'LISTO'].includes(result.status) ? 'border-primary text-primary' : 'border-black/10 text-foreground/30'}`}>
                       <Package size={20} />
                    </div>
-                   <span className="text-xs font-bold text-white/70">Recibido</span>
+                   <span className="text-xs font-bold text-foreground/70">Recibido</span>
                  </div>
 
                  <div className="flex flex-col items-center gap-2">
-                   <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 z-10 bg-background transition-colors ${['EN_PROCESO', 'LISTO'].includes(result.status) ? 'border-primary text-primary' : 'border-white/20 text-white/30'}`}>
+                   <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 z-10 bg-background transition-colors ${['EN_PROCESO', 'LISTO'].includes(result.status) ? 'border-primary text-primary' : 'border-black/10 text-foreground/30'}`}>
                       <Clock size={20} className={result.status === 'EN_PROCESO' ? 'animate-spin-slow' : ''} />
                    </div>
-                   <span className="text-xs font-bold text-white/70">Lavando</span>
+                   <span className="text-xs font-bold text-foreground/70">Lavando</span>
                  </div>
 
                  <div className="flex flex-col items-center gap-2">
-                   <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 z-10 bg-background transition-colors ${result.status === 'LISTO' ? 'border-success text-success bg-success/10' : 'border-white/20 text-white/30'}`}>
+                   <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 z-10 bg-background transition-colors ${result.status === 'LISTO' ? 'border-success text-success bg-success/10' : 'border-black/10 text-foreground/30'}`}>
                       <CheckCircle size={20} />
                    </div>
-                   <span className="text-xs font-bold text-white/70">Listo 🙌</span>
+                   <span className="text-xs font-bold text-foreground/70">Listo 🙌</span>
                  </div>
                </div>
              </div>
 
              {/* CTA Pago (Si no está pagado ni en verificación) */}
              {result.paymentStatus === 'UNPAID' && (
-               <div className="mt-8 pt-6 border-t border-dashed border-white/20 relative z-10 w-full overflow-hidden">
+               <div className="mt-8 pt-6 border-t border-dashed border-black/10 relative z-10 w-full overflow-hidden">
                   
                   {!showPayment ? (
                       <div className="text-center">
-                         <h3 className="text-lg font-bold text-white mb-2">
+                         <h3 className="text-lg font-bold text-foreground mb-2">
                            {result.status === 'LISTO' ? '¡Tu ropa ya está lista! ✨' : '¿Quieres recoger tu ropa más rápido? ⚡'}
                          </h3>
-                         <p className="text-sm text-white/60 mb-6">Deja tu pago listo por Yape desde aquí mismo y ahorra tiempo.</p>
+                         <p className="text-sm text-foreground/60 mb-6">Deja tu pago listo por Yape desde aquí mismo y ahorra tiempo.</p>
                          
                          <button onClick={() => setShowPayment(true)} className="bg-[#742284] hover:bg-[#742284]/80 active:scale-95 text-white w-full sm:w-auto px-8 mx-auto font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-[#742284]/20">
                            Pagar con Yape <ChevronDown size={18} />
                          </button>
                       </div>
                   ) : (
-                      <div className="bg-[#111111]/90 rounded-2xl p-5 border border-white/10 mt-2 slide-in-from-top-4 animate-in fade-in relative shadow-2xl">
-                         <div className="flex justify-between items-start mb-4 border-b border-white/10 pb-4">
+                      <div className="bg-white rounded-2xl p-5 border border-black/10 mt-2 slide-in-from-top-4 animate-in fade-in relative shadow-xl">
+                         <div className="flex justify-between items-start mb-4 border-b border-black/10 pb-4">
                            <div>
-                              <h4 className="text-white font-bold text-lg flex items-center gap-2">
+                              <h4 className="text-foreground font-bold text-lg flex items-center gap-2">
                                 <span className="w-6 h-6 rounded-md bg-[#742284] text-white flex items-center justify-center text-xs font-sans tracking-tighter shadow-md">Y</span> Yape
                               </h4>
                               <p className="text-primary font-mono text-xl mt-1 font-bold">S/ {result.total.toFixed(2)}</p>
                            </div>
-                           <button onClick={() => {setShowPayment(false); setFile(null);}} className="text-white/40 hover:text-white text-sm px-2 py-1 bg-white/5 rounded-lg active:scale-95">Cerrar</button>
+                           <button onClick={() => {setShowPayment(false); setFile(null);}} className="text-foreground/40 hover:text-foreground text-sm px-2 py-1 bg-black/5 rounded-lg active:scale-95">Cerrar</button>
                          </div>
 
                          {/* Paso 1: Copiar Numero */}
-                         <div className="mb-6 bg-black/40 p-4 rounded-xl border border-white/5">
-                            <span className="text-[#00E5C0] font-bold text-xs uppercase tracking-wider mb-2 block">Paso 1</span>
-                            <p className="text-sm text-white/80 mb-3">Copia el número y envía el Yape a nombre de <strong className="text-white">{storeData?.yapeName || "la tienda"}</strong>.</p>
+                         <div className="mb-6 bg-black/5 p-4 rounded-xl border border-black/5">
+                            <span className="text-primary font-bold text-xs uppercase tracking-wider mb-2 block">Paso 1</span>
+                            <p className="text-sm text-foreground/80 mb-3">Copia el número y envía el Yape a nombre de <strong className="text-foreground">{storeData?.yapeName || "la tienda"}</strong>.</p>
                             
                             {storeData?.yapeNumber ? (
                               <button 
@@ -291,23 +291,23 @@ export default function StorefrontPage({ params }: PublicPageProps) {
                                  {copied ? "¡Copiado!" : <>Copiar número: {storeData.yapeNumber} <Copy size={16} /></>}
                               </button>
                             ) : (
-                              <p className="text-white/50 text-xs italic text-center p-2 bg-white/5 rounded-lg">El administrador aún no ha configurado su número oficial.</p>
+                              <p className="text-foreground/50 text-xs italic text-center p-2 bg-black/5 rounded-lg">El administrador aún no ha configurado su número oficial.</p>
                             )}
                          </div>
 
                          {/* Paso 2: Subir Captura */}
-                         <div className="bg-black/40 p-4 rounded-xl border border-white/5">
-                            <span className="text-[#00E5C0] font-bold text-xs uppercase tracking-wider mb-2 block">Paso 2</span>
-                            <p className="text-sm text-white/80 mb-3">Sube aquí la captura de pantalla de tu depósito para validarlo.</p>
+                         <div className="bg-black/5 p-4 rounded-xl border border-black/5">
+                            <span className="text-primary font-bold text-xs uppercase tracking-wider mb-2 block">Paso 2</span>
+                            <p className="text-sm text-foreground/80 mb-3">Sube aquí la captura de pantalla de tu depósito para validarlo.</p>
                             
                             <form onSubmit={handleSubmitVoucher}>
-                              <label htmlFor="file-upload" className={`w-full border-2 ${file ? 'border-[#00E5C0]/50 bg-[#00E5C0]/10' : 'border-dashed border-white/20 hover:border-[#742284]/50 bg-black/50'} rounded-xl px-4 py-6 text-center cursor-pointer flex flex-col items-center justify-center transition-all group`}>
+                              <label htmlFor="file-upload" className={`w-full border-2 ${file ? 'border-primary/50 bg-primary/10' : 'border-dashed border-black/20 hover:border-[#742284]/50 bg-white'} rounded-xl px-4 py-6 text-center cursor-pointer flex flex-col items-center justify-center transition-all group`}>
                                 {file ? (
-                                  <CheckCircle size={28} className="text-[#00E5C0] mb-2" />
+                                  <CheckCircle size={28} className="text-primary mb-2" />
                                 ) : (
-                                  <UploadCloud size={28} className="text-white/30 group-hover:text-[#742284] mb-2 transition-colors" />
+                                  <UploadCloud size={28} className="text-foreground/30 group-hover:text-[#742284] mb-2 transition-colors" />
                                 )}
-                                <span className={`font-medium text-sm line-clamp-1 break-all px-2 ${file ? 'text-[#00E5C0]' : 'text-white/70'}`}>
+                                <span className={`font-medium text-sm line-clamp-1 break-all px-2 ${file ? 'text-primary' : 'text-foreground/70'}`}>
                                   {file ? file.name : "Toca para abrir tu galería"}
                                 </span>
                               </label>
@@ -315,8 +315,8 @@ export default function StorefrontPage({ params }: PublicPageProps) {
                                   if (e.target.files && e.target.files.length > 0) setFile(e.target.files[0]);
                               }} />
                               
-                              <button type="submit" disabled={isSubmitting || !file} className="w-full bg-white hover:bg-gray-200 text-black font-extrabold py-3 rounded-xl flex items-center justify-center gap-2 transition-transform active:scale-95 disabled:opacity-30 mt-4 disabled:pointer-events-none text-sm">
-                                {isSubmitting ? <span className="animate-spin border-2 border-black/30 border-t-black rounded-full w-4 h-4" /> : "Enviar Comprobante"}
+                              <button type="submit" disabled={isSubmitting || !file} className="w-full bg-primary hover:bg-primary-hover text-white font-extrabold py-3 rounded-xl flex items-center justify-center gap-2 transition-transform active:scale-95 disabled:opacity-30 mt-4 disabled:pointer-events-none text-sm shadow-lg shadow-primary/20">
+                                {isSubmitting ? <span className="animate-spin border-2 border-white/30 border-t-white rounded-full w-4 h-4" /> : "Enviar Comprobante"}
                               </button>
                             </form>
                          </div>
@@ -326,7 +326,7 @@ export default function StorefrontPage({ params }: PublicPageProps) {
              )}
 
              {result.paymentStatus === 'PENDING_VERIFICATION' && (
-                <div className="mt-8 pt-6 border-t border-dashed border-white/10 text-center relative z-10">
+                <div className="mt-8 pt-6 border-t border-dashed border-black/5 text-center relative z-10">
                   <p className="text-sm text-primary flex items-center justify-center gap-2 font-bold animate-pulse">
                      <Clock size={16} /> Pago en verificación por el administrador...
                   </p>
@@ -334,17 +334,17 @@ export default function StorefrontPage({ params }: PublicPageProps) {
              )}
 
              {result.paymentStatus === 'PAID' && (
-                <div className="mt-8 pt-6 border-t border-dashed border-white/10 text-center relative z-10">
+                <div className="mt-8 pt-6 border-t border-dashed border-black/5 text-center relative z-10">
                   <p className="text-sm text-success flex items-center justify-center gap-2 font-bold">
-                     <CheckCircle size={16} /> Pedido Pagado Correctamente
+                     <CheckCircle size={16} /> Orden Pagada Correctamente
                   </p>
                 </div>
              )}
 
              {result.status === 'EN_PROCESO' && (
-                <div className="mt-8 pt-6 border-t border-dashed border-white/10 text-center relative z-10">
+                <div className="mt-8 pt-6 border-t border-dashed border-black/5 text-center relative z-10">
                   <p className="text-sm text-warning/80 flex items-center justify-center gap-2">
-                     <Clock size={16} /> Estamos trabajando en tu pedido, te avisaremos cuando esté listo.
+                     <Clock size={16} /> Estamos trabajando en tu orden, te avisaremos cuando esté listo.
                   </p>
                 </div>
              )}
@@ -357,8 +357,8 @@ export default function StorefrontPage({ params }: PublicPageProps) {
       <section className="mt-8">
         <div className="flex justify-between items-end mb-6">
            <div>
-             <h2 className="text-2xl font-bold text-white mb-2">Tarifario de Servicios</h2>
-             <p className="text-white/50 text-sm">Precios transparentes. Calcula tu presupuesto fácilmente.</p>
+             <h2 className="text-2xl font-bold text-foreground mb-2">Tarifario de Servicios</h2>
+             <p className="text-foreground/50 text-sm">Precios transparentes. Calcula tu presupuesto fácilmente.</p>
            </div>
         </div>
 
@@ -369,32 +369,32 @@ export default function StorefrontPage({ params }: PublicPageProps) {
                  <div key={s.id} className="glass-card p-4 flex flex-col relative group cursor-pointer hover:border-primary/50 transition-colors"
                       onClick={() => setCalcItems(prev => ({...prev, [s.id]: (prev[s.id] || 0) + 1}))}>
                     <div className="flex-1 mb-4">
-                      <h3 className="text-white font-bold leading-tight line-clamp-2 text-sm">{s.name}</h3>
-                      <p className="font-mono text-primary font-bold mt-1 text-sm">S/ {Number(s.price).toFixed(2)} <span className="text-[10px] text-white/30">/{s.type}</span></p>
+                      <h3 className="text-foreground font-bold leading-tight line-clamp-2 text-sm">{s.name}</h3>
+                      <p className="font-mono text-primary font-bold mt-1 text-sm">S/ {Number(s.price).toFixed(2)} <span className="text-[10px] text-foreground/30">/{s.type}</span></p>
                     </div>
-                    <button className="bg-white/5 hover:bg-primary/20 text-white rounded-lg py-2 text-xs font-bold w-full transition-colors flex items-center justify-center gap-1">
+                    <button className="bg-black/5 hover:bg-primary/20 text-foreground hover:text-white rounded-lg py-2 text-xs font-bold w-full transition-colors flex items-center justify-center gap-1">
                       <Plus size={14} /> Añadir a cálculo
                     </button>
                  </div>
               ))}
               {services.length === 0 && (
-                 <div className="col-span-2 sm:col-span-3 text-center py-10 bg-white/5 rounded-2xl border border-white/5">
-                    <p className="text-white/50 text-sm">No hay servicios configurados aún.</p>
+                 <div className="col-span-2 sm:col-span-3 text-center py-10 bg-black/5 rounded-2xl border border-black/5">
+                    <p className="text-foreground/50 text-sm">No hay servicios configurados aún.</p>
                  </div>
               )}
            </div>
 
            {/* Calculadora Flotante */}
            <div className="lg:col-span-1">
-              <div className="glass-card p-6 sticky top-24 border-primary/20 bg-gradient-to-br from-surface to-primary/5 shadow-2xl">
-                 <h3 className="text-white font-bold mb-4 flex items-center gap-2 border-b border-white/10 pb-4">
+              <div className="glass-card p-6 sticky top-24 border-primary/20 bg-white shadow-2xl">
+                 <h3 className="text-foreground font-bold mb-4 flex items-center gap-2 border-b border-black/5 pb-4">
                    <Clock size={18} className="text-primary" /> Mi Presupuesto
                  </h3>
                  
                  {Object.keys(calcItems).length === 0 ? (
                     <div className="text-center py-8">
-                       <Package size={32} className="text-white/10 mx-auto mb-2" />
-                       <p className="text-sm text-white/30">Toca "Añadir a cálculo" para estimar tu total.</p>
+                       <Package size={32} className="text-black/10 mx-auto mb-2" />
+                       <p className="text-sm text-foreground/30">Toca "Añadir a cálculo" para estimar tu total.</p>
                     </div>
                  ) : (
                     <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2">
@@ -403,19 +403,19 @@ export default function StorefrontPage({ params }: PublicPageProps) {
                           if (!s) return null;
                           const qty = calcItems[id];
                           return (
-                             <div key={id} className="flex justify-between items-center bg-black/20 rounded-lg p-2">
+                             <div key={id} className="flex justify-between items-center bg-black/5 rounded-lg p-2">
                                 <div className="flex-1">
-                                   <p className="text-xs font-bold text-white line-clamp-1">{s.name}</p>
+                                   <p className="text-xs font-bold text-foreground line-clamp-1">{s.name}</p>
                                    <p className="text-[10px] text-primary">S/ {(s.price * qty).toFixed(2)}</p>
                                 </div>
-                                <div className="flex items-center gap-2 bg-white/5 rounded-lg px-2 py-1">
-                                   <button className="text-white/50 hover:text-white" onClick={() => setCalcItems(prev => {
+                                <div className="flex items-center gap-2 bg-black/5 rounded-lg px-2 py-1">
+                                   <button className="text-foreground/50 hover:text-foreground" onClick={() => setCalcItems(prev => {
                                       const n = {...prev};
                                       if (n[id] > 1) n[id]--; else delete n[id];
                                       return n;
                                    })}>-</button>
-                                   <span className="text-xs text-white font-bold w-4 text-center">{qty}</span>
-                                   <button className="text-white/50 hover:text-white" onClick={() => setCalcItems(prev => ({...prev, [id]: prev[id] + 1}))}>+</button>
+                                   <span className="text-xs text-foreground font-bold w-4 text-center">{qty}</span>
+                                   <button className="text-foreground/50 hover:text-foreground" onClick={() => setCalcItems(prev => ({...prev, [id]: prev[id] + 1}))}>+</button>
                                 </div>
                              </div>
                           );
@@ -424,17 +424,17 @@ export default function StorefrontPage({ params }: PublicPageProps) {
                  )}
 
                  {Object.keys(calcItems).length > 0 && (
-                    <div className="mt-6 pt-4 border-t border-dashed border-white/10">
+                    <div className="mt-6 pt-4 border-t border-dashed border-black/5">
                        <div className="flex justify-between items-end mb-4">
-                          <span className="text-white/60 text-sm">Total estimado</span>
-                          <span className="text-2xl font-bold text-white">
+                          <span className="text-foreground/60 text-sm">Total estimado</span>
+                          <span className="text-2xl font-bold text-foreground">
                              S/ {Object.keys(calcItems).reduce((acc, id) => {
                                 const s = services.find(x => x.id === id);
                                 return acc + (s ? s.price * calcItems[id] : 0);
                              }, 0).toFixed(2)}
                           </span>
                        </div>
-                       <button className="w-full text-xs text-white/30 hover:text-white/80 transition-colors underline" onClick={() => setCalcItems({})}>
+                       <button className="w-full text-xs text-foreground/30 hover:text-foreground/80 transition-colors underline" onClick={() => setCalcItems({})}>
                           Limpiar cálculo
                        </button>
                     </div>
