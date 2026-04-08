@@ -98,35 +98,31 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
       {/* Sidebar */}
       <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-primary border-r border-black/5 flex flex-col transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"}`}>
-        <div className="p-6 border-b border-white/5 flex justify-between items-center">
+        <div className="h-16 px-4 lg:px-6 border-b border-white/5 flex justify-between items-center shrink-0">
           <div className="flex items-center gap-3">
             {currentStore?.logoUrl ? (
               <img 
                 src={currentStore.logoUrl} 
                 alt={currentStore.name} 
-                className="w-8 h-8 rounded-lg object-contain bg-white" 
+                className="w-8 h-8 rounded-lg object-contain bg-white shrink-0" 
               />
             ) : (
-                <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center shrink-0">
                   <span className="font-bold text-white text-lg">
                     {currentStore?.name ? currentStore.name.charAt(0).toUpperCase() : "M"}
                   </span>
                 </div>
             )}
-            <h1 className="font-bold text-xl tracking-tight text-white truncate max-w-[120px]">
+            <h1 className="font-bold text-sm lg:text-base leading-tight tracking-tight text-white line-clamp-2">
               {currentStore?.name || "Magistral"}
             </h1>
           </div>
           {/* Close button for mobile */}
-          <button onClick={() => setIsMobileMenuOpen(false)} className="md:hidden text-white/50 hover:text-white">
+          <button onClick={() => setIsMobileMenuOpen(false)} className="md:hidden text-white/50 hover:text-white shrink-0">
             <X size={20} />
           </button>
         </div>
-        <div className="px-6 py-2">
-          <p className="text-[10px] text-white/70 uppercase tracking-widest font-black">
-            {user.role === "ADMIN" ? "Panel Administrador" : "Panel Personal"}
-          </p>
-        </div>
+
 
         <nav className="flex-1 p-4 flex flex-col gap-2 overflow-y-auto">
           <SidebarLink href="/admin" icon={<LayoutDashboard size={20} />} label="Dashboard" exact />
@@ -176,16 +172,16 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                <img 
                  src={currentStore.logoUrl} 
                  alt={currentStore.name} 
-                 className="w-7 h-7 rounded object-contain bg-white" 
+                 className="w-7 h-7 rounded object-contain bg-white shrink-0" 
                />
              ) : (
-               <div className="w-7 h-7 rounded bg-gradient-to-tr from-primary to-accent flex items-center justify-center">
+               <div className="w-7 h-7 rounded bg-gradient-to-tr from-primary to-accent flex items-center justify-center shadow-sm shrink-0">
                  <span className="font-bold text-white text-sm">
                    {currentStore?.name ? currentStore.name.charAt(0).toUpperCase() : "M"}
                  </span>
                </div>
              )}
-             <span className="font-bold text-white text-sm truncate max-w-[130px]">
+             <span className="font-bold text-primary text-sm line-clamp-2 max-w-[160px] leading-tight">
                {currentStore?.name || "Magistral"}
              </span>
            </div>
@@ -197,16 +193,16 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
            <div className="flex items-center gap-3">
               {/* Desktop: email + role */}
               <div className="hidden md:flex flex-col items-end">
-                  <span className="text-sm font-medium text-white truncate max-w-[200px]">{user.email}</span>
-                  <span className="text-[10px] text-foreground/50 uppercase tracking-widest font-bold">{user.role}</span>
+                  <span className="text-sm font-medium text-foreground truncate max-w-[200px]">{user.email}</span>
+                  <span className="text-[10px] text-primary uppercase tracking-widest font-bold">{user.role}</span>
               </div>
 
               {/* Mobile: role label + hamburger */}
               <div className="flex items-center gap-2 md:hidden">
-                <span className="text-[10px] text-white/50 uppercase tracking-widest font-bold">{user.role}</span>
+                <span className="text-[10px] text-primary uppercase tracking-widest font-bold">{user.role}</span>
                 <button 
                   onClick={() => setIsMobileMenuOpen(true)}
-                  className="p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+                  className="p-2 text-primary hover:text-primary-hover hover:bg-black/5 rounded-lg transition-colors"
                   aria-label="Abrir menú"
                 >
                   <Menu size={24} />
