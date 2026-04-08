@@ -2,7 +2,7 @@
 
 import { use, useEffect, useState } from "react";
 import Link from "next/link";
-import { Printer, ArrowLeft, Copy, Share2, Loader2, AlertTriangle } from "lucide-react";
+import { Printer, ArrowLeft, Copy, Share2, Loader2, AlertTriangle, Camera } from "lucide-react";
 import { QRCodeCanvas } from "qrcode.react";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -106,6 +106,7 @@ export default function TicketViewPage({
       24 +            // status stamp
       LINE * 2 +      // total/pay
       6 +             // gap pre-QR
+      (ticketData.totalPieces && ticketData.totalPieces > 0 ? LINE + 10 : 0) + // totalPieces info height
       (QR_SIZE > 0 ? QR_SIZE + 16 : 0) + // QR area
       PAD;
 
@@ -170,7 +171,15 @@ export default function TicketViewPage({
     if (atendidoPor) {
       ctx.fillText(`ATENDIDO POR: ${atendidoPor}`, PAD, y); y += LINE;
     }
-    y += 1;
+    y += 4;
+    
+    // Total de Piezas en Imagen
+    if (ticketData.totalPieces && ticketData.totalPieces > 0) {
+      dashed(y); y += 10;
+      setFont(10, "900");
+      ctx.fillText(`TOTAL PRENDAS: ${ticketData.totalPieces} uds.`, PAD, y); y += LINE;
+    }
+
     solid(y, 1); y += 2;
 
     // ── Table header ─────────────────────────────────────────────────────────
@@ -303,6 +312,30 @@ export default function TicketViewPage({
             <Share2 size={18} /> Mandar por WhatsApp
           </button>
         </div>
+
+        {/* Evidences Section (Internal) */}
+        {ticketData.evidences && ticketData.evidences.length > 0 && (
+          <div className="glass-card p-6 flex flex-col gap-3 print:hidden mt-4">
+            <h2 className="text-foreground font-bold mb-2 flex items-center gap-2">
+              <Camera size={18} /> Evidencias Internas
+            </h2>
+            <div className="grid grid-cols-2 gap-2">
+              {ticketData.evidences.filter((e: any) => e.type === 'image').map((img: any, i: number) => (
+                <div key={i} className="aspect-square bg-black/5 rounded-lg overflow-hidden border border-black/10">
+                  <a href={img.url} target="_blank" rel="noreferrer">
+                    <img src={img.url} alt={`Evidencia ${i}`} className="w-full h-full object-cover hover:scale-105 transition-transform" />
+                  </a>
+                </div>
+              ))}
+            </div>
+            {ticketData.evidences.filter((e: any) => e.type === 'audio').map((aud: any, i: number) => (
+              <audio key={i} src={aud.url} controls className="w-full h-8 mt-2" />
+            ))}
+            <p className="text-[10px] text-foreground/50 mt-2">
+              Estas notas son de uso interno y no aparecen en el recibo físico ni en la vista rastreo del cliente.
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Papel del Ticket Físico (Termal) */}
@@ -333,12 +366,13 @@ export default function TicketViewPage({
           <p className="text-[10px]">{storeData?.ruc ? `RUC: ${storeData.ruc}` : "RUC: 20123456789"}</p>
         </div>
 
-        <div className="mb-2 text-[10px] font-bold leading-tight space-y-0.5">
+         <div className="mb-2 text-[10px] font-bold leading-tight space-y-0.5">
           <p>FECHA: {dateStr}</p>
           <p>TICKET: <span className="text-[11px] font-black ml-1">{ticketData.ticketNumber || ticketId.slice(0, 6).toUpperCase()}</span></p>
           <p>CLIENTE: {ticketData.customerName || "Cliente"}</p>
           {ticketData.customerDni && ticketData.customerDni !== "0" && <p>DNI: {ticketData.customerDni}</p>}
           {ticketData.createdByEmail && <p>ATENDIDO POR: {ticketData.createdByEmail.split('@')[0]}</p>}
+          {ticketData.totalPieces > 0 && <p className="mt-1 pb-1 pt-1 border-t border-black/10">TOTAL PRENDAS: <span className="font-black text-[12px]">{ticketData.totalPieces} uds.</span></p>}
         </div>
 
         <table className="w-full text-[10px] font-bold mb-1 border-t border-b border-black py-0.5">

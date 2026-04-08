@@ -109,8 +109,8 @@ export default function OrdenesPage() {
     return (
       <div className="flex flex-col h-[420px] md:h-full glass-card p-4 overflow-hidden">
         <div className={`mb-4 flex items-center justify-between pb-2 border-b-2 ${colorClass}`}>
-          <h3 className="font-bold text-foreground uppercase tracking-wider text-sm">{title}</h3>
-          <span className="bg-primary/10 text-primary text-xs px-2 py-0.5 rounded-full font-bold">{columnOrders.length}</span>
+          <h3 className="font-black text-foreground uppercase tracking-widest text-xs">{title}</h3>
+          <span className="bg-primary/20 text-primary text-xs px-2 py-0.5 rounded-full font-black border border-primary/20">{columnOrders.length}</span>
         </div>
         
         {loading ? (
@@ -118,10 +118,10 @@ export default function OrdenesPage() {
         ) : (
           <div className="flex-1 space-y-3 overflow-y-auto pr-2 pb-4 scrollbar-hide">
             {columnOrders.map(order => (
-              <div key={order.id} className="bg-white/80 p-4 hover:border-primary/50 transition-colors group border border-black/5 rounded-xl shadow-sm">
+              <div key={order.id} className="bg-white/90 p-4 hover:border-primary/50 transition-colors group border border-black/5 rounded-xl shadow-sm">
                 <div className="flex justify-between items-start mb-2">
                   <div className="flex items-center gap-2">
-                    <Link href={`/admin/pedidos/ticket/${order.id}`} className="text-primary font-bold font-mono bg-primary/10 px-2 py-0.5 rounded-md text-sm hover:underline">{order.ticketNumber || order.id.slice(0, 6).toUpperCase()}</Link>
+                    <Link href={`/admin/pedidos/ticket/${order.id}`} className="text-primary font-black font-mono bg-primary/10 px-2 py-0.5 rounded-md text-sm hover:underline">{order.ticketNumber || order.id.slice(0, 6).toUpperCase()}</Link>
                     {user?.role === 'ADMIN' && (
                       <button 
                         onClick={() => setOrderToCancel(order)}
@@ -132,14 +132,14 @@ export default function OrdenesPage() {
                       </button>
                     )}
                   </div>
-                  <span className="text-foreground/40 text-xs">{order.date}</span>
+                  <span className="text-foreground/60 text-[10px] font-bold">{order.date}</span>
                 </div>
                 
-                <h4 className="text-foreground font-bold mb-1 line-clamp-1">{order.customerName}</h4>
+                <h4 className="text-foreground font-black mb-1 line-clamp-1">{order.customerName}</h4>
                 
-                <div className="flex items-center gap-4 text-xs text-foreground/50 mb-3">
-                  <span className="flex items-center gap-1"><PackageSearch size={14}/> {order.items?.length || 0} serv.</span>
-                  <span className="font-mono bg-primary/5 px-2 py-0.5 rounded text-primary font-bold">S/ {Number(order.total).toFixed(2)}</span>
+                <div className="flex items-center gap-4 text-xs text-foreground/70 mb-3 font-medium">
+                  <span className="flex items-center gap-1 font-bold"><PackageSearch size={14} className="text-primary" /> {order.items?.length || 0} serv.</span>
+                  <span className="font-mono bg-primary/5 px-2 py-0.5 rounded text-primary font-black border border-primary/10">S/ {Number(order.total).toFixed(2)}</span>
                 </div>
 
                 {/* Bloque Superior: Avisos Activos de Deuda o Validación */}
@@ -156,8 +156,8 @@ export default function OrdenesPage() {
                       <Info size={12}/> Por Cobrar ❌
                     </span>
                     <div className="flex gap-1">
-                      <button onClick={() => confirmPayment(order.id, 'EFECTIVO', order.status === 'LISTO')} className="flex-1 bg-white/10 hover:bg-white/20 text-[9px] py-1.5 rounded font-bold transition-colors">💵 Efectivo</button>
-                      <button onClick={() => confirmPayment(order.id, 'YAPE', order.status === 'LISTO')} className="flex-1 bg-[#742284]/20 hover:bg-[#742284]/40 text-[9px] py-1.5 rounded font-bold text-[#742284] border border-[#742284]/20 transition-colors">🟣 Yape</button>
+                      <button onClick={() => confirmPayment(order.id, 'EFECTIVO', order.status === 'LISTO')} className="flex-1 bg-white/20 hover:bg-white/40 text-[9px] py-1.5 rounded font-black transition-colors border border-error/10">💵 Efectivo</button>
+                      <button onClick={() => confirmPayment(order.id, 'YAPE', order.status === 'LISTO')} className="flex-1 bg-[#742284]/20 hover:bg-[#742284]/40 text-[9px] py-1.5 rounded font-black text-[#742284] border border-[#742284]/20 transition-colors">🟣 Yape</button>
                     </div>
                   </div>
                 )}
@@ -177,8 +177,8 @@ export default function OrdenesPage() {
                         </button>
                      )}
                      {order.paymentStatus === 'UNPAID' && (
-                        <div className="bg-white/5 text-white/30 rounded-md flex items-center justify-center shrink-0 w-full h-[34px]">
-                           <span className="text-[9px] uppercase font-bold text-center leading-tight">Debe<br/>Pagar</span>
+                        <div className="bg-black/5 text-foreground/40 rounded-md flex items-center justify-center shrink-0 w-full h-[34px] border border-black/5">
+                           <span className="text-[9px] uppercase font-black text-center leading-tight">Pendiente Pago</span>
                         </div>
                      )}
                   </div>
@@ -186,17 +186,17 @@ export default function OrdenesPage() {
                   {/* Columna Derecha: Acción para avanzar Workflow */}
                   <div className="flex-1 flex gap-1 items-stretch">
                     {status === 'RECIBIDO' && (
-                      <button onClick={() => updateStatus(order.id, 'EN_PROCESO')} className="flex-1 bg-warning/20 text-warning hover:bg-warning/30 rounded-md text-xs font-bold transition-colors">
-                        A Proceso
+                      <button onClick={() => updateStatus(order.id, 'EN_PROCESO')} className="flex-1 bg-warning/20 text-warning hover:bg-warning/30 rounded-md text-xs font-black transition-all active:scale-95 border border-warning/10">
+                        Proceso
                       </button>
                     )}
                     {status === 'EN_PROCESO' && (
-                      <button onClick={() => updateStatus(order.id, 'LISTO')} className="flex-1 bg-info/20 text-info hover:bg-info/30 rounded-md text-xs font-bold transition-colors">
+                      <button onClick={() => updateStatus(order.id, 'LISTO')} className="flex-1 bg-info/20 text-info hover:bg-info/40 rounded-md text-xs font-black transition-all active:scale-95 border border-info/10">
                         Listo
                       </button>
                     )}
                     {status === 'LISTO' && (
-                      <button onClick={() => { if(order.paymentStatus === 'PAID') updateStatus(order.id, 'ENTREGADO'); else alert('Debe cobrar el pago antes de entregar la ropa.'); }} className={`flex-1 rounded-md text-xs font-bold transition-colors ${order.paymentStatus === 'PAID' ? 'bg-primary/20 text-primary hover:bg-primary/30' : 'bg-white/5 text-white/10 cursor-not-allowed'}`}>
+                      <button onClick={() => { if(order.paymentStatus === 'PAID') updateStatus(order.id, 'ENTREGADO'); else alert('Debe cobrar el pago antes de entregar la ropa.'); }} className={`flex-1 rounded-md text-xs font-black transition-all active:scale-95 ${order.paymentStatus === 'PAID' ? 'bg-primary/20 text-primary hover:bg-primary/30 border border-primary/20' : 'bg-black/5 text-foreground/20 cursor-not-allowed border border-black/5'}`}>
                         Entregar
                       </button>
                     )}
@@ -206,8 +206,8 @@ export default function OrdenesPage() {
             ))}
 
             {columnOrders.length === 0 && (
-              <div className="text-center py-8 text-foreground/30 border border-dashed border-black/10 rounded-xl bg-white/20">
-                  <p className="text-sm">Sin tickets</p>
+              <div className="text-center py-10 text-foreground/60 border border-dashed border-black/10 rounded-xl bg-white/20 px-4">
+                  <p className="text-sm font-bold">Sin tickets en esta etapa</p>
               </div>
             )}
           </div>
@@ -221,43 +221,43 @@ export default function OrdenesPage() {
       {/* Cabecera */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 shrink-0">
         <div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">Órdenes</h1>
-          <p className="text-foreground/60">Gestiona el flujo de lavado e informa a tus clientes.</p>
+          <h1 className="text-3xl font-bold text-foreground mb-2">Pedidos en Curso</h1>
+          <p className="text-foreground/70 font-medium">Gestiona el flujo de lavado y el estado de los pagos.</p>
         </div>
         
         <div className="flex items-center gap-3 w-full sm:w-auto">
           <div className="relative flex-1 sm:w-64">
-             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-foreground/40" size={18} />
+             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-foreground/70" size={18} />
              <input type="text" placeholder="Buscar ticket o cliente..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
-               className="w-full bg-white/50 border border-black/10 rounded-xl pl-10 pr-4 py-2 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary shadow-sm"
+               className="w-full bg-white/50 border border-black/10 rounded-xl pl-10 pr-4 py-3 text-foreground text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary shadow-sm placeholder:text-foreground/40"
              />
           </div>
           
           <button 
             onClick={() => setShowHistory(true)}
-            className="bg-white/20 hover:bg-white/40 text-foreground border border-black/10 rounded-xl px-4 py-2 flex items-center justify-center gap-2 transition-all relative"
+            className="bg-white/40 hover:bg-white/60 text-foreground border border-black/10 rounded-xl px-4 py-3 flex items-center justify-center gap-2 transition-all relative font-bold shadow-sm"
           >
             <History size={18} />
-            <span className="hidden sm:inline">Entregados</span>
+            <span className="hidden sm:inline">Historial Hoy</span>
             {deliveredToday.length > 0 && (
-              <span className="absolute -top-1 -right-1 bg-primary text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center border-2 border-surface font-bold">
+              <span className="absolute -top-1 -right-1 bg-primary text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center border-2 border-white font-black">
                 {deliveredToday.length}
               </span>
             )}
           </button>
 
-          <Link href="/admin/pedidos/nuevo" className="bg-primary hover:bg-primary-hover active:scale-95 transition-all text-white font-bold rounded-xl px-4 py-2 flex items-center justify-center gap-2 shadow-lg shadow-primary/20 shrink-0">
+          <Link href="/admin/pedidos/nuevo" className="bg-primary hover:bg-primary-hover active:scale-95 transition-all text-white font-black rounded-xl px-4 py-3 flex items-center justify-center gap-2 shadow-lg shadow-primary/20 shrink-0">
             <Plus size={20} />
-            <span className="hidden sm:inline">Nueva Orden</span>
+            <span className="hidden sm:inline">Nuevo Pedido</span>
           </Link>
         </div>
       </div>
 
       {/* Tablero Kanban */}
       <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-6 md:overflow-hidden md:min-h-0">
-         {renderColumn('RECIBIDO', 'Recibidos (Cola)', 'border-white/20 text-white/80')}
-         {renderColumn('EN_PROCESO', 'En Proceso (Lavando)', 'border-warning/50 text-warning')}
-         {renderColumn('LISTO', 'Listos (Por entregar)', 'border-success/50 text-success')}
+         {renderColumn('RECIBIDO', 'Cola de Espera', 'border-black/5 text-foreground/40')}
+         {renderColumn('EN_PROCESO', 'En Lavado/Secado', 'border-warning/40 text-warning')}
+         {renderColumn('LISTO', 'Listos para Entrega', 'border-success/40 text-success')}
       </div>
 
       {/* Historial Lateral (Drawer) */}
@@ -273,7 +273,7 @@ export default function OrdenesPage() {
                 <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
                   <History size={20} className="text-primary" /> Entregados Hoy
                 </h2>
-                <p className="text-foreground/40 text-xs">Cierre preliminar del día</p>
+                <p className="text-foreground/70 text-xs font-bold">Cierre preliminar del turno</p>
               </div>
               <button 
                 onClick={() => setShowHistory(false)}
@@ -285,31 +285,31 @@ export default function OrdenesPage() {
 
             <div className="p-6 bg-primary/5 border-b border-black/10 flex items-center justify-between">
               <div>
-                <span className="text-xs text-foreground/40 uppercase font-black">Cobrado del día</span>
-                <div className="text-3xl font-black text-primary">S/ {totalDelivered.toFixed(2)}</div>
+                <span className="text-xs text-foreground/60 uppercase font-black tracking-tight">Cobrado Hoy</span>
+                <div className="text-3xl font-black text-primary font-mono">S/ {totalDelivered.toFixed(2)}</div>
               </div>
               <div className="text-right">
-                <span className="text-xs text-foreground/40 uppercase font-black italic">Órdenes</span>
+                <span className="text-xs text-foreground/60 uppercase font-black italic tracking-wide">Órdenes</span>
                 <div className="text-2xl font-black text-foreground">{deliveredToday.length}</div>
               </div>
             </div>
 
             <div className="flex-1 overflow-y-auto p-4 space-y-3">
               {deliveredToday.length === 0 ? (
-                <div className="h-full flex flex-col items-center justify-center text-foreground/20 text-center px-10">
-                   <PackageSearch size={48} className="mb-4 opacity-5" />
-                   <p className="text-sm font-medium">Aún no se han entregado órdenes hoy.</p>
+                <div className="h-full flex flex-col items-center justify-center text-foreground/60 text-center px-10">
+                   <PackageSearch size={48} className="mb-4 opacity-10" />
+                   <p className="text-sm font-black italic">Aún no hay entregas registradas hoy.</p>
                 </div>
               ) : (
                 deliveredToday.map(order => (
-                  <div key={order.id} className="bg-white/50 border border-black/5 p-4 rounded-2xl flex items-center justify-between group hover:border-primary/30 transition-all">
+                  <div key={order.id} className="bg-white/60 border border-black/5 p-4 rounded-2xl flex items-center justify-between group hover:border-primary/30 transition-all shadow-sm">
                     <div className="flex flex-col">
-                      <span className="text-primary font-bold font-mono text-[10px] bg-primary/10 px-2 py-0.5 rounded-md self-start mb-1">{order.ticketNumber}</span>
-                      <span className="text-foreground font-medium text-sm line-clamp-1">{order.customerName}</span>
+                      <span className="text-primary font-black font-mono text-[10px] bg-primary/10 px-2 py-0.5 rounded-md self-start mb-1">{order.ticketNumber}</span>
+                      <span className="text-foreground font-black text-sm line-clamp-1">{order.customerName}</span>
                     </div>
                     <div className="text-right flex flex-col items-end">
-                      <span className="text-foreground font-bold text-sm">S/ {Number(order.total).toFixed(2)}</span>
-                      <span className="flex items-center gap-1 text-[10px] text-success font-bold mt-1">
+                      <span className="text-foreground font-black text-sm font-mono">S/ {Number(order.total).toFixed(2)}</span>
+                      <span className="flex items-center gap-1 text-[10px] text-success font-black mt-1 uppercase tracking-tight">
                         <Check size={12} /> {order.payMethod || 'Pagado'}
                       </span>
                     </div>
@@ -321,9 +321,9 @@ export default function OrdenesPage() {
             <div className="p-6 border-t border-black/10 bg-white/20">
               <Link 
                 href="/admin/caja" 
-                className="w-full bg-primary/10 hover:bg-primary/20 text-primary font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-all border border-primary/20"
+                className="w-full bg-primary/20 hover:bg-primary/30 text-primary font-black py-4 rounded-xl flex items-center justify-center gap-2 transition-all border border-primary/20 shadow-sm"
               >
-                Ir a Caja Completa
+                Ver Caja Completa
               </Link>
             </div>
           </div>
@@ -332,41 +332,41 @@ export default function OrdenesPage() {
 
       {/* Voucher Validation Modal */}
       {previewVoucherOrder && (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center sm:p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-[120] flex items-center justify-center sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white sm:border border-black/10 sm:rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col h-full sm:h-auto sm:max-h-[90vh] relative">
             
             {/* Close Button */}
             <button 
                 onClick={() => setPreviewVoucherOrder(null)} 
-                className="absolute top-4 right-4 z-10 bg-black/10 hover:bg-black/20 backdrop-blur-md text-foreground p-2 rounded-full transition-colors"
+                className="absolute top-4 right-4 z-10 bg-black/20 hover:bg-black/40 backdrop-blur-md text-white p-2 rounded-full transition-colors"
             >
                <X size={20} />
             </button>
 
-            <div className="flex-1 overflow-y-auto min-h-0 bg-black relative">
+            <div className="flex-1 overflow-y-auto min-h-0 bg-black relative flex items-center justify-center">
                {previewVoucherOrder.voucherUrl ? (
                    // eslint-disable-next-line @next/next/no-img-element
-                  <img src={previewVoucherOrder.voucherUrl} alt="Comprobante de Pago" className="w-full h-auto block" />
+                  <img src={previewVoucherOrder.voucherUrl} alt="Comprobante de Pago" className="max-w-full h-auto block" />
                ) : (
                   <div className="flex items-center justify-center h-full min-h-[200px]">
-                     <p className="text-white/50 text-sm">No hay imagen adjunta</p>
+                     <p className="text-white/70 text-sm font-bold italic">No se encontró imagen del comprobante</p>
                   </div>
                )}
             </div>
 
-            <div className="p-5 border-t border-black/5 bg-white shrink-0">
-               <div className="flex justify-between items-end mb-4">
+            <div className="p-6 border-t border-black/10 bg-white shrink-0 shadow-2xl">
+               <div className="flex justify-between items-end mb-6">
                   <div>
-                    <p className="text-sm text-foreground/40 mb-1">Ticket a Validar</p>
-                    <p className="text-foreground font-bold text-xl">{previewVoucherOrder.ticketNumber || (previewVoucherOrder.id.slice(0,6).toUpperCase())}</p>
+                    <p className="text-xs text-foreground/60 font-black uppercase tracking-widest mb-1">Ticket a Validar</p>
+                    <p className="text-foreground font-black text-2xl font-mono">{previewVoucherOrder.ticketNumber || (previewVoucherOrder.id.slice(0,6).toUpperCase())}</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm text-foreground/40 mb-1">Monto Cobrado</p>
-                    <p className="text-primary font-bold text-3xl font-mono tracking-tighter leading-none">S/ {Number(previewVoucherOrder.total).toFixed(2)}</p>
+                    <p className="text-xs text-foreground/60 font-black uppercase tracking-widest mb-1">Monto del Ticket</p>
+                    <p className="text-primary font-black text-3xl font-mono tracking-tighter leading-none">S/ {Number(previewVoucherOrder.total).toFixed(2)}</p>
                   </div>
                </div>
 
-                <div className="flex gap-3">
+                <div className="flex gap-4">
                   <button 
                     onClick={async (e) => {
                        e.stopPropagation();
@@ -375,7 +375,7 @@ export default function OrdenesPage() {
                        await updateDoc(orderRef, { paymentStatus: 'UNPAID', voucherUrl: null });
                        setPreviewVoucherOrder(null);
                     }}
-                    className="flex-1 bg-black/5 hover:bg-error/10 text-foreground hover:text-error py-4 rounded-xl font-bold transition-all active:scale-95 border border-black/5 hover:border-error/20 text-sm"
+                    className="flex-1 bg-black/5 hover:bg-error/10 text-foreground/70 hover:text-error py-4 rounded-2xl font-black transition-all active:scale-95 border border-black/5 hover:border-error/20 text-xs uppercase"
                   >
                     Rechazar
                   </button>
@@ -385,7 +385,7 @@ export default function OrdenesPage() {
                        confirmPayment(previewVoucherOrder.id, 'YAPE');
                        setPreviewVoucherOrder(null);
                     }} 
-                    className="flex-[2] bg-[#742284] hover:bg-[#742284]/90 text-white py-4 rounded-xl font-black text-sm flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg shadow-[#742284]/20"
+                    className="flex-[2] bg-[#742284] hover:bg-[#742284]/90 text-white py-4 rounded-2xl font-black text-xs flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg shadow-[#742284]/30 uppercase"
                   >
                     APROBAR PAGO YAPE <CheckCircle size={18} />
                   </button>
@@ -398,35 +398,35 @@ export default function OrdenesPage() {
       {/* Cancellation Reason Modal */}
       {orderToCancel && (
         <div className="fixed inset-0 z-[130] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white border border-black/10 rounded-3xl w-full max-w-md shadow-2xl overflow-hidden p-6">
-            <h3 className="text-xl font-bold text-foreground mb-2">Cancelar Orden</h3>
-            <p className="text-foreground/50 text-sm mb-6">
-              Estás por cancelar el ticket <span className="text-primary font-mono font-bold">#{orderToCancel.ticketNumber}</span>. 
-              Por favor, indica el motivo de la cancelación.
+          <div className="bg-white border border-black/10 rounded-3xl w-full max-w-md shadow-2xl overflow-hidden p-8">
+            <h3 className="text-2xl font-black text-foreground mb-2 tracking-tight">Cancelar Orden</h3>
+            <p className="text-foreground/70 text-sm mb-6 font-medium">
+              Estás por cancelar el ticket <span className="text-primary font-mono font-black">#{orderToCancel.ticketNumber}</span>. 
+              Indica el motivo para el reporte de auditoría.
             </p>
 
             <textarea
               value={cancelReason}
               onChange={(e) => setCancelReason(e.target.value)}
-              placeholder="Ej: El cliente se arrepintió, error en la orden..."
-              className="w-full bg-black/5 border border-black/10 rounded-xl p-4 text-foreground text-sm focus:border-primary/50 outline-none transition-all h-32 mb-6 resize-none"
+              placeholder="Ej: El cliente se arrepintió, error en la digitación, etc..."
+              className="w-full bg-black/5 border border-black/10 rounded-2xl p-5 text-foreground text-sm font-bold focus:ring-2 focus:ring-error transition-all h-32 mb-6 resize-none outline-none placeholder:text-foreground/20"
               autoFocus
             />
 
-            <div className="flex gap-3">
+            <div className="flex gap-4">
               <button 
                 onClick={() => {
                   setOrderToCancel(null);
                   setCancelReason("");
                 }} 
-                className="flex-1 bg-black/5 hover:bg-black/10 text-foreground py-3 rounded-xl font-bold transition-all"
+                className="flex-1 bg-black/5 hover:bg-black/10 text-foreground/70 py-4 rounded-2xl font-black transition-all uppercase text-xs"
               >
-                Cerrar
+                Volver
               </button>
               <button 
                 onClick={() => cancelOrder(orderToCancel.id, cancelReason)}
                 disabled={!cancelReason.trim()}
-                className="flex-[2] bg-error/20 hover:bg-error/30 text-error py-3 rounded-xl font-bold transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                className="flex-[2] bg-error hover:bg-error/90 text-white py-4 rounded-2xl font-black transition-all disabled:opacity-30 disabled:cursor-not-allowed shadow-lg shadow-error/20 uppercase text-xs"
               >
                 Confirmar Cancelación
               </button>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { TrendingUp, Users, DollarSign, Activity, Loader2, Star, Award } from "lucide-react";
+import { TrendingUp, Users, DollarSign, Activity, Loader2, Star, Award, Package } from "lucide-react";
 import { collection, onSnapshot, query, orderBy, limit } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useStore } from "@/store/useStore";
@@ -9,6 +9,7 @@ import { useStore } from "@/store/useStore";
 export default function AdminDashboard() {
   const { user, currentStore } = useStore();
   const [orders, setOrders] = useState<any[]>([]);
+  const [expenses, setExpenses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -35,7 +36,27 @@ export default function AdminDashboard() {
       setLoading(false);
     });
     return () => unsub();
-  }, []);
+  }, [user]);
+
+  useEffect(() => {
+    if (!user?.storeId || user.role !== 'ADMIN') return;
+    const q = query(collection(db, `stores/${user.storeId}/expenses`), orderBy("date", "desc"));
+    const unsub = onSnapshot(q, (snap) => {
+      const todayStr = new Date().toISOString().slice(0, 10);
+      const data = snap.docs.map(d => {
+        const raw = d.data();
+        const dateObj = raw.date?.toDate ? raw.date.toDate() : new Date(raw.date);
+        const expDateStr = dateObj.toISOString().slice(0, 10);
+        return {
+          id: d.id,
+          ...raw,
+          _isToday: expDateStr === todayStr,
+        };
+      });
+      setExpenses(data);
+    });
+    return () => unsub();
+  }, [user]);
 
   // Cálculos dinámicos
   const todayOrders = orders.filter(o => o._isToday);
@@ -49,10 +70,19 @@ export default function AdminDashboard() {
   // Clientes únicos hoy (aproximación rápida)
   const clientesHoy = new Set(todayOrders.map(o => o.customerPhone || o.customerDni)).size;
 
-  // KPIs Adicionales para Admin
+  // Gastos y Utilidad
+  const gastosHoy = expenses
+    .filter(e => e._isToday)
+    .reduce((acc, e) => acc + (Number(e.amount) || 0), 0);
+  
+  const utilidadHoy = ingresosHoy - gastosHoy;
+
   const ingresosTotales = orders
     .filter(o => o.status === 'ENTREGADO' || o.paymentStatus === 'PAID')
     .reduce((acc, o) => acc + (Number(o.total) || 0), 0);
+  
+  const gastosTotales = expenses.reduce((acc, e) => acc + (Number(e.amount) || 0), 0);
+  const utilidadTotal = ingresosTotales - gastosTotales;
 
   const topCustomers = (() => {
     const map = new Map();
@@ -84,39 +114,49 @@ export default function AdminDashboard() {
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div>
         <h1 className="text-3xl font-bold text-foreground mb-2">Panel de Control</h1>
-        <p className="text-foreground/60">Resumen de lavandería para {currentStore?.storeName || "tu negocio"}.</p>
+        <p className="text-foreground/70 font-medium">Resumen de lavandería para {currentStore?.storeName || "tu negocio"}.</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {user?.role === "ADMIN" && (
-          <KpiCard 
-            title="Ingresos Hoy"
-            value={`S/ ${ingresosHoy.toFixed(2)}`}
-            trend="+0%"
-            trendUp={true}
-            icon={<DollarSign className="text-primary" size={24} />}
-          />
-        )}
-        <KpiCard 
-          title="Nuevas Órdenes"
-          value={ordenesNuevas.toString()}
-          trend="+0%"
-          trendUp={true}
-          icon={<Activity className="text-accent" size={24} />}
-        />
-        <KpiCard 
-          title="En Proceso"
-          value={enProceso.toString()}
-          icon={<TrendingUp className="text-warning" size={24} />}
-        />
-        {user?.role === "ADMIN" && (
-          <KpiCard 
-            title="Clientes de Hoy"
-            value={clientesHoy.toString()}
-            trend="+0%"
-            trendUp={true}
-            icon={<Users className="text-success" size={24} />}
-          />
+        {user?.role === "ADMIN" ? (
+          <>
+            <KpiCard 
+              title="Ingresos Hoy"
+              value={`S/ ${ingresosHoy.toFixed(2)}`}
+              trend="+0%"
+              trendUp={true}
+              icon={<DollarSign className="text-primary" size={24} />}
+            />
+            <KpiCard 
+              title="Gastos Hoy"
+              value={`S/ ${gastosHoy.toFixed(2)}`}
+              icon={<TrendingUp className="rotate-180 text-error" size={24} />}
+            />
+            <KpiCard 
+              title="Utilidad de Hoy"
+              value={`S/ ${utilidadHoy.toFixed(2)}`}
+              trendUp={utilidadHoy >= 0}
+              icon={<Activity className="text-accent" size={24} />}
+            />
+            <KpiCard 
+              title="Nuevas Órdenes"
+              value={ordenesNuevas.toString()}
+              icon={<Package className="text-warning" size={24} />}
+            />
+          </>
+        ) : (
+          <>
+            <KpiCard 
+              title="Nuevas Órdenes"
+              value={ordenesNuevas.toString()}
+              icon={<Activity className="text-accent" size={24} />}
+            />
+            <KpiCard 
+              title="En Proceso"
+              value={enProceso.toString()}
+              icon={<TrendingUp className="text-warning" size={24} />}
+            />
+          </>
         )}
       </div>
 
@@ -126,7 +166,7 @@ export default function AdminDashboard() {
         <div className="lg:col-span-2 glass-card p-6 flex flex-col h-[400px] bg-white/60">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-lg font-bold text-foreground">Ingresos Semanales</h2>
-            <div className="flex gap-4 text-xs font-bold text-foreground/50">
+            <div className="flex gap-4 text-xs font-bold text-foreground/70">
                <span className="flex items-center gap-1"><div className="w-3 h-3 rounded-sm bg-primary" /> Efectivo</span>
                <span className="flex items-center gap-1"><div className="w-3 h-3 rounded-sm bg-[#742284]" /> Yape</span>
             </div>
@@ -147,7 +187,7 @@ export default function AdminDashboard() {
                { day: 'Hoy', cash: ingresosHoy * 0.4, yape: ingresosHoy * 0.6 }
              ].map((col, i) => (
                 <div key={i} className="flex-1 flex flex-col items-center gap-2 group z-10 w-full h-full justify-end cursor-pointer">
-                   <div className="opacity-0 group-hover:opacity-100 transition-opacity absolute -top-8 bg-black/80 px-3 py-1 rounded-lg text-xs font-bold whitespace-nowrap z-20 pointer-events-none transform translate-y-2 group-hover:translate-y-0">
+                   <div className="opacity-0 group-hover:opacity-100 transition-opacity absolute -top-8 bg-black/80 px-3 py-1 rounded-lg text-xs font-bold text-white whitespace-nowrap z-20 pointer-events-none transform translate-y-2 group-hover:translate-y-0 shadow-lg">
                       S/ {(col.cash + col.yape).toFixed(0)}
                    </div>
                    <div className="w-full max-w-[40px] flex flex-col justify-end gap-1 flex-1 relative">
@@ -160,7 +200,7 @@ export default function AdminDashboard() {
                           style={{ height: `${Math.max(5, (col.cash / 200) * 100)}%` }} 
                        />
                    </div>
-                   <span className="text-foreground/50 text-[10px] sm:text-xs font-medium">{col.day}</span>
+                   <span className="text-foreground/70 text-[10px] sm:text-xs font-semibold">{col.day}</span>
                 </div>
              ))}
           </div>
@@ -173,7 +213,10 @@ export default function AdminDashboard() {
             <h2 className="text-lg font-semibold text-foreground mb-2 flex items-center gap-2">
               <Award className="text-primary" /> Top 5 Clientes
             </h2>
-            <p className="text-xs text-foreground/50 mb-4 block">Total histórico acumulado: <strong className="text-primary tracking-widest text-sm">S/ {ingresosTotales.toFixed(2)}</strong></p>
+            <p className="text-xs text-foreground/70 mb-1 font-medium">Total Ingresos: <strong className="text-success tracking-widest font-black">S/ {ingresosTotales.toFixed(2)}</strong></p>
+            <p className="text-xs text-foreground/70 mb-1 font-medium">Total Gastos: <strong className="text-error tracking-widest font-black">S/ {gastosTotales.toFixed(2)}</strong></p>
+            <div className="h-[1px] bg-black/5 my-2" />
+            <p className="text-xs text-foreground/70 mb-4 font-medium">Utilidad Total: <strong className="text-primary tracking-widest text-sm font-black">S/ {utilidadTotal.toFixed(2)}</strong></p>
             <div className="space-y-3 flex-1 overflow-y-auto pr-2 scrollbar-hide">
               {topCustomers.map((c, i) => (
                 <div key={i} className="flex justify-between items-center bg-black/5 p-3 rounded-lg border border-black/5">
@@ -183,7 +226,7 @@ export default function AdminDashboard() {
                       </div>
                       <div>
                         <p className="text-xs font-bold text-foreground">{c.name}</p>
-                        <p className="text-[10px] text-foreground/40">{c.count} órdenes</p>
+                        <p className="text-[10px] text-foreground/60 font-semibold">{c.count} órdenes</p>
                       </div>
                    </div>
                    <div className="text-right">
@@ -192,7 +235,7 @@ export default function AdminDashboard() {
                 </div>
               ))}
               {topCustomers.length === 0 && (
-                <p className="text-foreground/30 text-sm text-center py-6 italic">No hay clientes frecuentes aún</p>
+                <p className="text-foreground/60 text-sm text-center py-6 italic font-medium">No hay clientes frecuentes aún</p>
               )}
             </div>
           </div>
@@ -211,7 +254,7 @@ export default function AdminDashboard() {
               />
             ))}
             {orders.length === 0 && (
-              <p className="text-foreground/30 text-sm text-center py-10 italic">Sin actividad registrada</p>
+              <p className="text-foreground/60 text-sm text-center py-10 italic font-medium">Sin actividad registrada</p>
             )}
           </div>
         </div>
@@ -227,7 +270,7 @@ function KpiCard({ title, value, trend, trendUp, icon }: any) {
         {icon}
       </div>
       <div className="flex justify-between items-start">
-        <span className="text-sm font-medium text-foreground/60">{title}</span>
+        <span className="text-sm font-bold text-foreground/80">{title}</span>
         <div className="w-10 h-10 rounded-full bg-black/5 flex items-center justify-center">
           {icon}
         </div>
@@ -235,7 +278,7 @@ function KpiCard({ title, value, trend, trendUp, icon }: any) {
       <div>
         <h3 className="text-3xl font-bold text-foreground tracking-tight">{value}</h3>
         {trend && (
-          <p className={`text-xs font-medium mt-1 ${trendUp ? 'text-success' : 'text-error'}`}>
+          <p className={`text-xs font-bold mt-1 ${trendUp ? 'text-success' : 'text-error'}`}>
              Dato en tiempo real
           </p>
         )}
@@ -256,8 +299,8 @@ function ActivityItem({ text, time, status }: { text: string; time: string; stat
       <div className={`w-2 h-2 rounded-full ${getStatusColor()} mt-2 flex-shrink-0 z-10 shadow-[0_0_8px_currentColor]`} />
       <div className="absolute left-[3px] top-4 bottom-[-16px] w-[2px] bg-black/5 z-0" />
       <div>
-        <p className="text-xs font-medium text-foreground/80 line-clamp-1">{text}</p>
-        <span className="text-[10px] text-foreground/40 uppercase tracking-wider">{time}</span>
+        <p className="text-xs font-bold text-foreground/90 line-clamp-1">{text}</p>
+        <span className="text-[10px] text-foreground/60 font-bold uppercase tracking-wider">{time}</span>
       </div>
     </div>
   );

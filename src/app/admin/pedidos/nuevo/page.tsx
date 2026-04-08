@@ -1,14 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { ArrowLeft, Search, Plus, Minus, CreditCard, DollarSign, PackageSearch } from "lucide-react";
+import { ArrowLeft, Search, Plus, Minus, CreditCard, DollarSign, PackageSearch, Trash2, Camera, Mic, StopCircle, ImageIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/store/useStore";
 import { toast } from "react-hot-toast";
 import { searchDNI } from "@/app/actions/reniec";
 import { collection, onSnapshot, addDoc, runTransaction, doc, getDoc, getDocs, query, where, setDoc, increment, orderBy } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { db, storage } from "@/lib/firebase";
 
 export type CatalogItem = {
   id: string;
@@ -43,6 +44,17 @@ export default function NuevaOrdenPage() {
   // Autocomplete State
   const [allClients, setAllClients] = useState<{ id: string, dni: string, name: string, phone: string, totalKgAccumulated: number }[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+
+  // Evidences State
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [photoFiles, setPhotoFiles] = useState<{file: File, preview: string}[]>([]);
+  const [audioBlob, setAudioBlob] = useState<{blob: Blob, url: string} | null>(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingTime, setRecordingTime] = useState(0);
+  const [isCompressing, setIsCompressing] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Escuchar Servicios Reales de Firebase
   useEffect(() => {
@@ -134,7 +146,9 @@ export default function NuevaOrdenPage() {
   const updateQty = (id: string, delta: number) => {
     setCart(cart.map(c => {
       if (c.item.id === id) {
-        return { ...c, qty: Math.max(0, c.qty + delta) };
+        // Redondear a 2 decimales para evitar errores de punto flotante de JS
+        const newQty = Math.max(0, Number((c.qty + delta).toFixed(2)));
+        return { ...c, qty: newQty };
       }
       return c;
     }).filter(c => c.qty > 0));
@@ -150,6 +164,10 @@ export default function NuevaOrdenPage() {
     if (!isNaN(parsed) && parsed > 0) {
       setCart(cart.map(c => c.item.id === id ? { ...c, qty: parsed } : c));
     }
+  };
+
+  const removeFromCart = (id: string) => {
+    setCart(cart.filter(c => c.item.id !== id));
   };
 
   // Cálculos de Totales
@@ -194,6 +212,100 @@ export default function NuevaOrdenPage() {
       toast.error("Error verificando cupón.");
     }
     setIsValidatingCoupon(false);
+  };
+
+  // Adicional: Contador Total de Piezas
+  const [totalPieces, setTotalPieces] = useState<number | null>(null);
+
+  // Lógica de Evidencias (Fotos y Audio)
+  const handlePhotoCapture = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const file = e.target.files[0];
+      
+      // Basic compression before storing
+      setIsCompressing(true);
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const img = new window.Image();
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          const MAX_WIDTH = 1000;
+          const scaleSize = MAX_WIDTH / img.width;
+          canvas.width = MAX_WIDTH;
+          canvas.height = img.height * scaleSize;
+          
+          const ctx = canvas.getContext("2d");
+          ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
+          
+          canvas.toBlob((blob) => {
+            if (blob) {
+              const compressedFile = new File([blob], file.name, {
+                type: "image/jpeg",
+                lastModified: Date.now()
+              });
+              const preview = URL.createObjectURL(compressedFile);
+              setPhotoFiles(prev => [...prev, { file: compressedFile, preview }]);
+            }
+            setIsCompressing(false);
+          }, "image/jpeg", 0.7);
+        };
+        img.src = event.target?.result as string;
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removePhoto = (index: number) => {
+    setPhotoFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) audioChunksRef.current.push(event.data);
+      };
+
+      mediaRecorder.onstop = () => {
+        const mimeType = mediaRecorder.mimeType || 'audio/webm';
+        const audioBlobLocal = new Blob(audioChunksRef.current, { type: mimeType });
+        const audioUrl = URL.createObjectURL(audioBlobLocal);
+        setAudioBlob({ blob: audioBlobLocal, url: audioUrl });
+        stream.getTracks().forEach(track => track.stop());
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+      setRecordingTime(0);
+      timerRef.current = setInterval(() => {
+        setRecordingTime(prev => prev + 1);
+      }, 1000);
+    } catch (e) {
+      console.error(e);
+      toast.error("No se pudo acceder al micrófono.");
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+      if (timerRef.current) clearInterval(timerRef.current);
+    }
+  };
+
+  const deleteAudio = () => {
+    setAudioBlob(null);
+  };
+
+  const formatTime = (seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s.toString().padStart(2, '0')}`;
   };
 
   const handleCreateOrder = async () => {
@@ -249,6 +361,7 @@ export default function NuevaOrdenPage() {
         discountCoupon: couponDiscount,
         appliedCoupon: appliedCoupon ? appliedCoupon.code : null,
         total,
+        totalPieces: totalPieces || 0,
         payMethod,
         status: "RECIBIDO",
         paymentStatus: payMethod === "LUEGO" ? "UNPAID" : (payMethod === "YAPE" ? "PENDING_VERIFICATION" : "PAID"),
@@ -258,6 +371,32 @@ export default function NuevaOrdenPage() {
 
       const docRef = await addDoc(ordersRef, orderData);
       newDocId = docRef.id;
+
+      // Subir evidencias si existen
+      const evidencesLinks: { url: string, type: 'image' | 'audio', date: string }[] = [];
+      
+      // Upload process
+      for (let i = 0; i < photoFiles.length; i++) {
+        const pf = photoFiles[i];
+        const fileName = `photo_${i}_${Date.now()}.jpg`;
+        const storageRef = ref(storage, `stores/${user.storeId}/orders/${newDocId}/evidences/${fileName}`);
+        await uploadBytes(storageRef, pf.file);
+        const url = await getDownloadURL(storageRef);
+        evidencesLinks.push({ url, type: 'image', date: new Date().toISOString() });
+      }
+
+      if (audioBlob) {
+        const ext = audioBlob.blob.type.includes('mp4') ? 'm4a' : 'webm';
+        const fileName = `audio_${Date.now()}.${ext}`;
+        const storageRef = ref(storage, `stores/${user.storeId}/orders/${newDocId}/evidences/${fileName}`);
+        await uploadBytes(storageRef, audioBlob.blob);
+        const url = await getDownloadURL(storageRef);
+        evidencesLinks.push({ url, type: 'audio', date: new Date().toISOString() });
+      }
+
+      if (evidencesLinks.length > 0) {
+        await setDoc(docRef, { evidences: evidencesLinks }, { merge: true });
+      }
 
       // Actualizar CRM del Cliente
       if (dni && dni.length === 8 && user?.storeId) {
@@ -404,6 +543,90 @@ export default function NuevaOrdenPage() {
             )}
           </div>
 
+          <div className="glass-card p-6">
+            <h2 className="text-sm font-bold text-foreground uppercase tracking-wider mb-4">3. Evidencias Opcionales</h2>
+            
+            <div className="space-y-4">
+              {/* Fotos */}
+              <div>
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  capture="environment" 
+                  ref={fileInputRef} 
+                  onChange={handlePhotoCapture} 
+                  className="hidden" 
+                />
+                
+                {photoFiles.length === 0 && (
+                  <button 
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isCompressing}
+                    className="w-full flex items-center justify-center gap-2 py-3 border border-dashed border-black/20 rounded-xl text-foreground/50 hover:bg-black/5 hover:text-foreground transition-all active:scale-95 disabled:opacity-50"
+                  >
+                    {isCompressing ? <span className="animate-spin border-2 border-black/30 border-t-black rounded-full w-4 h-4" /> : <Camera size={18} />}
+                    {isCompressing ? "Procesando..." : "Tomar/Añadir Foto"}
+                  </button>
+                )}
+
+                {photoFiles.length > 0 && (
+                  <div className="grid grid-cols-3 gap-2">
+                    {photoFiles.map((pf, i) => (
+                      <div key={i} className="relative group rounded-lg overflow-hidden border border-black/10 aspect-square bg-black/5">
+                        <img src={pf.preview} alt="evidencia" className="w-full h-full object-cover" />
+                        <button 
+                          onClick={() => removePhoto(i)}
+                          className="absolute top-1 right-1 bg-white/80 p-1 rounded-full text-error hover:bg-error hover:text-white transition-colors"
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                      </div>
+                    ))}
+                    <button 
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isCompressing || photoFiles.length >= 3}
+                      className="flex flex-col items-center justify-center gap-1 border border-dashed border-black/20 rounded-lg text-foreground/50 hover:bg-black/5 transition-all aspect-square disabled:opacity-50"
+                    >
+                      {isCompressing ? <span className="animate-spin border border-black/30 border-t-black rounded-full w-4 h-4" /> : <Plus size={16} />}
+                      <span className="text-[10px]">Añadir</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Audio */}
+              <div>
+                {!audioBlob ? (
+                  !isRecording ? (
+                    <button 
+                      onClick={startRecording}
+                      className="w-full flex items-center justify-center gap-2 py-3 border border-black/10 rounded-xl text-foreground font-medium hover:bg-black/5 transition-all active:scale-95"
+                    >
+                      <Mic size={18} className="text-primary" />
+                      Grabar Nota de Voz
+                    </button>
+                  ) : (
+                    <button 
+                      onClick={stopRecording}
+                      className="w-full flex items-center justify-center gap-2 py-3 bg-error/10 border border-error/50 rounded-xl text-error font-bold animate-pulse transition-all"
+                    >
+                      <StopCircle size={18} />
+                      Grabando... ({formatTime(recordingTime)}) Detener
+                    </button>
+                  )
+                ) : (
+                  <div className="flex items-center gap-3 bg-black/5 p-3 rounded-xl border border-black/10">
+                    <audio src={audioBlob.url} controls className="flex-1 h-8 max-w-full" />
+                    <button onClick={deleteAudio} className="p-2 text-error hover:bg-error/10 rounded-lg transition-colors">
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+            <p className="text-[10px] text-foreground/40 mt-3 text-center">Estas evidencias se subirán ocultas como uso exclusivo de control y calidad.</p>
+          </div>
+
         </div>
 
         {/* Columna Derecha: Resumen (Cart) y Pago */}
@@ -427,17 +650,35 @@ export default function NuevaOrdenPage() {
                       <p className="text-foreground font-medium text-sm mb-1">{c.item.name}</p>
 
                       {c.item.type === "KG" ? (
-                        /* Input de peso exacto para servicios por Kg */
-                        <div className="flex items-center gap-2 bg-black/5 w-fit rounded-lg border border-primary/30 px-3 py-1.5">
-                          <input
-                            type="number"
-                            min="0.1"
-                            step="0.1"
-                            value={c.qty}
-                            onChange={e => setQty(c.item.id, e.target.value)}
-                            className="w-16 bg-transparent text-primary font-mono font-bold text-sm text-center focus:outline-none"
-                          />
-                          <span className="text-foreground/50 text-[10px] font-bold uppercase">KG</span>
+                        /* Input de peso exacto para servicios por Kg con botones siempre visibles */
+                        <div className="flex items-center bg-black/5 w-fit rounded-lg border border-primary/30 overflow-hidden shadow-sm">
+                          <button 
+                            type="button"
+                            onClick={() => updateQty(c.item.id, -0.1)} 
+                            className="p-2 text-primary hover:bg-primary/10 active:scale-95 transition-all outline-none"
+                          >
+                            <Minus size={14} />
+                          </button>
+                          
+                          <div className="flex items-center px-1 border-x border-primary/20">
+                            <input
+                              type="number"
+                              min="0.1"
+                              step="0.1"
+                              value={c.qty}
+                              onChange={e => setQty(c.item.id, e.target.value)}
+                              className="w-12 bg-transparent text-primary font-mono font-bold text-sm text-center focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none p-1"
+                            />
+                            <span className="text-foreground/40 text-[9px] font-bold uppercase pr-1">KG</span>
+                          </div>
+
+                          <button 
+                            type="button"
+                            onClick={() => updateQty(c.item.id, 0.1)} 
+                            className="p-2 text-primary hover:bg-primary/10 active:scale-95 transition-all outline-none"
+                          >
+                            <Plus size={14} />
+                          </button>
                         </div>
                       ) : (
                         /* Stepper +/- para servicios por unidad */
@@ -449,19 +690,42 @@ export default function NuevaOrdenPage() {
                         </div>
                       )}
                     </div>
-                    <div className="text-right">
-                      <p className="text-foreground font-mono font-bold text-sm">S/ {(c.item.price * c.qty).toFixed(2)}</p>
-                      <p className="text-foreground/30 text-[10px]">(S/ {c.item.price.toFixed(2)} c/u)</p>
+                    <div className="flex items-center gap-3">
+                      <div className="text-right">
+                        <p className="text-foreground font-mono font-bold text-sm">S/ {(c.item.price * c.qty).toFixed(2)}</p>
+                        <p className="text-foreground/30 text-[10px]">(S/ {c.item.price.toFixed(2)} c/u)</p>
+                      </div>
+                      <button 
+                        type="button" 
+                        onClick={() => removeFromCart(c.item.id)}
+                        className="p-2 text-error/30 hover:text-error hover:bg-error/10 rounded-lg transition-all active:scale-90"
+                        title="Eliminar del resumen"
+                      >
+                        <Trash2 size={16} />
+                      </button>
                     </div>
                   </div>
                 ))
               )}
             </div>
 
-            <div className="p-4 bg-black/5 border-t border-b border-black/5 space-y-3">
-              <div className="flex gap-2">
-                <input type="text" value={couponCode} onChange={e => setCouponCode(e.target.value)} placeholder="Código de Cupón" className="flex-1 bg-white/50 border border-black/10 text-foreground text-sm px-3 py-2 rounded-lg uppercase placeholder:normal-case shadow-sm" />
-                <button onClick={handleValidateCoupon} disabled={isValidatingCoupon || !couponCode} className="bg-black/5 hover:bg-black/10 text-foreground text-xs font-bold px-3 py-2 rounded-lg transition-colors">Validar</button>
+            <div className="p-3 bg-black/5 border-t border-b border-black/5 flex flex-col gap-3">
+              <div className="flex gap-2 flex-wrap">
+                <div className="flex flex-1 gap-2 min-w-[140px]">
+                  <input type="text" value={couponCode} onChange={e => setCouponCode(e.target.value)} placeholder="Cupón" className="flex-1 min-w-0 bg-white/50 border border-black/10 text-foreground text-sm px-3 py-1.5 rounded-lg uppercase placeholder:normal-case shadow-sm" />
+                  <button onClick={handleValidateCoupon} disabled={isValidatingCoupon || !couponCode} className="bg-black/5 hover:bg-black/10 text-foreground text-xs font-bold px-3 py-1.5 rounded-lg transition-colors shrink-0">Validar</button>
+                </div>
+                
+                {/* Contador de piezas compacto */}
+                <div className="flex items-center gap-2 bg-white/50 px-2 py-1 rounded-lg border border-black/10 shadow-sm shrink-0">
+                  <PackageSearch size={14} className="text-foreground/50" />
+                  <span className="text-[11px] font-bold text-foreground/70 uppercase">Piezas:</span>
+                  <div className="flex items-center gap-1">
+                    <button onClick={() => setTotalPieces(prev => Math.max(0, (prev || 0) - 1))} className="w-6 h-6 bg-white border border-black/10 rounded flex justify-center items-center hover:bg-black/5 active:scale-95 text-foreground"><Minus size={12} /></button>
+                    <input type="number" min="0" placeholder="0" value={totalPieces || ""} onChange={e => setTotalPieces(e.target.value ? parseInt(e.target.value) : null)} className="w-8 bg-transparent text-center font-mono font-bold text-sm focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
+                    <button onClick={() => setTotalPieces(prev => (prev || 0) + 1)} className="w-6 h-6 bg-white border border-black/10 rounded flex justify-center items-center hover:bg-black/5 active:scale-95 text-foreground"><Plus size={12} /></button>
+                  </div>
+                </div>
               </div>
 
               {appliedCoupon && (
@@ -492,10 +756,12 @@ export default function NuevaOrdenPage() {
                 )}
               </div>
 
-              <div className="flex justify-between items-center mb-4">
+              <div className="flex justify-between items-center mb-6">
                 <span className="text-foreground/70">Total a Pagar</span>
                 <span className="text-3xl font-black text-primary font-mono">S/ {total.toFixed(2)}</span>
               </div>
+
+
 
               <div className="grid grid-cols-2 gap-2 mb-6 text-sm font-bold">
                 <button onClick={() => setPayMethod("EFECTIVO")} className={`py-3 rounded-lg flex justify-center items-center gap-2 transition-colors border ${payMethod === "EFECTIVO" ? "bg-black/10 text-foreground border-black/20" : "bg-transparent text-foreground/50 border-black/5 hover:border-black/10"}`}>

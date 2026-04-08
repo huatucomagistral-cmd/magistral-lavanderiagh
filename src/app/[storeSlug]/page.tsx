@@ -21,6 +21,7 @@ type TicketResult = {
   total: number;
   date: string;
   paymentStatus: string;
+  totalPieces: number;
 } | null;
 
 export default function StorefrontPage({ params }: PublicPageProps) {
@@ -103,6 +104,7 @@ export default function StorefrontPage({ params }: PublicPageProps) {
           total: data.total,
           date: new Date(data.date).toLocaleString(),
           paymentStatus: data.paymentStatus || "UNPAID",
+          totalPieces: data.totalPieces || 0,
         } as any);
       } else {
         toast.error(`El ticket "${normalized}" no fue encontrado. Verifica el número e intenta de nuevo.`);
@@ -216,7 +218,9 @@ export default function StorefrontPage({ params }: PublicPageProps) {
                </div>
                <div className="text-right">
                   <span className="font-mono text-xl font-bold text-primary">S/ {result.total.toFixed(2)}</span>
-                  <p className="text-foreground/60 text-xs mt-1">Total a pagar ({result.items} prendas)</p>
+                  <p className="text-foreground/60 text-xs mt-1">
+                    {result.totalPieces > 0 ? `${result.totalPieces} uds. (en ${result.items} serv.)` : `Total a pagar (${result.items} prendas)`}
+                  </p>
                </div>
              </div>
 

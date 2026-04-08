@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Plus, Trash2, Edit2, Info } from "lucide-react";
 import { db } from "@/lib/firebase";
 import { useStore } from "@/store/useStore";
-import { collection, onSnapshot, addDoc, deleteDoc, doc } from "firebase/firestore";
+import { collection, onSnapshot, addDoc, deleteDoc, doc, updateDoc } from "firebase/firestore";
 import { toast } from "react-hot-toast";
 
 type ServiceItem = {
@@ -20,6 +20,7 @@ export default function ServicesPage() {
   const [services, setServices] = useState<ServiceItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   // Form State
   const [name, setName] = useState("");
@@ -41,25 +42,52 @@ export default function ServicesPage() {
     });
     return () => unsubscribe();
   }, []);
+  
+  const clearForm = () => {
+    setName("");
+    setPrice("");
+    setType("KG");
+    setDescription("");
+    setEditingId(null);
+  };
+  
+  const handleOpenEdit = (service: ServiceItem) => {
+    setEditingId(service.id);
+    setName(service.name);
+    setPrice(service.price.toString());
+    setType(service.type);
+    setDescription(service.description || "");
+    setIsModalOpen(true);
+  };
 
-  const handleCreate = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsModalOpen(false);
     
     try {
-      // Guardar en Firestore
       if (!user?.storeId) throw new Error("Store ID missing");
-      await addDoc(collection(db, `stores/${user.storeId}/services`), {
+      
+      const serviceData = {
         name,
         price: parseFloat(price) || 0,
         type,
         description
-      });
-      // reset
-      setName(""); setPrice(""); setType("KG"); setDescription("");
+      };
+
+      if (editingId) {
+        // ACTUALIZAR
+        await updateDoc(doc(db, `stores/${user.storeId}/services`, editingId), serviceData);
+        toast.success("Servicio actualizado");
+      } else {
+        // CREAR NUEVO
+        await addDoc(collection(db, `stores/${user.storeId}/services`), serviceData);
+        toast.success("Servicio creado");
+      }
+      
+      clearForm();
     } catch(error) {
        console.error(error);
-       toast.error("Error al guardar en la nube");
+       toast.error("Error al guardar cambios");
     }
   };
 
@@ -82,8 +110,8 @@ export default function ServicesPage() {
           <p className="text-foreground/60">Crea los servicios y precios que verán tus clientes y tu cajero.</p>
         </div>
         <button 
-          onClick={() => setIsModalOpen(true)}
-          className="bg-primary hover:bg-primary-hover active:scale-95 transition-all text-white font-semibold rounded-xl px-5 py-2.5 flex items-center gap-2"
+          onClick={() => { clearForm(); setIsModalOpen(true); }}
+          className="bg-primary hover:bg-primary-hover active:scale-95 transition-all text-white font-semibold rounded-xl px-5 py-2.5 flex items-center gap-2 shadow-lg shadow-primary/20"
         >
           <Plus size={18} /> Nuevo Servicio
         </button>
@@ -121,7 +149,11 @@ export default function ServicesPage() {
             )}
 
             <div className="flex items-center justify-end gap-2 border-t border-black/5 pt-4">
-              <button className="p-2 text-foreground/30 hover:text-primary transition-colors" title="Editar">
+              <button 
+                onClick={() => handleOpenEdit(service)}
+                className="p-2 text-foreground/30 hover:text-primary transition-colors hover:bg-primary/5 rounded-lg" 
+                title="Editar"
+              >
                 <Edit2 size={16} />
               </button>
               <button 
@@ -142,10 +174,12 @@ export default function ServicesPage() {
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in zoom-in-95 duration-200">
           <div className="bg-white border border-black/10 rounded-3xl w-full max-w-md overflow-hidden relative shadow-2xl">
              <div className="p-6 border-b border-black/5">
-                <h2 className="text-xl font-bold text-foreground">Nuevo Servicio</h2>
+                <h2 className="text-xl font-bold text-foreground">
+                  {editingId ? "Editar Servicio" : "Nuevo Servicio"}
+                </h2>
              </div>
              
-             <form onSubmit={handleCreate} className="p-6 space-y-4">
+             <form onSubmit={handleSubmit} className="p-6 space-y-4">
                 <div>
                    <label className="block text-sm font-medium text-foreground/70 mb-1">Nombre del Servicio</label>
                    <input type="text" value={name} onChange={e => setName(e.target.value)} required placeholder="Ej: Zapatillas blancas"
@@ -183,7 +217,7 @@ export default function ServicesPage() {
                      Cancelar
                    </button>
                    <button type="submit" className="flex-1 bg-primary hover:bg-primary-hover active:scale-95 transition-all text-white font-bold rounded-xl px-4 py-2.5 shadow-lg shadow-primary/20">
-                     Guardar
+                     {editingId ? "Actualizar" : "Guardar"}
                    </button>
                 </div>
              </form>

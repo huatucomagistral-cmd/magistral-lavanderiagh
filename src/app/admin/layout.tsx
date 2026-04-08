@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { LayoutDashboard, Users, Receipt, Package, Settings, LogOut, Menu, X, ClipboardList, TrendingUp, Megaphone } from "lucide-react";
+import { LayoutDashboard, Users, Receipt, Package, Settings, LogOut, Menu, X, ClipboardList, TrendingUp, Megaphone, DollarSign } from "lucide-react";
 import Link from "next/link";
 import { useStore } from "@/store/useStore";
 import { auth, db } from "@/lib/firebase";
@@ -131,6 +131,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         <nav className="flex-1 p-4 flex flex-col gap-2 overflow-y-auto">
           <SidebarLink href="/admin" icon={<LayoutDashboard size={20} />} label="Dashboard" exact />
           <SidebarLink href="/admin/caja" icon={<Receipt size={20} />} label="Caja" />
+          <SidebarLink href="/admin/gastos" icon={<DollarSign size={20} />} label="Gastos" />
           <SidebarLink
             href="/admin/pedidos"
             icon={<Package size={20} />}
