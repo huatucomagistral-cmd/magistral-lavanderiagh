@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Plus, Search, MoreVertical, MapPin, CheckCircle, PackageSearch, Loader2, Info, History, X, Check, Trash2 } from "lucide-react";
-import { collection, onSnapshot, doc, updateDoc } from "firebase/firestore";
+import { Plus, Search, MoreVertical, MapPin, CheckCircle, PackageSearch, Loader2, Info, History, X, Check, Trash2, Inbox, Activity, CheckCircle2, ShoppingBag, ArrowRight, Banknote, Smartphone, Lock } from "lucide-react";
+import { collection, onSnapshot, doc, updateDoc, query, orderBy } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useStore } from "@/store/useStore";
 import { toast } from "react-hot-toast";
@@ -32,11 +32,13 @@ export default function OrdenesPage() {
   const [loading, setLoading] = useState(true);
   const [orderToCancel, setOrderToCancel] = useState<Order | null>(null);
   const [cancelReason, setCancelReason] = useState("");
+  const [activeTab, setActiveTab] = useState<OrderStatus>('RECIBIDO');
 
   // Cargar orders en tiempo real desde Firebase
   useEffect(() => {
     if (!user?.storeId) return;
-    const unsub = onSnapshot(collection(db, `stores/${user.storeId}/orders`), (snap) => {
+    const q = query(collection(db, `stores/${user.storeId}/orders`), orderBy("date", "asc"));
+    const unsub = onSnapshot(q, (snap) => {
       const data = snap.docs.map(d => ({
         id: d.id,
         ...d.data(),
@@ -111,127 +113,89 @@ export default function OrdenesPage() {
 
   const totalDelivered = deliveredToday.reduce((sum, o) => sum + (Number(o.total) || 0), 0);
 
-  const renderColumn = (status: OrderStatus, title: string, colorClass: string) => {
-    const columnOrders = filteredOrders.filter(o => o.status === status);
-    
+  const renderRow = (order: Order) => {
     return (
-      <div className="flex flex-col h-[420px] md:h-full glass-card p-4 overflow-hidden">
-        <div className={`mb-4 flex items-center justify-between pb-2 border-b-2 ${colorClass}`}>
-          <h3 className="font-black text-foreground uppercase tracking-widest text-xs">{title}</h3>
-          <span className="bg-primary/20 text-primary text-xs px-2 py-0.5 rounded-full font-black border border-primary/20">{columnOrders.length}</span>
+      <div key={order.id} className="hover:bg-white text-foreground p-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-colors group w-full">
+        {/* BLOQUE 1: ID y Fecha */}
+        <div className="flex flex-col min-w-[120px] shrink-0">
+          <Link href={`/admin/pedidos/ticket/${order.id}`} className="text-primary font-black font-mono bg-primary/10 px-2 py-0.5 rounded text-sm hover:underline self-start mb-1">
+            {order.ticketNumber || order.id.slice(0, 6).toUpperCase()}
+          </Link>
+          <span className="text-foreground/50 text-[10px] font-bold">{order.date}</span>
         </div>
-        
-        {loading ? (
-          <div className="flex justify-center flex-1 items-center"><Loader2 className="animate-spin text-primary/50" /></div>
-        ) : (
-          <div className="flex-1 space-y-3 overflow-y-auto pr-2 pb-4 scrollbar-hide">
-            {columnOrders.map(order => (
-              <div key={order.id} className="bg-white/90 p-4 hover:border-primary/50 transition-colors group border border-black/5 rounded-xl shadow-sm">
-                <div className="flex justify-between items-start mb-2">
-                  <div className="flex items-center gap-2">
-                    <Link href={`/admin/pedidos/ticket/${order.id}`} className="text-primary font-black font-mono bg-primary/10 px-2 py-0.5 rounded-md text-sm hover:underline">{order.ticketNumber || order.id.slice(0, 6).toUpperCase()}</Link>
-                    {user?.role === 'ADMIN' && (
-                      <button 
-                        onClick={() => setOrderToCancel(order)}
-                        className="text-foreground/20 hover:text-error transition-colors p-1 rounded-md hover:bg-error/10"
-                        title="Cancelar Orden"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    )}
-                  </div>
-                  <span className="text-foreground/60 text-[10px] font-bold">{order.date}</span>
-                </div>
-                
-                <h4 className="text-foreground font-black mb-1 line-clamp-1">{order.customerName}</h4>
-                
-                <div className="flex items-center gap-4 text-xs text-foreground/70 mb-3 font-medium">
-                  <span className="flex items-center gap-1 font-bold"><PackageSearch size={14} className="text-primary" /> {order.items?.length || 0} serv.</span>
-                  <span className="font-mono bg-primary/5 px-2 py-0.5 rounded text-primary font-black border border-primary/10">S/ {Number(order.total).toFixed(2)}</span>
-                </div>
 
-                {/* Bloque Superior: Avisos Activos de Deuda o Validación */}
-                {order.paymentStatus === 'PENDING_VERIFICATION' && (
-                  <div className="mb-3 animate-pulse">
-                    <button onClick={() => setPreviewVoucherOrder(order)} className="w-full flex items-center justify-center gap-2 bg-warning/20 text-warning border border-warning/30 py-2 rounded-lg text-[10px] font-black uppercase hover:bg-warning/30 transition-colors">
-                      <Info size={12} /> Pago por Validar
-                    </button>
-                  </div>
-                )}
-                {order.paymentStatus === 'UNPAID' && (
-                  <div className="mb-3 px-2 py-2 bg-error/10 text-error border border-error/20 rounded-lg flex flex-col gap-2">
-                    <span className="text-[10px] font-black uppercase text-center flex items-center justify-center gap-1">
-                      <Info size={12}/> Por Cobrar ❌
-                    </span>
-                    <div className="flex gap-1">
-                      <button 
-                        onClick={() => confirmPayment(order.id, 'EFECTIVO', order.status === 'LISTO')} 
-                        disabled={!isCajaOpen}
-                        className={`flex-1 text-[9px] py-1.5 rounded font-black transition-colors border ${isCajaOpen ? 'bg-white/20 hover:bg-white/40 border-error/10' : 'bg-black/5 text-error/40 border-black/5 cursor-not-allowed'}`}
-                      >
-                        {isCajaOpen ? '💵 Efectivo' : 'Cerrada 🔒'}
-                      </button>
-                      <button 
-                        onClick={() => confirmPayment(order.id, 'YAPE', order.status === 'LISTO')} 
-                        disabled={!isCajaOpen}
-                        className={`flex-1 text-[9px] py-1.5 rounded font-black border transition-colors ${isCajaOpen ? 'bg-[#742284]/20 hover:bg-[#742284]/40 text-[#742284] border-[#742284]/20' : 'bg-black/5 text-error/40 border-black/5 cursor-not-allowed'}`}
-                      >
-                        {isCajaOpen ? '🟣 Yape' : 'Cerrada 🔒'}
-                      </button>
-                    </div>
-                  </div>
-                )}
+        {/* BLOQUE 2: Cliente y Servicio */}
+        <div className="flex-1 flex flex-col min-w-0 w-full">
+          <h4 className="font-black text-base line-clamp-1 leading-tight mb-1">{order.customerName}</h4>
+          <div className="flex items-center gap-3 text-xs font-medium">
+             <span className="flex items-center gap-1 text-foreground/60 font-bold"><PackageSearch size={14}/> {order.items?.length || 0} serv.</span>
+             <span className="font-mono bg-primary/5 px-2 py-0.5 rounded text-primary font-black border border-primary/10">S/ {Number(order.total).toFixed(2)}</span>
+          </div>
+        </div>
 
-                {/* Fila Inferior (Siempre visible): Estado de Pago + Estado de Lavandería */}
-                <div className="flex gap-2 mt-2 pt-3 border-t border-black/5">
-                  {/* Columna Izquierda: Estado de Pago */}
-                  <div className="flex-1 flex flex-col justify-center">
-                     {order.paymentStatus === 'PAID' && (
-                       <div className="bg-success/10 text-success border border-success/20 rounded-md flex items-center justify-center shrink-0 w-full h-[34px]">
-                         <span className="text-[10px] font-black uppercase flex items-center gap-1"><CheckCircle size={10}/> Pagado</span>
-                       </div>
-                     )}
-                     {order.paymentStatus === 'PENDING_VERIFICATION' && (
-                        <button onClick={() => setPreviewVoucherOrder(order)} className="w-full bg-warning text-white hover:bg-warning/80 rounded-md text-[10px] font-black transition-colors shadow-lg shrink-0 h-[34px] shadow-warning/20 uppercase flex items-center justify-center gap-1">
-                          Validar
-                        </button>
-                     )}
-                     {order.paymentStatus === 'UNPAID' && (
-                        <div className="bg-black/5 text-foreground/40 rounded-md flex items-center justify-center shrink-0 w-full h-[34px] border border-black/5">
-                           <span className="text-[9px] uppercase font-black text-center leading-tight">Pendiente Pago</span>
-                        </div>
-                     )}
-                  </div>
+        {/* BLOQUE 3: Estado Financiero */}
+        <div className="w-full sm:w-[220px] flex flex-col justify-center gap-2 shrink-0">
+          {order.paymentStatus === 'PAID' && (
+            <div className={`border rounded-md flex items-center justify-center w-full h-[32px] ${(order.payMethod || order.paymentMethod)?.toUpperCase() === 'YAPE' ? 'bg-[#742284]/10 text-[#742284] border-[#742284]/20' : 'bg-success/10 text-success border-success/20'}`}>
+              <span className="text-[10px] font-black uppercase flex items-center gap-1"><CheckCircle2 size={13}/> Pagado ({(order.payMethod || order.paymentMethod || 'EFECTIVO')})</span>
+            </div>
+          )}
+          {order.paymentStatus === 'PENDING_VERIFICATION' && (
+            <button onClick={() => setPreviewVoucherOrder(order)} className="w-full bg-warning text-white hover:bg-warning/80 rounded-md text-[10px] font-black transition-colors shadow-sm h-[32px] shadow-warning/20 uppercase flex items-center justify-center gap-1 animate-pulse">
+              <Info size={14} /> Validar Yape
+            </button>
+          )}
+          {order.paymentStatus === 'UNPAID' && (
+             <div className="flex gap-2 w-full h-[32px]">
+               <button 
+                  onClick={() => confirmPayment(order.id, 'EFECTIVO', order.status === 'LISTO')} 
+                  disabled={!isCajaOpen}
+                  className={`flex-1 text-[10px] rounded-md font-black transition-colors border flex items-center justify-center gap-1 ${isCajaOpen ? 'bg-success/10 hover:bg-success/20 text-success border-success/20' : 'bg-black/5 text-foreground/40 border-black/5 cursor-not-allowed'}`}
+                >
+                  {isCajaOpen ? <><Banknote size={13}/> Efectivo</> : <><Lock size={12}/> Cerrada</>}
+                </button>
+                <button 
+                  onClick={() => confirmPayment(order.id, 'YAPE', order.status === 'LISTO')} 
+                  disabled={!isCajaOpen}
+                  className={`flex-1 text-[10px] rounded-md font-black border flex items-center justify-center gap-1 transition-colors ${isCajaOpen ? 'bg-[#742284]/10 hover:bg-[#742284]/20 text-[#742284] border-[#742284]/20' : 'bg-black/5 text-error/40 border-black/5 cursor-not-allowed'}`}
+                >
+                  {isCajaOpen ? <><Smartphone size={13}/> Yape</> : <><Lock size={12}/> Cerrada</>}
+                </button>
+             </div>
+          )}
+        </div>
 
-                  {/* Columna Derecha: Acción para avanzar Workflow */}
-                  <div className="flex-1 flex gap-1 items-stretch">
-                    {status === 'RECIBIDO' && (
-                      <button onClick={() => updateStatus(order.id, 'EN_PROCESO')} className="flex-1 bg-warning/20 text-warning hover:bg-warning/30 rounded-md text-xs font-black transition-all active:scale-95 border border-warning/10">
-                        Proceso
-                      </button>
-                    )}
-                    {status === 'EN_PROCESO' && (
-                      <button onClick={() => updateStatus(order.id, 'LISTO')} className="flex-1 bg-info/20 text-info hover:bg-info/40 rounded-md text-xs font-black transition-all active:scale-95 border border-info/10">
-                        Listo
-                      </button>
-                    )}
-                    {status === 'LISTO' && (
-                      <button onClick={() => { if(order.paymentStatus === 'PAID') updateStatus(order.id, 'ENTREGADO'); else alert('Debe cobrar el pago antes de entregar la ropa.'); }} className={`flex-1 rounded-md text-xs font-black transition-all active:scale-95 ${order.paymentStatus === 'PAID' ? 'bg-primary/20 text-primary hover:bg-primary/30 border border-primary/20' : 'bg-black/5 text-foreground/20 cursor-not-allowed border border-black/5'}`}>
-                        Entregar
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))}
-
-            {columnOrders.length === 0 && (
-              <div className="text-center py-10 text-foreground/60 border border-dashed border-black/10 rounded-xl bg-white/20 px-4">
-                  <p className="text-sm font-bold">Sin tickets en esta etapa</p>
-              </div>
+        {/* BLOQUE 4: Acciones Operativas */}
+        <div className="w-full sm:w-[150px] flex items-center gap-2 shrink-0">
+          <div className="flex-1">
+            {order.status === 'RECIBIDO' && (
+              <button onClick={() => updateStatus(order.id, 'EN_PROCESO')} className="w-full bg-warning/20 text-warning hover:bg-warning/30 rounded-md text-xs font-black transition-all active:scale-95 border border-warning/10 h-[32px] flex items-center justify-center gap-1">
+                Proceso <ArrowRight size={14}/>
+              </button>
+            )}
+            {order.status === 'EN_PROCESO' && (
+              <button onClick={() => updateStatus(order.id, 'LISTO')} className="w-full bg-info/20 text-info hover:bg-info/40 rounded-md text-xs font-black transition-all active:scale-95 border border-info/10 h-[32px] flex items-center justify-center gap-1">
+                Listo <CheckCircle2 size={14}/>
+              </button>
+            )}
+            {order.status === 'LISTO' && (
+              <button onClick={() => { if(order.paymentStatus === 'PAID') updateStatus(order.id, 'ENTREGADO'); else alert('Debe cobrar el pago antes de entregar la ropa.'); }} className={`w-full rounded-md text-xs font-black transition-all active:scale-95 h-[32px] flex items-center justify-center gap-1 ${order.paymentStatus === 'PAID' ? 'bg-primary text-white hover:bg-primary-hover shadow-sm shadow-primary/20' : 'bg-black/5 text-foreground/40 cursor-not-allowed border border-black/10'}`}>
+                Entregar <ShoppingBag size={14}/>
+              </button>
             )}
           </div>
-        )}
+          {user?.role === 'ADMIN' && (
+             <div className="flex h-[32px] items-center shrink-0">
+               <button 
+                 onClick={() => setOrderToCancel(order)}
+                 className="text-foreground/30 hover:text-error hover:bg-error/10 transition-colors p-1.5 rounded-lg flex items-center justify-center"
+                 title="Cancelar Orden"
+               >
+                 <Trash2 size={16} />
+               </button>
+             </div>
+          )}
+        </div>
       </div>
     );
   };
@@ -273,11 +237,45 @@ export default function OrdenesPage() {
         </div>
       </div>
 
-      {/* Tablero Kanban */}
-      <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-6 md:overflow-hidden md:min-h-0">
-         {renderColumn('RECIBIDO', 'Cola de Espera', 'border-black/5 text-foreground/40')}
-         {renderColumn('EN_PROCESO', 'En Lavado/Secado', 'border-warning/40 text-warning')}
-         {renderColumn('LISTO', 'Listos para Entrega', 'border-success/40 text-success')}
+      {/* TABS SELECTOR */}
+      <div className="flex flex-col sm:flex-row p-1 bg-white/40 rounded-xl border border-black/5 overflow-x-auto mb-4 shrink-0 shadow-sm gap-1">
+        <button 
+          onClick={() => setActiveTab('RECIBIDO')}
+          className={`flex-1 py-3 px-4 rounded-lg font-black text-sm transition-all whitespace-nowrap flex items-center justify-center gap-2 ${activeTab === 'RECIBIDO' ? 'bg-white text-foreground shadow-sm border border-black/5' : 'text-foreground/50 hover:text-foreground hover:bg-white/40 border border-transparent'}`}
+        >
+          <Inbox size={16}/> COLA DE ESPERA <span className="bg-black/10 px-2 py-0.5 rounded-md text-[10px]">{filteredOrders.filter(o => o.status === 'RECIBIDO').length}</span>
+        </button>
+        <button 
+          onClick={() => setActiveTab('EN_PROCESO')}
+          className={`flex-1 py-3 px-4 rounded-lg font-black text-sm transition-all whitespace-nowrap flex items-center justify-center gap-2 ${activeTab === 'EN_PROCESO' ? 'bg-warning/20 text-warning shadow-sm border border-warning/20' : 'text-foreground/50 hover:text-foreground hover:bg-white/40 border border-transparent'}`}
+        >
+          <Activity size={16}/> EN LAVADO/SECADO <span className="bg-warning/40 px-2 py-0.5 rounded-md text-[10px] text-warning-strong">{filteredOrders.filter(o => o.status === 'EN_PROCESO').length}</span>
+        </button>
+        <button 
+          onClick={() => setActiveTab('LISTO')}
+          className={`flex-1 py-3 px-4 rounded-lg font-black text-sm transition-all whitespace-nowrap flex items-center justify-center gap-2 ${activeTab === 'LISTO' ? 'bg-success/20 text-success shadow-sm border border-success/20' : 'text-foreground/50 hover:text-foreground hover:bg-white/40 border border-transparent'}`}
+        >
+          <CheckCircle2 size={16}/> LISTOS PARA ENTREGA <span className="bg-success/40 px-2 py-0.5 rounded-md text-[10px] text-success-strong">{filteredOrders.filter(o => o.status === 'LISTO').length}</span>
+        </button>
+      </div>
+
+      {/* LISTADO DE PEDIDOS (Wide Rows in Single Container) */}
+      <div className="flex-1 overflow-y-auto pr-2 pb-10">
+        {loading ? (
+          <div className="flex justify-center items-center py-20"><Loader2 className="animate-spin text-primary/50" size={32} /></div>
+        ) : (
+           filteredOrders.filter(o => o.status === activeTab).length === 0 ? (
+            <div className="text-center py-20 text-foreground/40 border-2 border-dashed border-black/10 rounded-2xl bg-white/20">
+                <PackageSearch size={48} className="mx-auto mb-4 opacity-50" />
+                <p className="text-lg font-black">Sin tickets en esta etapa</p>
+                <p className="text-sm font-medium mt-1">Limpio y ordenado.</p>
+            </div>
+           ) : (
+             <div className="bg-white/60 rounded-2xl border border-black/5 divide-y divide-black/10 shadow-sm overflow-hidden">
+               {filteredOrders.filter(o => o.status === activeTab).map(order => renderRow(order))}
+             </div>
+           )
+        )}
       </div>
 
       {/* Historial Lateral (Drawer) */}

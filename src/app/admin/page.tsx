@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { TrendingUp, Users, DollarSign, Activity, Loader2, Star, Award, Package } from "lucide-react";
-import { collection, onSnapshot, query, orderBy, limit } from "firebase/firestore";
+import { useEffect, useState, useMemo } from "react";
+import { TrendingUp, DollarSign, Activity, Loader2, Award, Package } from "lucide-react";
+import { collection, onSnapshot, query, orderBy } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useStore } from "@/store/useStore";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 
 export default function AdminDashboard() {
   const { user, currentStore } = useStore();
@@ -59,37 +60,35 @@ export default function AdminDashboard() {
   }, [user]);
 
   // Cálculos dinámicos
-  const todayOrders = orders.filter(o => o._isToday);
-  const ingresosHoy = orders
+  const todayOrders = useMemo(() => orders.filter(o => o._isToday), [orders]);
+  
+  const ingresosHoy = useMemo(() => orders
     .filter(o => o._isPaidToday)
-    .reduce((acc, o) => acc + (Number(o.total) || 0), 0);
+    .reduce((acc, o) => acc + (Number(o.total) || 0), 0), [orders]);
   
   const ordenesNuevas = todayOrders.length;
   const enProceso = orders.filter(o => o.status !== 'ENTREGADO').length;
-  
-  // Clientes únicos hoy (aproximación rápida)
-  const clientesHoy = new Set(todayOrders.map(o => o.customerPhone || o.customerDni)).size;
 
   // Gastos y Utilidad
-  const gastosHoy = expenses
+  const gastosHoy = useMemo(() => expenses
     .filter(e => e._isToday)
-    .reduce((acc, e) => acc + (Number(e.amount) || 0), 0);
+    .reduce((acc, e) => acc + (Number(e.amount) || 0), 0), [expenses]);
   
   const utilidadHoy = ingresosHoy - gastosHoy;
 
-  const ingresosTotales = orders
+  const ingresosTotales = useMemo(() => orders
     .filter(o => o.status === 'ENTREGADO' || o.paymentStatus === 'PAID')
-    .reduce((acc, o) => acc + (Number(o.total) || 0), 0);
+    .reduce((acc, o) => acc + (Number(o.total) || 0), 0), [orders]);
   
-  const gastosTotales = expenses.reduce((acc, e) => acc + (Number(e.amount) || 0), 0);
+  const gastosTotales = useMemo(() => expenses.reduce((acc, e) => acc + (Number(e.amount) || 0), 0), [expenses]);
   const utilidadTotal = ingresosTotales - gastosTotales;
 
-  const topCustomers = (() => {
+  const topCustomers = useMemo(() => {
     const map = new Map();
     orders.forEach(o => {
       if(!o.customerName) return;
       const key = o.customerPhone || o.customerDni || o.customerName;
-      const current = map.get(key) || { name: o.customerName, spent: 0, count: 0, phone: o.customerPhone };
+      const current = map.get(key) || { name: o.customerName, spent: 0, count: 0 };
       if(o.status === 'ENTREGADO' || o.paymentStatus === 'PAID') {
         current.spent += Number(o.total) || 0;
       }
@@ -100,7 +99,42 @@ export default function AdminDashboard() {
       .filter(c => c.spent > 0)
       .sort((a, b) => b.spent - a.spent)
       .slice(0, 5);
-  })();
+  }, [orders]);
+
+  // Generar data real real para el gráfico de los últimos 7 días
+  const chartData = useMemo(() => {
+    const days = [];
+    for (let i = 6; i >= 0; i--) {
+       const d = new Date();
+       d.setDate(d.getDate() - i);
+       const dateStr = d.toISOString().slice(0, 10);
+       const dayName = d.toLocaleDateString('es-ES', { weekday: 'short' });
+       
+       let cash = 0;
+       let yape = 0;
+       
+       orders.forEach((o:any) => {
+          const oDateStr = o._dateObj && !isNaN(o._dateObj.getTime()) ? o._dateObj.toISOString().slice(0, 10) : '';
+          const pDateStr = o.paymentDate ? (new Date(o.paymentDate)).toISOString().slice(0, 10) : '';
+          
+          if (pDateStr === dateStr || (!o.paymentDate && oDateStr === dateStr && o.paymentStatus === 'PAID')) {
+             const method = o.payMethod || o.paymentMethod || '';
+             if (method.toUpperCase() === 'YAPE') {
+                yape += Number(o.total) || 0;
+             } else {
+                cash += Number(o.total) || 0;
+             }
+          }
+       });
+
+       days.push({
+         name: dayName.charAt(0).toUpperCase() + dayName.slice(1),
+         Efectivo: cash,
+         Yape: yape,
+       });
+    }
+    return days;
+  }, [orders]);
 
   if (loading) {
     return (
@@ -113,35 +147,43 @@ export default function AdminDashboard() {
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div>
-        <h1 className="text-3xl font-bold text-foreground mb-2">Panel de Control</h1>
-        <p className="text-foreground/70 font-medium">Resumen de lavandería para {currentStore?.storeName || "tu negocio"}.</p>
+        <h1 className="text-3xl font-black text-black tracking-tight mb-1">Panel de Control</h1>
+        <p className="text-black/60 font-semibold text-sm">Visión ejecutiva de <strong className="text-primary">{currentStore?.storeName || currentStore?.name || "tu negocio"}</strong>.</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 xl:gap-6">
         {user?.role === "ADMIN" ? (
           <>
             <KpiCard 
               title="Ingresos Hoy"
               value={`S/ ${ingresosHoy.toFixed(2)}`}
-              trend="+0%"
               trendUp={true}
-              icon={<DollarSign className="text-primary" size={24} />}
+              icon={<DollarSign size={24} />}
+              colorClass="bg-[#0FFF50] text-[#0A9E32]"
+              borderClass="border-black/5"
             />
             <KpiCard 
               title="Gastos Hoy"
               value={`S/ ${gastosHoy.toFixed(2)}`}
-              icon={<TrendingUp className="rotate-180 text-error" size={24} />}
+              icon={<TrendingUp className="rotate-180" size={24} />}
+              colorClass="bg-[#FF453A] text-[#B01E15]"
+              borderClass="border-black/5"
             />
             <KpiCard 
               title="Utilidad de Hoy"
               value={`S/ ${utilidadHoy.toFixed(2)}`}
               trendUp={utilidadHoy >= 0}
-              icon={<Activity className="text-accent" size={24} />}
+              icon={<Activity size={24} />}
+              colorClass={utilidadHoy >= 0 ? "bg-primary text-black" : "bg-[#FF453A] text-[#B01E15]"}
+              borderClass="border-black/5"
             />
             <KpiCard 
               title="Nuevas Órdenes"
               value={ordenesNuevas.toString()}
-              icon={<Package className="text-warning" size={24} />}
+              icon={<Package size={24} />}
+              colorClass="bg-[#FF9F0A] text-[#9D5D02]"
+              borderClass="border-black/5"
             />
           </>
         ) : (
@@ -149,113 +191,155 @@ export default function AdminDashboard() {
             <KpiCard 
               title="Nuevas Órdenes"
               value={ordenesNuevas.toString()}
-              icon={<Activity className="text-accent" size={24} />}
+              icon={<Activity size={24} />}
+              colorClass="bg-primary text-black"
+              borderClass="border-black/5"
             />
             <KpiCard 
               title="En Proceso"
               value={enProceso.toString()}
-              icon={<TrendingUp className="text-warning" size={24} />}
+              icon={<TrendingUp size={24} />}
+              colorClass="bg-[#FF9F0A] text-[#9D5D02]"
+              borderClass="border-black/5"
             />
           </>
         )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Gráfico Semanal (Estructura preparada para datos reales en el futuro) */}
+        
+        {/* Gráfico Semanal Profesional */}
         {user?.role === "ADMIN" && (
-        <div className="lg:col-span-2 glass-card p-6 flex flex-col h-[400px] bg-white/60">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-lg font-bold text-foreground">Ingresos Semanales</h2>
-            <div className="flex gap-4 text-xs font-bold text-foreground/70">
-               <span className="flex items-center gap-1"><div className="w-3 h-3 rounded-sm bg-primary" /> Efectivo</span>
-               <span className="flex items-center gap-1"><div className="w-3 h-3 rounded-sm bg-[#742284]" /> Yape</span>
+        <div className="lg:col-span-2 bg-white rounded-3xl border border-black/5 p-6 flex flex-col h-[420px] shadow-sm">
+          <div className="flex justify-between items-center mb-8">
+            <div>
+              <h2 className="text-xl font-black text-black">Ingresos Semanales</h2>
+              <p className="text-xs font-bold text-black/50 tracking-wider uppercase mt-1">Últimos 7 días</p>
+            </div>
+            <div className="flex gap-4 text-xs font-bold text-black/70 bg-black/5 px-4 py-2 rounded-full">
+               <span className="flex items-center gap-2"><div className="w-2.5 h-2.5 rounded-full bg-primary shadow-sm" /> Efectivo</span>
+               <span className="flex items-center gap-2"><div className="w-2.5 h-2.5 rounded-full bg-[#742284] shadow-sm" /> Yape</span>
             </div>
           </div>
           
-          <div className="flex-1 flex items-end justify-between gap-2 xl:gap-4 pb-2 border-b border-black/5 relative">
-             <div className="absolute top-0 w-full h-[1px] bg-black/5" />
-             <div className="absolute top-1/2 w-full h-[1px] bg-black/5" />
-
-             {/* Datos Grafico - Por ahora promediamos los datos para visualizar la estructura */}
-             {[
-               { day: 'Lun', cash: 40, yape: 60 },
-               { day: 'Mar', cash: 50, yape: 30 },
-               { day: 'Mié', cash: 20, yape: 40 },
-               { day: 'Jue', cash: 60, yape: 80 },
-               { day: 'Vie', cash: 30, yape: 90 },
-               { day: 'Sáb', cash: 90, yape: 120 },
-               { day: 'Hoy', cash: ingresosHoy * 0.4, yape: ingresosHoy * 0.6 }
-             ].map((col, i) => (
-                <div key={i} className="flex-1 flex flex-col items-center gap-2 group z-10 w-full h-full justify-end cursor-pointer">
-                   <div className="opacity-0 group-hover:opacity-100 transition-opacity absolute -top-8 bg-black/80 px-3 py-1 rounded-lg text-xs font-bold text-white whitespace-nowrap z-20 pointer-events-none transform translate-y-2 group-hover:translate-y-0 shadow-lg">
-                      S/ {(col.cash + col.yape).toFixed(0)}
-                   </div>
-                   <div className="w-full max-w-[40px] flex flex-col justify-end gap-1 flex-1 relative">
-                       <div 
-                          className="w-full bg-[#742284] rounded-t-sm" 
-                          style={{ height: `${Math.max(5, (col.yape / 200) * 100)}%` }} 
-                       />
-                       <div 
-                          className="w-full bg-primary rounded-b-sm shadow-[0_0_15px_rgba(15,255,160,0.3)]" 
-                          style={{ height: `${Math.max(5, (col.cash / 200) * 100)}%` }} 
-                       />
-                   </div>
-                   <span className="text-foreground/70 text-[10px] sm:text-xs font-semibold">{col.day}</span>
-                </div>
-             ))}
+          <div className="flex-1 min-h-0 w-full relative -ml-4">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#00000010" />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#00000060', fontWeight: 'bold' }} dy={10} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#00000060', fontWeight: 'bold' }} tickFormatter={(val) => `S/${val}`} />
+                <Tooltip 
+                   cursor={{ fill: '#00000005' }} 
+                   contentStyle={{ borderRadius: '16px', border: '1px solid #00000010', boxShadow: '0 10px 40px rgba(0,0,0,0.08)', fontWeight: 'bold', padding: '12px' }} 
+                   itemStyle={{ fontWeight: 'black', fontSize: '14px' }}
+                />
+                <Bar dataKey="Yape" stackId="a" fill="#742284" radius={[0, 0, 0, 0]} barSize={40} />
+                <Bar dataKey="Efectivo" stackId="a" fill="var(--color-primary)" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
           </div>
         </div>
         )}
 
-        {/* Business Intelligence (Admin Only) */}
+        {/* Top Clientes con Medallas */}
         {user?.role === "ADMIN" && (
-          <div className="glass-card p-6 overflow-hidden flex flex-col">
-            <h2 className="text-lg font-semibold text-foreground mb-2 flex items-center gap-2">
-              <Award className="text-primary" /> Top 5 Clientes
-            </h2>
-            <p className="text-xs text-foreground/70 mb-1 font-medium">Total Ingresos: <strong className="text-success tracking-widest font-black">S/ {ingresosTotales.toFixed(2)}</strong></p>
-            <p className="text-xs text-foreground/70 mb-1 font-medium">Total Gastos: <strong className="text-error tracking-widest font-black">S/ {gastosTotales.toFixed(2)}</strong></p>
-            <div className="h-[1px] bg-black/5 my-2" />
-            <p className="text-xs text-foreground/70 mb-4 font-medium">Utilidad Total: <strong className="text-primary tracking-widest text-sm font-black">S/ {utilidadTotal.toFixed(2)}</strong></p>
+          <div className="bg-white rounded-3xl border border-black/5 p-6 overflow-hidden flex flex-col shadow-sm">
+            <div className="flex justify-between items-start mb-6">
+               <div>
+                 <h2 className="text-xl font-black text-black">Top Clientes</h2>
+                 <p className="text-xs font-bold text-black/50 tracking-wider uppercase mt-1">Mejores Compradores</p>
+               </div>
+               <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+                 <Award size={20} />
+               </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 mb-6">
+               <div className="bg-black/5 rounded-2xl p-4">
+                  <p className="text-[10px] uppercase font-bold text-black/50 tracking-wider">Ingresos Globales</p>
+                  <p className="text-lg font-black text-success mt-1">S/ {ingresosTotales.toFixed(2)}</p>
+               </div>
+               <div className="bg-black/5 rounded-2xl p-4">
+                  <p className="text-[10px] uppercase font-bold text-black/50 tracking-wider">Utilidad Global</p>
+                  <p className="text-lg font-black text-primary mt-1">S/ {utilidadTotal.toFixed(2)}</p>
+               </div>
+            </div>
+
             <div className="space-y-3 flex-1 overflow-y-auto pr-2 scrollbar-hide">
-              {topCustomers.map((c, i) => (
-                <div key={i} className="flex justify-between items-center bg-black/5 p-3 rounded-lg border border-black/5">
-                   <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-primary/20 text-primary font-black flex items-center justify-center text-xs">
-                        {i + 1}
-                      </div>
-                      <div>
-                        <p className="text-xs font-bold text-foreground">{c.name}</p>
-                        <p className="text-[10px] text-foreground/60 font-semibold">{c.count} órdenes</p>
-                      </div>
-                   </div>
-                   <div className="text-right">
-                      <p className="text-sm font-mono font-bold text-primary">S/ {c.spent.toFixed(2)}</p>
-                   </div>
-                </div>
-              ))}
+              {topCustomers.map((c, i) => {
+                 const isGold = i === 0;
+                 const isSilver = i === 1;
+                 const isBronze = i === 2;
+                 const maxSpent = topCustomers[0]?.spent || 1;
+                 const percent = (c.spent / maxSpent) * 100;
+                 
+                 let medalClass = "bg-primary/10 text-primary";
+                 let ringClass = "border-primary/20";
+                 if (isGold) { medalClass = "bg-[#FFD700]/20 text-[#B8860B]"; ringClass = "border-[#FFD700]/40"; }
+                 else if (isSilver) { medalClass = "bg-[#C0C0C0]/30 text-[#696969]"; ringClass = "border-[#C0C0C0]/50"; }
+                 else if (isBronze) { medalClass = "bg-[#CD7F32]/20 text-[#8B4513]"; ringClass = "border-[#CD7F32]/40"; }
+                 
+                 return (
+                 <div key={i} className={`flex flex-col p-3 rounded-2xl border ${ringClass} group hover:shadow-sm transition-all bg-white`}>
+                    <div className="flex justify-between items-center mb-2">
+                       <div className="flex items-center gap-3">
+                          <div className={`w-8 h-8 rounded-full font-black flex items-center justify-center text-xs ${medalClass}`}>
+                            {i + 1}
+                          </div>
+                          <div>
+                            <p className="text-sm font-bold text-black line-clamp-1">{c.name}</p>
+                            <p className="text-[10px] text-black/50 font-bold uppercase tracking-wider">{c.count} órdenes</p>
+                          </div>
+                       </div>
+                       <div className="text-right shrink-0">
+                          <p className="text-sm font-mono font-black text-black">S/ {c.spent.toFixed(2)}</p>
+                       </div>
+                    </div>
+                    {/* Barra Proporcional */}
+                    <div className="w-full bg-black/5 rounded-full h-1.5 overflow-hidden">
+                       <div className={`h-full rounded-full ${medalClass.split(' ')[0].replace('/20','').replace('/30','')}`} style={{ width: `${percent}%` }} />
+                    </div>
+                 </div>
+              )})}
               {topCustomers.length === 0 && (
-                <p className="text-foreground/60 text-sm text-center py-6 italic font-medium">No hay clientes frecuentes aún</p>
+                <div className="h-full flex flex-col justify-center items-center text-black/40 p-6">
+                  <Award size={32} className="mb-2 opacity-20" />
+                  <p className="text-sm font-bold text-center">No hay datos suficientes</p>
+                </div>
               )}
             </div>
           </div>
         )}
 
-        {/* Recent Activity Sincronizada */}
-        <div className="glass-card p-6 overflow-hidden flex flex-col bg-white/60">
-          <h2 className="text-lg font-semibold text-foreground mb-4">Actividad Reciente</h2>
-          <div className="space-y-4 flex-1 overflow-y-auto pr-2 scrollbar-hide">
-            {orders.slice(0, 8).map((o) => (
-              <ActivityItem 
-                key={o.id} 
-                text={`Orden #${o.ticketNumber?.slice(-3) || o.id.slice(0,4)} - ${o.customerName}`}
-                time={o.status === 'ENTREGADO' ? 'Entregado' : 'En proceso'}
-                status={o.status}
-              />
-            ))}
-            {orders.length === 0 && (
-              <p className="text-foreground/60 text-sm text-center py-10 italic font-medium">Sin actividad registrada</p>
-            )}
+        {/* Timeline Actividad Reciente */}
+        <div className={`bg-white rounded-3xl border border-black/5 p-6 shadow-sm flex flex-col ${user?.role === "ADMIN" ? "lg:col-span-3" : "col-span-1"}`}>
+          <div className="flex justify-between items-center mb-8">
+             <div>
+               <h2 className="text-xl font-black text-black">Línea de Tiempo Operativa</h2>
+               <p className="text-xs font-bold text-black/50 tracking-wider uppercase mt-1">Actividad Reciente</p>
+             </div>
+          </div>
+
+          <div className="space-y-0 overflow-x-auto pb-4 pt-2">
+             <div className="flex gap-4 min-w-max px-2 relative">
+               {/* Línea conectora horizontal para pantallas anchas o scroll */}
+               <div className="absolute top-2.5 left-4 right-4 h-[2px] bg-black/5 rounded-full z-0" />
+               
+               {orders.slice(0, 8).map((o, idx) => {
+                 return (
+                   <ActivityItem 
+                     key={o.id} 
+                     text={`Orden #${o.ticketNumber?.slice(-3) || o.id.slice(0,4)} • ${o.customerName}`}
+                     status={o.status}
+                     date={o._dateObj}
+                   />
+                 )
+               })}
+
+               {orders.length === 0 && (
+                 <p className="text-black/40 text-sm italic font-bold">Sin actividad registrada en la tienda.</p>
+               )}
+             </div>
           </div>
         </div>
       </div>
@@ -263,44 +347,58 @@ export default function AdminDashboard() {
   );
 }
 
-function KpiCard({ title, value, trend, trendUp, icon }: any) {
+function KpiCard({ title, value, trendUp, icon, colorClass, borderClass }: any) {
   return (
-    <div className="glass-card p-6 flex flex-col gap-4 relative overflow-hidden group">
-      <div className="absolute -right-4 -bottom-4 opacity-[0.05] group-hover:opacity-[0.08] transition-opacity duration-500 scale-150 transform">
-        {icon}
-      </div>
-      <div className="flex justify-between items-start">
-        <span className="text-sm font-bold text-foreground/80">{title}</span>
-        <div className="w-10 h-10 rounded-full bg-black/5 flex items-center justify-center">
-          {icon}
+    <div className={`p-5 rounded-3xl bg-white border ${borderClass} flex flex-col gap-5 relative overflow-hidden group shadow-sm hover:shadow-md transition-all duration-300`}>
+      {/* Decorative Glow Atmosférico */}
+      <div className={`absolute -right-6 -top-6 w-24 h-24 rounded-full ${colorClass.split(" ")[0]} opacity-30 blur-2xl group-hover:opacity-50 transition-opacity duration-500`} />
+      
+      <div className="flex justify-between items-start z-10">
+        <span className="text-sm font-bold text-black/50 tracking-tight">{title}</span>
+        <div className={`w-10 h-10 rounded-2xl flex items-center justify-center ${colorClass.split(" ")[0]} bg-opacity-10 text-current`}>
+          <div className="text-current opacity-80">
+            {icon}
+          </div>
         </div>
       </div>
-      <div>
-        <h3 className="text-3xl font-bold text-foreground tracking-tight">{value}</h3>
-        {trend && (
-          <p className={`text-xs font-bold mt-1 ${trendUp ? 'text-success' : 'text-error'}`}>
-             Dato en tiempo real
-          </p>
-        )}
+      <div className="z-10 mt-2">
+        <h3 className="text-4xl font-black text-black tracking-tighter tabular-nums">{value}</h3>
+        <p className={`text-[10px] font-bold mt-3 uppercase tracking-wider flex items-center gap-1.5 ${trendUp ? 'text-success' : 'text-error'}`}>
+          <span className={`w-1.5 h-1.5 rounded-full ${trendUp ? 'bg-success' : 'bg-error'} animate-pulse`} />
+          En tiempo real
+        </p>
       </div>
     </div>
   );
 }
 
-function ActivityItem({ text, time, status }: { text: string; time: string; status?: string }) {
+function ActivityItem({ text, status, date }: any) {
   const getStatusColor = () => {
-    if (status === 'ENTREGADO') return 'bg-success';
-    if (status === 'LISTO') return 'bg-primary';
-    return 'bg-warning';
+    if (status === 'ENTREGADO') return 'bg-success border-success text-success';
+    if (status === 'LISTO') return 'bg-primary border-primary text-primary';
+    return 'bg-[#FF9F0A] border-[#FF9F0A] text-[#9D5D02]';
   };
 
+  const getStatusLabel = () => {
+     if (status === 'ENTREGADO') return 'Entregado';
+     if (status === 'LISTO') return 'Listo';
+     return 'Proceso';
+  }
+
+  const timeStr = date && !isNaN(date.getTime()) 
+    ? date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) 
+    : '--:--';
+
   return (
-    <div className="flex gap-4 items-start relative pb-2">
-      <div className={`w-2 h-2 rounded-full ${getStatusColor()} mt-2 flex-shrink-0 z-10 shadow-[0_0_8px_currentColor]`} />
-      <div className="absolute left-[3px] top-4 bottom-[-16px] w-[2px] bg-black/5 z-0" />
-      <div>
-        <p className="text-xs font-bold text-foreground/90 line-clamp-1">{text}</p>
-        <span className="text-[10px] text-foreground/60 font-bold uppercase tracking-wider">{time}</span>
+    <div className="flex flex-col gap-3 relative group min-w-[200px] max-w-[240px]">
+      <div className={`w-5 h-5 rounded-full border-[5px] shadow-sm border-white flex-shrink-0 z-10 ${getStatusColor().split(' ')[0]} transition-transform group-hover:scale-125 mx-auto`} />
+      
+      <div className="bg-white p-4 rounded-2xl border border-black/5 shadow-sm group-hover:shadow-md transition-shadow group-hover:border-black/10">
+        <div className="flex justify-between items-center mb-2">
+           <span className={`text-[9px] font-black uppercase tracking-widest ${getStatusColor().split(' ')[2]} bg-black/5 px-2 py-0.5 rounded-md`}>{getStatusLabel()}</span>
+           <span className="text-[10px] text-black/40 font-black shrink-0">{timeStr}</span>
+        </div>
+        <p className="text-xs font-bold text-black leading-tight line-clamp-2">{text}</p>
       </div>
     </div>
   );

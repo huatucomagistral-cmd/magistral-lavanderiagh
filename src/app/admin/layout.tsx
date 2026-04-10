@@ -151,11 +151,14 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           {user.role === "ADMIN" && (
               <SidebarLink href="/admin/configuracion" icon={<Settings size={20} />} label="Configuración" />
           )}
-          {/* Email del usuario */}
+          {/* Email del usuario y Rol */}
           <div className="px-3 py-2 mt-1">
-            <span className="text-xs text-white/60 truncate block">{user.email}</span>
+             <div className="flex items-center justify-between gap-2">
+                <span className="text-xs text-white/60 truncate" title={user.email}>{user.email}</span>
+                <span className="text-[9px] bg-white/20 px-1.5 py-0.5 rounded text-white font-black uppercase tracking-widest shrink-0">{user.role}</span>
+             </div>
           </div>
-          <button onClick={handleLogout} className="flex items-center gap-3 px-3 py-2.5 w-full text-white/70 hover:text-white transition-all rounded-xl hover:bg-black/20 mt-1 font-medium">
+          <button onClick={handleLogout} className="flex items-center gap-3 px-3 py-2 w-full text-white/70 hover:text-white transition-all rounded-xl hover:bg-black/20 mt-1 font-medium">
             <LogOut size={20} />
             <span className="text-sm">Cerrar Sesión</span>
           </button>
@@ -164,10 +167,10 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-w-0 relative h-full">
-        <header className="glass-header h-16 flex items-center justify-between px-4 lg:px-6 shrink-0 z-30 relative">
+        <header className="glass-header h-16 flex items-center justify-between px-4 sm:px-6 shrink-0 z-30 relative md:hidden border-b border-black/5">
            
-           {/* Left side: Logo + Store Name (mobile) | empty (desktop) */}
-           <div className="flex items-center gap-2 md:hidden">
+           {/* Left side: Logo + Store Name (mobile) */}
+           <div className="flex items-center gap-2">
              {currentStore?.logoUrl ? (
                <img 
                  src={currentStore.logoUrl} 
@@ -186,34 +189,21 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
              </span>
            </div>
 
-           {/* Placeholder for desktop layout alignment */}
-           <div className="hidden md:block"></div>
-
-           {/* Right side: Role + Hamburger (mobile) | Email + Role (desktop) */}
-           <div className="flex items-center gap-3">
-              {/* Desktop: email + role */}
-              <div className="hidden md:flex flex-col items-end">
-                  <span className="text-sm font-medium text-foreground truncate max-w-[200px]">{user.email}</span>
-                  <span className="text-[10px] text-primary uppercase tracking-widest font-bold">{user.role}</span>
-              </div>
-
-              {/* Mobile: role label + hamburger */}
-              <div className="flex items-center gap-2 md:hidden">
-                <span className="text-[10px] text-primary uppercase tracking-widest font-bold">{user.role}</span>
-                <button 
-                  onClick={() => setIsMobileMenuOpen(true)}
-                  className="p-2 text-primary hover:text-primary-hover hover:bg-black/5 rounded-lg transition-colors"
-                  aria-label="Abrir menú"
-                >
-                  <Menu size={24} />
-                </button>
-              </div>
+           {/* Right side: Hamburger (mobile) */}
+           <div className="flex items-center gap-2">
+             <button 
+               onClick={() => setIsMobileMenuOpen(true)}
+               className="p-2 text-primary hover:text-primary-hover hover:bg-black/5 rounded-lg transition-colors"
+               aria-label="Abrir menú"
+             >
+               <Menu size={24} />
+             </button>
            </div>
         </header>
 
         
-        <div className="flex-1 overflow-y-auto w-full">
-          <div className="p-4 sm:p-6 lg:p-10 max-w-6xl mx-auto w-full min-h-full">
+        <div className="flex-1 overflow-y-auto w-full bg-background md:bg-transparent">
+          <div className="p-3 sm:p-5 max-w-6xl mx-auto w-full min-h-full">
             {children}
           </div>
         </div>
