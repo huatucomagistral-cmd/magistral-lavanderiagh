@@ -206,6 +206,7 @@ export default function HistorialPage() {
                   <th className="p-4 text-xs font-bold text-foreground/50 uppercase tracking-wider">Cliente</th>
                   <th className="p-4 text-xs font-bold text-foreground/50 uppercase tracking-wider">Total</th>
                   <th className="p-4 text-xs font-bold text-foreground/50 uppercase tracking-wider">Estado Operativo</th>
+                  <th className="p-4 text-xs font-bold text-foreground/50 uppercase tracking-wider">Fecha Recojo</th>
                   <th className="p-4 text-xs font-bold text-foreground/50 uppercase tracking-wider">Pago</th>
                   <th className="p-4 text-xs font-bold text-foreground/50 uppercase tracking-wider text-right">Recibo</th>
                 </tr>
@@ -246,6 +247,22 @@ export default function HistorialPage() {
                                </span>
                              )}
                           </div>
+                        )}
+                      </td>
+                      <td className="p-4 align-middle">
+                        {order.status === 'ENTREGADO' && order.deliveredAt ? (
+                          <div className="flex flex-col">
+                            <span className="text-sm font-medium text-foreground">
+                              {new Date(order.deliveredAt).toLocaleDateString()}
+                            </span>
+                            <span className="text-xs text-foreground/40">
+                              {new Date(order.deliveredAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                        ) : order.status === 'ENTREGADO' ? (
+                          <span className="text-xs text-foreground/30 italic">No registrada</span>
+                        ) : (
+                          <span className="text-xs text-foreground/20">-</span>
                         )}
                       </td>
                       <td className="p-4 align-middle">
