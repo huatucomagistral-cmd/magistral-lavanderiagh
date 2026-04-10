@@ -11,7 +11,8 @@ import {
   ArrowDownCircle, 
   Wallet,
   X,
-  CreditCard
+  CreditCard,
+  Search
 } from "lucide-react";
 import { 
   collection, 
@@ -21,10 +22,12 @@ import {
   addDoc, 
   deleteDoc, 
   doc, 
-  serverTimestamp
+  serverTimestamp,
+  where
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { toast } from "react-hot-toast";
+import { DateRangePicker } from "@/components/ui/DateRangePicker";
 
 interface Expense {
   id: string;
@@ -44,8 +47,10 @@ const CATEGORIES = [
   { id: "OTROS", label: "Otros", icon: "✨" }
 ];
 
+type FilterScope = "HOY" | "SEMANA" | "MES" | "TODOS" | "CUSTOM";
+
 export default function GastosPage() {
-  const { user } = useStore();
+  const { user, isCajaOpen } = useStore();
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -58,14 +63,61 @@ export default function GastosPage() {
   const [subtractFromCaja, setSubtractFromCaja] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
+  // Filtros
+  const [filterScope, setFilterScope] = useState<FilterScope>("MES");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [searchTrigger, setSearchTrigger] = useState(0); // To manually trigger CUSTOM search
+
+  const calculateDateRange = (scope: FilterScope) => {
+    const end = new Date();
+    end.setHours(23, 59, 59, 999);
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+
+    if (scope === "HOY") {
+      // already set
+    } else if (scope === "SEMANA") {
+      start.setDate(start.getDate() - 7);
+    } else if (scope === "MES") {
+      start.setDate(1);
+    }
+    return { start, end };
+  };
+
+  const [monthExpenses, setMonthExpenses] = useState<Expense[]>([]);
+
   useEffect(() => {
     if (!user?.storeId) return;
 
-    const q = query(
-      collection(db, `stores/${user.storeId}/expenses`),
-      orderBy("date", "desc")
-    );
+    let q;
+    
+    if (filterScope === "TODOS") {
+      q = query(
+        collection(db, `stores/${user.storeId}/expenses`),
+        orderBy("date", "desc")
+      );
+    } else {
+      let start, end;
+      if (filterScope === "CUSTOM") {
+        if (!startDate || !endDate) return;
+        start = new Date(`${startDate}T00:00:00-05:00`);
+        end = new Date(`${endDate}T23:59:59-05:00`);
+      } else {
+        const range = calculateDateRange(filterScope);
+        start = range.start;
+        end = range.end;
+      }
 
+      q = query(
+        collection(db, `stores/${user.storeId}/expenses`),
+        where("date", ">=", start),
+        where("date", "<=", end),
+        orderBy("date", "desc")
+      );
+    }
+
+    setLoading(true);
     const unsub = onSnapshot(q, (snap) => {
       const data = snap.docs.map(d => ({
         id: d.id,
@@ -76,13 +128,36 @@ export default function GastosPage() {
     });
 
     return () => unsub();
+  }, [user, filterScope, searchTrigger]);
+
+  // Query separada SIEMPRE anclada al mes actual para alimentar las tarjetas superiores
+  useEffect(() => {
+    if (!user?.storeId) return;
+    const start = new Date();
+    start.setDate(1);
+    start.setHours(0, 0, 0, 0);
+
+    const qStats = query(
+      collection(db, `stores/${user.storeId}/expenses`),
+      where("date", ">=", start)
+    );
+
+    const unsubStats = onSnapshot(qStats, (snap) => {
+      const data = snap.docs.map(d => ({
+        id: d.id,
+        ...d.data()
+      })) as Expense[];
+      setMonthExpenses(data);
+    });
+
+    return () => unsubStats();
   }, [user]);
 
-  // Totales
+  // Totales de tarjetas basados en monthExpenses, inmune al filtro de vista
   const todayStr = new Date().toISOString().slice(0, 10);
   const thisMonthStr = new Date().toISOString().slice(0, 7);
 
-  const stats = expenses.reduce((acc, exp) => {
+  const stats = monthExpenses.reduce((acc, exp) => {
     const rawDate = exp.date?.toDate ? exp.date.toDate() : (exp.date ? new Date(exp.date) : new Date());
     const expDateStr = rawDate.toISOString().slice(0, 10);
     const expMonthStr = rawDate.toISOString().slice(0, 7);
@@ -102,7 +177,7 @@ export default function GastosPage() {
         description,
         amount: parseFloat(amount),
         category,
-        subtractFromCaja,
+        subtractFromCaja: isCajaOpen ? subtractFromCaja : false,
         date: serverTimestamp(),
         createdBy: user?.email || "unknown",
         storeId: user?.storeId
@@ -179,6 +254,50 @@ export default function GastosPage() {
 
       {/* Expense List */}
       <div className="glass-card overflow-hidden">
+        
+        {/* Controladores de Filtro */}
+        <div className="p-4 border-b border-black/5 bg-white/40 flex flex-col md:flex-row gap-4 items-center justify-between">
+          <div className="flex bg-white/40 p-1 rounded-xl border border-black/5 w-full md:w-auto overflow-x-auto">
+            {["HOY", "SEMANA", "MES", "TODOS", "CUSTOM"].map((f) => (
+               <button 
+                 key={f}
+                 onClick={() => {
+                   setFilterScope(f as FilterScope);
+                   if (f !== "CUSTOM") {
+                     setStartDate("");
+                     setEndDate("");
+                   }
+                 }}
+                 className={`px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-colors ${filterScope === f ? 'bg-primary text-white shadow-lg' : 'text-foreground/50 hover:text-foreground hover:bg-black/5'}`}
+               >
+                 {f === "CUSTOM" ? "Personalizado" : f === "TODOS" ? "Todos" : f}
+               </button>
+            ))}
+          </div>
+
+          {filterScope === "CUSTOM" && (
+            <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+               <DateRangePicker 
+                 startDate={startDate}
+                 endDate={endDate}
+                 onStartDateChange={setStartDate}
+                 onEndDateChange={setEndDate}
+                 onClear={() => {
+                   setStartDate("");
+                   setEndDate("");
+                 }}
+               />
+               <button 
+                 onClick={() => setSearchTrigger(prev => prev + 1)} 
+                 disabled={!startDate || !endDate || loading}
+                 className="bg-primary px-6 py-3 rounded-xl font-bold text-white text-sm disabled:opacity-50 hover:bg-primary-hover transition-colors w-full sm:w-auto tracking-widest"
+               >
+                 FILTRAR
+               </button>
+            </div>
+          )}
+        </div>
+
         <div className="p-6 border-b border-black/5 bg-white/30 flex justify-between items-center">
             <h2 className="font-bold text-lg text-foreground">Movimientos Recientes</h2>
             <div className="text-sm text-foreground/60 font-bold flex items-center gap-2">
@@ -208,7 +327,7 @@ export default function GastosPage() {
               ) : expenses.length === 0 ? (
                 <tr>
                    <td colSpan={6} className="py-20 text-center text-foreground/70 italic font-black">
-                      No hay gastos registrados en el sistema aún.
+                      No hay gastos registrados en este periodo.
                    </td>
                 </tr>
               ) : (
@@ -326,19 +445,24 @@ export default function GastosPage() {
                     </div>
                  </div>
 
-                 <label className="flex items-center gap-3 p-4 bg-black/5 rounded-2xl cursor-pointer hover:bg-black/[0.08] transition-colors group">
+                 <label className={`flex items-center gap-3 p-4 bg-black/5 rounded-2xl transition-colors group ${!isCajaOpen ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:bg-black/[0.08]'}`}>
                     <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${
-                      subtractFromCaja ? "bg-error border-error text-white" : "border-black/20 group-hover:border-error/30"
+                      subtractFromCaja && isCajaOpen ? "bg-error border-error text-white" : "border-black/20 group-hover:border-error/30"
                     }`}>
-                       {subtractFromCaja && <div className="w-2 h-2 bg-white rounded-full animate-in zoom-in" />}
+                       {subtractFromCaja && isCajaOpen && <div className="w-2 h-2 bg-white rounded-full animate-in zoom-in" />}
                     </div>
                     <input 
-                       type="checkbox" className="hidden" checked={subtractFromCaja} 
+                       type="checkbox" className="hidden" checked={subtractFromCaja && isCajaOpen} 
+                       disabled={!isCajaOpen}
                        onChange={e => setSubtractFromCaja(e.target.checked)} 
                     />
                     <div>
                        <span className="text-sm font-bold text-foreground block">Descontar de Caja Abierta</span>
-                       <span className="text-[10px] text-foreground/60 font-bold uppercase tracking-tight">Afecta directamente al balance del día</span>
+                       {isCajaOpen ? (
+                          <span className="text-[10px] text-foreground/60 font-bold uppercase tracking-tight">Afecta directamente al balance del día</span>
+                       ) : (
+                          <span className="text-[10px] text-error font-bold uppercase tracking-tight">Caja registradora cerrada</span>
+                       )}
                     </div>
                  </label>
 

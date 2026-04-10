@@ -56,7 +56,7 @@
   }
 }
 
-/* Modificadores para impresión en Ticketera Térmica (80mm) */
+/* Modificadores para impresión en Ticketera Térmica (58mm) */
 @media print {
   /* Ocultar TODO el sistema web por defecto al imprimir */
   body * {
@@ -73,10 +73,10 @@
     position: absolute;
     left: 0;
     top: 0;
-    width: 80mm !important; /* Forzar el ancho del rollo de papel */
+    width: 58mm !important; /* Forzar el ancho del rollo de papel (58mm nativo) */
     margin: 0;
-    padding: 0.5cm; /* Margen interno de medio centímetro en todos los lados */
-    box-sizing: border-box; /* Asegura que el padding no cambie el ancho total de 80mm */
+    padding: 0.3cm; /* Margen interno reducido en todos los lados para 58mm */
+    box-sizing: border-box; /* Asegura que el padding no cambie el ancho total de 58mm */
   }
   
   /* Quitar los márgenes de página por defecto del navegador */

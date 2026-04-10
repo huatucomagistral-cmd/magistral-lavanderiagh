@@ -27,7 +27,7 @@ export default function NuevaOrdenPage() {
   const [customerPhone, setCustomerPhone] = useState("");
   const [isSearchingDNI, setIsSearchingDNI] = useState(false);
   const [cart, setCart] = useState<{ item: CatalogItem, qty: number }[]>([]);
-  const [payMethod, setPayMethod] = useState<"EFECTIVO" | "YAPE" | "TRANSFERENCIA" | "LUEGO">("EFECTIVO");
+  const [payMethod, setPayMethod] = useState<"EFECTIVO" | "YAPE" | "LUEGO">("EFECTIVO");
   const [isSaving, setIsSaving] = useState(false);
   const [loadingServices, setLoadingServices] = useState(true);
   const [catalogDb, setCatalogDb] = useState<CatalogItem[]>([]);

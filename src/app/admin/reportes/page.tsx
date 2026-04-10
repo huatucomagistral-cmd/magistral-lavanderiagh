@@ -7,6 +7,7 @@ import { db } from "@/lib/firebase";
 import { TrendingUp, Download, Calendar, DollarSign, Loader2, BarChart2, Activity } from "lucide-react";
 import { toast } from "react-hot-toast";
 import * as XLSX from "xlsx";
+import { DateRangePicker } from "@/components/ui/DateRangePicker";
 
 const OrderStatusObj: any = {
   RECIBIDO: "Recibido",
@@ -55,10 +56,8 @@ export default function ReportesPage() {
           setLoading(false);
           return;
         }
-        start = new Date(startDate);
-        start.setHours(0,0,0,0);
-        end = new Date(endDate);
-        end.setHours(23,59,59,999);
+        start = new Date(`${startDate}T00:00:00-05:00`);
+        end = new Date(`${endDate}T23:59:59-05:00`);
       } else {
         const range = calculateDateRange(filterType);
         start = range.start;
@@ -186,7 +185,13 @@ export default function ReportesPage() {
             {["HOY", "SEMANA", "MES", "CUSTOM"].map((f) => (
                <button 
                  key={f}
-                 onClick={() => setFilterType(f as ReportFilter)}
+                 onClick={() => {
+                   setFilterType(f as ReportFilter);
+                   if (f !== "CUSTOM") {
+                     setStartDate("");
+                     setEndDate("");
+                   }
+                 }}
                  className={`px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-colors ${filterType === f ? 'bg-primary text-white shadow-lg' : 'text-foreground/50 hover:text-foreground hover:bg-black/5'}`}
                >
                  {f === "CUSTOM" ? "Personalizado" : f}
@@ -195,11 +200,24 @@ export default function ReportesPage() {
           </div>
 
           {filterType === "CUSTOM" && (
-            <div className="flex items-center gap-2 w-full md:w-auto">
-               <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="bg-white/50 border border-black/10 text-foreground text-sm rounded-lg px-3 py-2 w-full" />
-               <span className="text-foreground/30">-</span>
-               <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="bg-white/50 border border-black/10 text-foreground text-sm rounded-lg px-3 py-2 w-full" />
-               <button onClick={fetchReportData} className="bg-primary px-4 py-2 rounded-lg font-bold text-white text-sm">Filtrar</button>
+            <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+               <DateRangePicker 
+                 startDate={startDate}
+                 endDate={endDate}
+                 onStartDateChange={setStartDate}
+                 onEndDateChange={setEndDate}
+                 onClear={() => {
+                   setStartDate("");
+                   setEndDate("");
+                 }}
+               />
+               <button 
+                 onClick={fetchReportData} 
+                 disabled={!startDate || !endDate || loading}
+                 className="bg-primary px-6 py-3 rounded-xl font-bold text-white text-sm disabled:opacity-50 hover:bg-primary-hover transition-colors w-full sm:w-auto tracking-widest"
+               >
+                 FILTRAR DATA
+               </button>
             </div>
           )}
         </div>

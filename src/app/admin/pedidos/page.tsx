@@ -6,6 +6,7 @@ import { Plus, Search, MoreVertical, MapPin, CheckCircle, PackageSearch, Loader2
 import { collection, onSnapshot, doc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useStore } from "@/store/useStore";
+import { toast } from "react-hot-toast";
 
 type OrderStatus = 'RECIBIDO' | 'EN_PROCESO' | 'LISTO' | 'ENTREGADO' | 'CANCELADO';
 
@@ -23,7 +24,7 @@ type Order = {
 };
 
 export default function OrdenesPage() {
-  const { user } = useStore();
+  const { user, isCajaOpen } = useStore();
   const [orders, setOrders] = useState<Order[]>([]);
   const [showHistory, setShowHistory] = useState(false);
   const [previewVoucherOrder, setPreviewVoucherOrder] = useState<Order | null>(null);
@@ -58,6 +59,11 @@ export default function OrdenesPage() {
   };
 
   const confirmPayment = async (id: string, method: string, andDeliver: boolean = false) => {
+    if (!isCajaOpen) {
+      toast.error("ERROR: No puedes recibir pagos con la CAJA CERRADA. ¡Abre la caja primero!");
+      return;
+    }
+    
     try {
       if (!user?.storeId) throw new Error("Store ID missing");
       const orderRef = doc(db, `stores/${user.storeId}/orders`, id);
@@ -68,8 +74,10 @@ export default function OrdenesPage() {
       };
       if (andDeliver) updates.status = 'ENTREGADO';
       await updateDoc(orderRef, updates);
+      toast.success(`Pago con ${method} registrado correctamente`);
     } catch(err) {
       console.error("Error confirming payment: ", err);
+      toast.error("Error al registrar pago");
     }
   };
 
@@ -156,8 +164,20 @@ export default function OrdenesPage() {
                       <Info size={12}/> Por Cobrar ❌
                     </span>
                     <div className="flex gap-1">
-                      <button onClick={() => confirmPayment(order.id, 'EFECTIVO', order.status === 'LISTO')} className="flex-1 bg-white/20 hover:bg-white/40 text-[9px] py-1.5 rounded font-black transition-colors border border-error/10">💵 Efectivo</button>
-                      <button onClick={() => confirmPayment(order.id, 'YAPE', order.status === 'LISTO')} className="flex-1 bg-[#742284]/20 hover:bg-[#742284]/40 text-[9px] py-1.5 rounded font-black text-[#742284] border border-[#742284]/20 transition-colors">🟣 Yape</button>
+                      <button 
+                        onClick={() => confirmPayment(order.id, 'EFECTIVO', order.status === 'LISTO')} 
+                        disabled={!isCajaOpen}
+                        className={`flex-1 text-[9px] py-1.5 rounded font-black transition-colors border ${isCajaOpen ? 'bg-white/20 hover:bg-white/40 border-error/10' : 'bg-black/5 text-error/40 border-black/5 cursor-not-allowed'}`}
+                      >
+                        {isCajaOpen ? '💵 Efectivo' : 'Cerrada 🔒'}
+                      </button>
+                      <button 
+                        onClick={() => confirmPayment(order.id, 'YAPE', order.status === 'LISTO')} 
+                        disabled={!isCajaOpen}
+                        className={`flex-1 text-[9px] py-1.5 rounded font-black border transition-colors ${isCajaOpen ? 'bg-[#742284]/20 hover:bg-[#742284]/40 text-[#742284] border-[#742284]/20' : 'bg-black/5 text-error/40 border-black/5 cursor-not-allowed'}`}
+                      >
+                        {isCajaOpen ? '🟣 Yape' : 'Cerrada 🔒'}
+                      </button>
                     </div>
                   </div>
                 )}
@@ -382,6 +402,10 @@ export default function OrdenesPage() {
                   <button 
                     onClick={(e) => {
                        e.stopPropagation();
+                       if (!isCajaOpen) {
+                         toast.error("ERROR: No puedes verificar pagos con la CAJA CERRADA. ¡Abre la caja primero!");
+                         return;
+                       }
                        confirmPayment(previewVoucherOrder.id, 'YAPE');
                        setPreviewVoucherOrder(null);
                     }} 
@@ -400,10 +424,19 @@ export default function OrdenesPage() {
         <div className="fixed inset-0 z-[130] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white border border-black/10 rounded-3xl w-full max-w-md shadow-2xl overflow-hidden p-8">
             <h3 className="text-2xl font-black text-foreground mb-2 tracking-tight">Cancelar Orden</h3>
-            <p className="text-foreground/70 text-sm mb-6 font-medium">
+            <p className="text-foreground/70 text-sm mb-4 font-medium">
               Estás por cancelar el ticket <span className="text-primary font-mono font-black">#{orderToCancel.ticketNumber}</span>. 
               Indica el motivo para el reporte de auditoría.
             </p>
+            {orderToCancel.paymentStatus === 'PAID' && (
+              <div className="mb-6 p-4 bg-error/10 border border-error/20 rounded-xl">
+                 <p className="text-error text-[11px] font-black uppercase text-center leading-relaxed">
+                   ⚠️ ¡ATENCIÓN! Este ticket ya fue cobrado (Pagado).
+                   <br/>
+                   Si el cliente pagó en EFECTIVO y vas a devolver el dinero, recuerda registrar manualmente un Gasto de Devolución en la Caja para que cuadre el dinero físico.
+                 </p>
+              </div>
+            )}
 
             <textarea
               value={cancelReason}

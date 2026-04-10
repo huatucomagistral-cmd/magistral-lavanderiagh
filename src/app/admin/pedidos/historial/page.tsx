@@ -6,6 +6,7 @@ import { collection, query, orderBy, limit, getDocs, where, Timestamp } from "fi
 import { db } from "@/lib/firebase";
 import { Search, History, Loader2, ArrowRight, Info } from "lucide-react";
 import Link from "next/link";
+import { DateRangePicker } from "@/components/ui/DateRangePicker";
 
 const OrderStatus = {
   RECIBIDO: "Recibido",
@@ -20,6 +21,8 @@ export default function HistorialPage() {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchString, setSearchString] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
   const [isSearching, setIsSearching] = useState(false);
 
   // Carga Inicial
@@ -61,29 +64,41 @@ export default function HistorialPage() {
   // Búsqueda Manual
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user?.storeId || !searchString.trim()) return;
+    // Requerimos al menos un criterio (texto o fechas)
+    if (!user?.storeId || (!searchString.trim() && !startDate && !endDate)) return;
 
     setIsSearching(true);
     setOrders([]);
 
     try {
       const ordersRef = collection(db, `stores/${user.storeId}/orders`);
-      
-      // Filtrar cliente en memoria por ahora para evitar índices complejos (DNI/Nombre/Ticket)
-      // Traemos una buena cantidad de historial y filtramos. 
-      // NOTA: Para un SaaS a gran escala esto requeriría Algolia o índices compuestos.
-      // Para cientos/miles de pedidos de una lavandería, esto es aceptable.
-      const q = query(ordersRef, orderBy("date", "desc"), limit(500));
+      let q = query(ordersRef, orderBy("date", "desc"), limit(500));
+
+      // Si hay fechas seleccionadas, aplicamos el timezone de Perú (UTC -5)
+      // para que el corte del día exacto coincida con su realidad local.
+      if (startDate) {
+        const start = new Date(`${startDate}T00:00:00-05:00`);
+        q = query(q, where("date", ">=", start.toISOString()));
+      }
+      if (endDate) {
+        const end = new Date(`${endDate}T23:59:59-05:00`);
+        q = query(q, where("date", "<=", end.toISOString()));
+      }
+
       const snap = await getDocs(q);
       
-      const searchLower = searchString.toLowerCase();
-      
-      const results = snap.docs.map(doc => ({ id: doc.id, ...doc.data() as any })).filter(o => 
-        (o.customerDni && o.customerDni.includes(searchString)) ||
-        (o.customerName && o.customerName.toLowerCase().includes(searchLower)) ||
-        (o.ticketNumber && o.ticketNumber.toLowerCase().includes(searchLower)) ||
-        (o.customerPhone && o.customerPhone.includes(searchString))
-      );
+      const searchLower = searchString.toLowerCase().trim();
+      let results = snap.docs.map(doc => ({ id: doc.id, ...doc.data() as any }));
+
+      // Filtrado por texto localmente
+      if (searchLower) {
+        results = results.filter(o => 
+          (o.customerDni && o.customerDni.includes(searchLower)) ||
+          (o.customerName && o.customerName.toLowerCase().includes(searchLower)) ||
+          (o.ticketNumber && o.ticketNumber.toLowerCase().includes(searchLower)) ||
+          (o.customerPhone && o.customerPhone.includes(searchLower))
+        );
+      }
       
       setOrders(results);
     } catch (e) {
@@ -111,7 +126,7 @@ export default function HistorialPage() {
           <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
             <History className="text-primary" /> Historial Inteligente
           </h1>
-          <p className="text-foreground/50 text-sm mt-1">Busca cualquier orden por DNI, Nombre o Ticket.</p>
+          <p className="text-foreground/50 text-sm mt-1">Busca cualquier orden filtrando por fechas, DNI, Nombre o Ticket.</p>
         </div>
       </div>
 
@@ -121,18 +136,32 @@ export default function HistorialPage() {
           <p className="text-sm text-foreground/70">
             Estás en <strong className="text-foreground">Modo Personal</strong>. 
             Solo ves las órdenes de las últimas 48 horas de forma automática.
-            Para buscar órdenes antiguas, utiliza el buscador.
+            Para buscar órdenes antiguas, utiliza el buscador y el selector de fechas.
           </p>
         </div>
       )}
 
-      {/* Buscador */}
-      <div className="glass-card p-4 md:p-6 flex flex-col md:flex-row gap-4 items-end">
-        <div className="flex-1 w-full">
-          <label className="text-xs font-bold text-foreground/50 uppercase tracking-widest mb-2 block">
-            Buscar por Nombre, DNI o Ticket
-          </label>
-          <form onSubmit={handleSearch} className="relative">
+      {/* Barra de Filtros */}
+      <div className="glass-card p-4 md:p-6">
+        <form onSubmit={handleSearch} className="flex flex-col xl:flex-row gap-6 items-start xl:items-end w-full">
+          
+          <div className="flex-shrink-0 w-full xl:w-auto">
+            <DateRangePicker 
+              startDate={startDate}
+              endDate={endDate}
+              onStartDateChange={setStartDate}
+              onEndDateChange={setEndDate}
+              onClear={() => {
+                setStartDate("");
+                setEndDate("");
+              }}
+            />
+          </div>
+
+          <div className="flex-1 w-full relative">
+            <label className="absolute -top-6 left-1 text-xs font-bold text-foreground/50 uppercase tracking-widest block xl:hidden">
+              Búsqueda por Texto
+            </label>
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <Search className="h-5 w-5 text-foreground/40" />
             </div>
@@ -145,13 +174,13 @@ export default function HistorialPage() {
             />
             <button
               type="submit"
-              disabled={!searchString.trim() || isSearching}
-              className="absolute inset-y-1 right-1 bg-primary hover:bg-primary-hover active:scale-95 disabled:opacity-50 text-white font-bold px-4 rounded-lg transition-all"
+              disabled={(!searchString.trim() && !startDate && !endDate) || isSearching}
+              className="absolute inset-y-1 right-1 bg-primary hover:bg-primary-hover active:scale-95 disabled:opacity-50 text-white font-bold px-4 md:px-6 rounded-lg transition-all"
             >
-              {isSearching ? <Loader2 className="animate-spin" size={18} /> : "Buscar"}
+              {isSearching ? <Loader2 className="animate-spin" size={18} /> : "Buscar Historial"}
             </button>
-          </form>
-        </div>
+          </div>
+        </form>
       </div>
 
       {/* Lista de Historial */}

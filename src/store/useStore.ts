@@ -34,12 +34,13 @@ interface AppState {
   cart: CartItem[];
   isCajaOpen: boolean;
   initialCash: number;
+  cajaOpenedAt: string | null;
   setUser: (user: User | null) => void;
   setAuthError: (error: string | null) => void;
   setStore: (store: LaundryStore | null) => void;
   addToCart: (item: CartItem) => void;
   removeFromCart: (id: string) => void;
-  setCajaStatus: (isOpen: boolean, initialCash?: number) => void;
+  setCajaStatus: (isOpen: boolean, initialCash?: number, openedAt?: string | null) => void;
 }
 
 export const useStore = create<AppState>((set) => ({
@@ -49,6 +50,7 @@ export const useStore = create<AppState>((set) => ({
   cart: [],
   isCajaOpen: false,
   initialCash: 0,
+  cajaOpenedAt: null,
   setUser: (user) => set({ user }),
   setAuthError: (error) => set({ authError: error }),
   setStore: (store) => set({ currentStore: store }),
@@ -60,5 +62,5 @@ export const useStore = create<AppState>((set) => ({
     set((state) => ({
       cart: state.cart.filter((item) => item.id !== id),
     })),
-  setCajaStatus: (isOpen, initialCash = 0) => set({ isCajaOpen: isOpen, initialCash: initialCash }),
+  setCajaStatus: (isOpen, initialCash = 0, openedAt = null) => set({ isCajaOpen: isOpen, initialCash: initialCash, cajaOpenedAt: openedAt }),
 }));

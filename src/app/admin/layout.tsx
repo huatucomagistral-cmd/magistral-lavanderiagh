@@ -47,9 +47,9 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     const unsubCaja = onSnapshot(doc(db, `stores/${user.storeId}/caja/sesion`), (snap) => {
       if (snap.exists()) {
         const data = snap.data();
-        useStore.getState().setCajaStatus(data.isOpen || false, data.initialCash || 0);
+        useStore.getState().setCajaStatus(data.isOpen || false, data.initialCash || 0, data.openedAt || null);
       } else {
-        useStore.getState().setCajaStatus(false, 0);
+        useStore.getState().setCajaStatus(false, 0, null);
       }
     });
 
