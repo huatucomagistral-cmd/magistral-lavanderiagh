@@ -21,6 +21,7 @@ type Order = {
   voucherUrl?: string;
   ticketNumber?: string;
   payMethod?: string;
+  paymentMethod?: string;
 };
 
 export default function OrdenesPage() {
