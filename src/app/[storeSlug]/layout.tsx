@@ -91,7 +91,7 @@ export default async function PublicLayout({ children, params }: PublicLayoutPro
            <div className="flex items-center gap-2"><Phone size={16}/> 987 654 321</div>
         </div>
         <p className="text-foreground/30 text-sm font-medium">
-          Tecnología <span className="text-foreground/50">Magistral SaaS</span> &copy; 2026
+          Tecnología <span className="text-foreground/50">Magistral</span> &copy; 2026
         </p>
       </footer>
     </div>

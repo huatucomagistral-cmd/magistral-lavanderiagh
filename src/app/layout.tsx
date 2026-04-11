@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Magistral SaaS - Lavanderías",
+  title: "Magistral - Lavanderías",
   description: "Plataforma Premium para la Gestión de Lavanderías",
   appleWebApp: {
     capable: true,
