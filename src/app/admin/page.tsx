@@ -11,7 +11,28 @@ export default function AdminDashboard() {
   const { user, currentStore } = useStore();
   const [orders, setOrders] = useState<any[]>([]);
   const [expenses, setExpenses] = useState<any[]>([]);
+  const [directSales, setDirectSales] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!user?.storeId) return;
+    const qpos = query(collection(db, `stores/${user.storeId}/directSales`), orderBy("date", "desc"));
+    const unsubPos = onSnapshot(qpos, (snap) => {
+      const todayStr = new Date().toISOString().slice(0, 10);
+      const data = snap.docs.map(d => {
+        const raw = d.data();
+        const dateObj = raw.date ? new Date(raw.date) : new Date();
+        const dsDateStr = !isNaN(dateObj.getTime()) ? dateObj.toISOString().slice(0, 10) : '';
+        return {
+          id: d.id, ...raw,
+          _isToday: dsDateStr === todayStr,
+          _dateObj: dateObj
+        };
+      });
+      setDirectSales(data);
+    });
+    return () => unsubPos();
+  }, [user]);
 
   useEffect(() => {
     if (!user?.storeId) return;
@@ -62,9 +83,13 @@ export default function AdminDashboard() {
   // Cálculos dinámicos
   const todayOrders = useMemo(() => orders.filter(o => o._isToday), [orders]);
   
+  const posIngresosHoy = useMemo(() => directSales
+    .filter(s => s._isToday)
+    .reduce((acc, s) => acc + (Number(s.total) || 0), 0), [directSales]);
+
   const ingresosHoy = useMemo(() => orders
     .filter(o => o._isPaidToday)
-    .reduce((acc, o) => acc + (Number(o.total) || 0), 0), [orders]);
+    .reduce((acc, o) => acc + (Number(o.total) || 0), 0) + posIngresosHoy, [orders, posIngresosHoy]);
   
   const ordenesNuevas = todayOrders.length;
   const enProceso = orders.filter(o => o.status !== 'ENTREGADO').length;
@@ -76,9 +101,12 @@ export default function AdminDashboard() {
   
   const utilidadHoy = ingresosHoy - gastosHoy;
 
+  const posIngresosTotales = useMemo(() => directSales
+    .reduce((acc, s) => acc + (Number(s.total) || 0), 0), [directSales]);
+
   const ingresosTotales = useMemo(() => orders
     .filter(o => o.status === 'ENTREGADO' || o.paymentStatus === 'PAID')
-    .reduce((acc, o) => acc + (Number(o.total) || 0), 0), [orders]);
+    .reduce((acc, o) => acc + (Number(o.total) || 0), 0) + posIngresosTotales, [orders, posIngresosTotales]);
   
   const gastosTotales = useMemo(() => expenses.reduce((acc, e) => acc + (Number(e.amount) || 0), 0), [expenses]);
   const utilidadTotal = ingresosTotales - gastosTotales;
@@ -127,6 +155,18 @@ export default function AdminDashboard() {
           }
        });
 
+       directSales.forEach((s:any) => {
+          const sDateStr = s._dateObj && !isNaN(s._dateObj.getTime()) ? s._dateObj.toISOString().slice(0, 10) : '';
+          if (sDateStr === dateStr) {
+             const method = s.payMethod || '';
+             if (method.toUpperCase() === 'YAPE' || method.toUpperCase() === 'YAPE/PLIN') {
+                 yape += Number(s.total) || 0;
+             } else {
+                 cash += Number(s.total) || 0;
+             }
+          }
+       });
+
        days.push({
          name: dayName.charAt(0).toUpperCase() + dayName.slice(1),
          Efectivo: cash,
@@ -134,7 +174,7 @@ export default function AdminDashboard() {
        });
     }
     return days;
-  }, [orders]);
+  }, [orders, directSales]);
 
   if (loading) {
     return (

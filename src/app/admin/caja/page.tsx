@@ -14,6 +14,7 @@ export default function CajaPage() {
   
   const [orders, setOrders] = useState<any[]>([]);
   const [expenses, setExpenses] = useState<any[]>([]);
+  const [directSales, setDirectSales] = useState<any[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(true);
 
   const [showHistoryModal, setShowHistoryModal] = useState(false);
@@ -80,6 +81,28 @@ export default function CajaPage() {
   }, [user, cajaOpenedAt]);
 
   useEffect(() => {
+    if (!user?.storeId) return;
+    const q = query(collection(db, `stores/${user.storeId}/directSales`), orderBy("date", "desc"));
+    const unsub = onSnapshot(q, (snap) => {
+      const cajaOpenedDate = cajaOpenedAt ? new Date(cajaOpenedAt).getTime() : null;
+
+      const data = snap.docs.map(d => {
+        const raw = d.data();
+        const dateObj = new Date(raw.date);
+        
+        let _isInCajaSession = false;
+        if (cajaOpenedDate && !isNaN(dateObj.getTime())) {
+           _isInCajaSession = dateObj.getTime() >= cajaOpenedDate;
+        }
+
+        return { id: d.id, ...raw, _isInCajaSession };
+      });
+      setDirectSales(data.filter((s: any) => s._isInCajaSession));
+    });
+    return () => unsub();
+  }, [user, cajaOpenedAt]);
+
+  useEffect(() => {
     if (showHistoryModal && user?.storeId) {
       setLoadingHistory(true);
       const q = query(collection(db, `stores/${user.storeId}/cajas_historial`), orderBy("closedAt", "desc"));
@@ -93,6 +116,7 @@ export default function CajaPage() {
 
   // Solo sumar a la caja los pedidos que fueron pagados hoy (en esta sesión) y NO fueron cancelados.
   const sessionOrders = orders.filter(o => o._isInCajaSession && o.status !== 'CANCELADO');
+  const sessionSales = directSales;
 
   const stats = sessionOrders.reduce((acc, order) => {
     const total = Number(order.total) || 0;
@@ -101,6 +125,14 @@ export default function CajaPage() {
     acc.cobrados += 1;
     return acc;
   }, { efectivo: 0, yape: 0, cobrados: 0 });
+
+  // Sumar ventas del Punto de Venta (Insumos)
+  sessionSales.forEach(sale => {
+    const total = Number(sale.total) || 0;
+    if(sale.payMethod === "EFECTIVO") stats.efectivo += total;
+    if(sale.payMethod === "YAPE") stats.yape += total;
+    stats.cobrados += 1;
+  });
 
   const totalIngresos = stats.efectivo + stats.yape;
   const totalGastosCaja = expenses.reduce((acc, exp) => acc + (Number(exp.amount) || 0), 0);
@@ -306,6 +338,22 @@ export default function CajaPage() {
                             <td className="py-3 px-4 text-right text-success font-black font-mono">+ S/ {Number(o.total).toFixed(2)}</td>
                           </tr>
                         ))}
+
+                        {sessionSales.map((s) => (
+                          <tr key={s.id} className="border-b border-black/5 hover:bg-black/[0.02]">
+                            <td className="py-3 px-4 font-mono">
+                              <span className="text-primary font-bold">POS VENTA</span>
+                              <span className="block text-foreground/60 text-[10px] font-sans normal-case font-medium">
+                                {s.items?.length || 0} producto(s)
+                              </span>
+                            </td>
+                            <td className="py-3 px-4">
+                              {s.payMethod === "YAPE" && <span className="px-2 py-0.5 rounded-full bg-[#742284]/10 text-[#742284] text-[9px] font-black uppercase">YAPE/PLIN</span>}
+                              {s.payMethod === "EFECTIVO" && <span className="px-2 py-0.5 rounded-full bg-success/10 text-success text-[9px] font-black uppercase">EFECTIVO</span>}
+                            </td>
+                            <td className="py-3 px-4 text-right text-success font-black font-mono">+ S/ {Number(s.total).toFixed(2)}</td>
+                          </tr>
+                        ))}
                         
                         {expenses.map((e) => (
                           <tr key={e.id} className="border-b border-black/5 bg-error/[0.03] hover:bg-error/[0.06]">
@@ -320,7 +368,7 @@ export default function CajaPage() {
                           </tr>
                         ))}
 
-                        {(sessionOrders.length === 0 && expenses.length === 0) && (
+                        {(sessionOrders.length === 0 && expenses.length === 0 && sessionSales.length === 0) && (
                           <tr>
                              <td colSpan={3} className="py-10 text-center text-foreground/60 italic text-xs font-bold font-sans">Sin movimientos de dinero aún</td>
                           </tr>

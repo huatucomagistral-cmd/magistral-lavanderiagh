@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { LayoutDashboard, Users, Receipt, Package, Settings, LogOut, Menu, X, ClipboardList, TrendingUp, Megaphone, DollarSign } from "lucide-react";
+import { LayoutDashboard, Users, Receipt, Package, Settings, LogOut, Menu, X, ClipboardList, TrendingUp, Megaphone, DollarSign, ShoppingCart } from "lucide-react";
 import Link from "next/link";
 import { useStore } from "@/store/useStore";
 import { auth, db } from "@/lib/firebase";
@@ -32,7 +32,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     }
 
     if (user.role === "PERSONAL") {
-      const blockedPaths = ["/admin/servicios", "/admin/staff", "/admin/configuracion", "/admin/reportes", "/admin/marketing"];
+      const blockedPaths = ["/admin/servicios", "/admin/staff", "/admin/configuracion", "/admin/reportes", "/admin/marketing", "/admin/inventario"];
       if (blockedPaths.some(p => pathname.startsWith(p))) {
         router.push("/admin"); // Kick them back to dashboard
       }
@@ -128,6 +128,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           <SidebarLink href="/admin" icon={<LayoutDashboard size={20} />} label="Dashboard" exact />
           <SidebarLink href="/admin/caja" icon={<Receipt size={20} />} label="Caja" />
           <SidebarLink href="/admin/gastos" icon={<DollarSign size={20} />} label="Gastos" />
+          <SidebarLink href="/admin/pos" icon={<ShoppingCart size={20} />} label="Punto de Venta" />
           <SidebarLink
             href="/admin/pedidos"
             icon={<Package size={20} />}
@@ -140,6 +141,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           {user.role === "ADMIN" && (
             <>
               <SidebarLink href="/admin/servicios" icon={<Settings size={20} />} label="Servicios" />
+              <SidebarLink href="/admin/inventario" icon={<Package size={20} />} label="Inventario" />
               <SidebarLink href="/admin/staff" icon={<Users size={20} />} label="Personal" />
               <SidebarLink href="/admin/reportes" icon={<TrendingUp size={20} />} label="Reportes" />
               <SidebarLink href="/admin/marketing" icon={<Megaphone size={20} />} label="Marketing" />
