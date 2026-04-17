@@ -104,16 +104,16 @@ export default function ServicesPage() {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="flex flex-row justify-between items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">Tarifario de Servicios</h1>
-
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2 sm:mb-0">Tarifario de Servicios</h1>
         </div>
         <button
           onClick={() => { clearForm(); setIsModalOpen(true); }}
-          className="bg-primary hover:bg-primary-hover active:scale-95 transition-all text-white font-semibold rounded-xl px-5 py-2.5 flex items-center gap-2 shadow-lg shadow-primary/20"
+          className="bg-primary hover:bg-primary-hover active:scale-95 transition-all text-white font-black rounded-xl p-3 sm:px-4 sm:py-3 flex items-center justify-center gap-2 shadow-lg shadow-primary/20 shrink-0"
         >
-          <Plus size={18} /> Nuevo Servicio
+          <Plus size={20} />
+          <span className="hidden sm:inline">Nuevo Servicio</span>
         </button>
       </div>
 
@@ -164,17 +164,17 @@ export default function ServicesPage() {
                 <div className="flex items-center border-l border-black/5 pl-3 sm:pl-4">
                   <button
                     onClick={() => handleOpenEdit(service)}
-                    className="p-2 text-foreground/30 hover:text-primary transition-colors hover:bg-primary/10 rounded-lg"
+                    className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-colors"
                     title="Editar"
                   >
-                    <Edit2 size={16} />
+                    <Edit2 size={18} />
                   </button>
                   <button
                     onClick={() => handleDelete(service.id)}
-                    className="p-2 text-foreground/30 hover:text-error hover:bg-error/10 rounded-lg transition-colors"
+                    className="p-2 text-error hover:bg-error/10 rounded-lg transition-colors"
                     title="Eliminar"
                   >
-                    <Trash2 size={16} />
+                    <Trash2 size={18} />
                   </button>
                 </div>
               </div>

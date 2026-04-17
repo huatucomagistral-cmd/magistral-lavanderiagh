@@ -242,141 +242,132 @@ export default function CajaPage() {
           </form>
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-1 space-y-6">
-            <div className="glass-card p-6 bg-white/80 border-primary/30 relative overflow-hidden">
-              <div className="absolute top-0 right-0 p-6 opacity-[0.05] pointer-events-none">
-                <Wallet size={120} className="text-primary" />
+        <div className="space-y-6">
+          {/* Header Action Row (Balance & Closing) */}
+          <div className="bg-white/60 rounded-2xl border border-black/5 shadow-sm p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-4 w-full sm:w-auto">
+              <div className="bg-primary/20 w-12 h-12 rounded-full flex items-center justify-center text-primary shrink-0">
+                <Wallet size={24} />
               </div>
-              <h3 className="text-foreground/70 font-medium mb-1 relative z-10">Balance en Caja</h3>
-              <p className="text-4xl font-black text-foreground tracking-tight relative z-10 font-mono">
-                S/ {saldoFinalEfectivo.toFixed(2)}
-              </p>
-
-              <div className="mt-6 flex flex-col gap-2 relative z-10">
-                <div className="flex justify-between text-sm">
-                  <span className="text-foreground/70 font-semibold">Base Inicial:</span>
-                  <span className="text-foreground font-bold">S/ {currentInitial.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-foreground/70 font-semibold">Cobros Efectivo:</span>
-                  <span className="text-success font-black">+ S/ {stats.efectivo.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-foreground/70 font-semibold">Gastos de Caja:</span>
-                  <span className="text-error font-black">- S/ {totalGastosCaja.toFixed(2)}</span>
-                </div>
-
-                <div className="flex justify-between text-xs mt-4 pt-4 border-t border-black/5">
-                  <span className="text-foreground/70 font-black uppercase tracking-tight">Órdenes Pagadas:</span>
-                  <span className="text-success font-black">{stats.cobrados}</span>
-                </div>
+              <div>
+                <p className="text-[10px] text-foreground/50 font-black uppercase tracking-widest mb-0.5">Balance Actual Efectivo</p>
+                <p className="text-3xl sm:text-4xl font-black text-foreground font-mono leading-none">S/ {saldoFinalEfectivo.toFixed(2)}</p>
               </div>
+            </div>
+            
+            <button 
+              onClick={handleCloseCaja} 
+              disabled={isProcessing} 
+              className="w-full sm:w-auto bg-error hover:bg-error/90 text-white font-bold py-3 px-6 rounded-xl flex items-center justify-center gap-2 transition-transform active:scale-95 shadow-md shadow-error/20 shrink-0"
+            >
+              {isProcessing ? <span className="animate-spin border-2 border-white/30 border-t-white rounded-full w-5 h-5" /> : <LockKeyhole size={20} />}
+              Cerrar Caja
+            </button>
+          </div>
 
-              <div className="mt-8 pt-6 border-t border-black/5 relative z-10">
-                <button onClick={handleCloseCaja} disabled={isProcessing} className="w-full bg-error hover:bg-error/80 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-transform active:scale-95 shadow-lg shadow-error/10">
-                  {isProcessing ? <span className="animate-spin border-2 border-white/30 border-t-white rounded-full w-5 h-5" /> : <LockKeyhole size={20} />}
-                  Realizar Cierre de Caja
-                </button>
-              </div>
+          {/* Metrics Ribbon */}
+          <div className="bg-white/60 rounded-2xl border border-black/5 shadow-sm grid grid-cols-2 lg:grid-cols-5 divide-x divide-y lg:divide-y-0 divide-black/5 overflow-hidden">
+            <div className="p-3 sm:p-4 flex flex-col justify-center items-center text-center">
+              <span className="text-[9px] sm:text-[10px] text-foreground/50 font-black uppercase tracking-widest flex items-center gap-1 mb-1">
+                <Wallet size={12} /> Base Inicial
+              </span>
+              <span className="text-base sm:text-lg font-bold text-foreground font-mono">S/ {currentInitial.toFixed(2)}</span>
+            </div>
+             <div className="p-3 sm:p-4 flex flex-col justify-center items-center text-center">
+              <span className="text-[9px] sm:text-[10px] text-success/70 font-black uppercase tracking-widest flex items-center gap-1 mb-1">
+                <DollarSign size={12} /> Entradas Efectivo
+              </span>
+              <span className="text-base sm:text-lg font-bold text-success font-mono">+ S/ {stats.efectivo.toFixed(2)}</span>
+            </div>
+            <div className="p-3 sm:p-4 flex flex-col justify-center items-center text-center">
+              <span className="text-[9px] sm:text-[10px] text-error/70 font-black uppercase tracking-widest flex items-center gap-1 mb-1">
+                <ArrowRightLeft size={12} /> Salidas Efectivo
+              </span>
+              <span className="text-base sm:text-lg font-bold text-error font-mono">- S/ {totalGastosCaja.toFixed(2)}</span>
+            </div>
+            <div className="p-3 sm:p-4 flex flex-col justify-center items-center text-center">
+              <span className="text-[9px] sm:text-[10px] text-[#742284]/70 font-black uppercase tracking-widest flex items-center gap-1 mb-1">
+                <DollarSign size={12} /> Yape/Plin
+              </span>
+              <span className="text-base sm:text-lg font-bold text-[#742284] font-mono">+ S/ {stats.yape.toFixed(2)}</span>
+            </div>
+            <div className="p-3 sm:p-4 flex flex-col justify-center items-center text-center bg-primary/5 lg:col-span-1 col-span-2">
+              <span className="text-[9px] sm:text-[10px] text-primary/70 font-black uppercase tracking-widest flex items-center gap-1 mb-1 text-center justify-center">
+                <Activity size={12} /> Ingresos Totales
+              </span>
+              <span className="text-base sm:text-lg font-bold text-primary font-mono">+ S/ {totalIngresos.toFixed(2)}</span>
             </div>
           </div>
 
-          <div className="lg:col-span-2 space-y-6">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="glass-card p-5 bg-primary/5 border-primary/20">
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary"><Wallet size={16} /></div>
-                  <span className="text-foreground/90 font-black tracking-tight text-sm">Total Ingresos</span>
-                </div>
-                <p className="text-2xl font-black text-primary font-mono">S/ {totalIngresos.toFixed(2)}</p>
-              </div>
-              <div className="glass-card p-5">
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="w-8 h-8 rounded-full bg-success/20 flex items-center justify-center text-success"><DollarSign size={16} /></div>
-                  <span className="text-foreground/80 font-bold text-sm">Efectivo</span>
-                </div>
-                <p className="text-2xl font-bold text-foreground font-mono">S/ {stats.efectivo.toFixed(2)}</p>
-              </div>
-              <div className="glass-card p-5">
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="w-8 h-8 rounded-full bg-[#742284]/20 flex items-center justify-center text-[#742284]"><DollarSign size={16} /></div>
-                  <span className="text-foreground/80 font-bold text-sm">Yape/Plin</span>
-                </div>
-                <p className="text-2xl font-bold text-foreground font-mono">S/ {stats.yape.toFixed(2)}</p>
-              </div>
-            </div>
-
-            <div className="glass-card p-6">
-              <h3 className="text-lg font-bold text-foreground mb-4 font-black tracking-tight flex items-center gap-2">
-                <Activity size={20} className="text-primary" /> Actividad de Caja (Hoy)
-              </h3>
-
+          {/* Unified Activity List */}
+          <div className="pb-8">
+            <h3 className="text-xs font-black text-foreground/50 uppercase tracking-widest mb-3 flex items-center gap-2 px-1">
+              <Activity size={16} /> Actividad de Caja y Movimientos
+            </h3>
+            
+            <div className="bg-white/60 rounded-2xl border border-black/5 shadow-sm overflow-hidden flex flex-col pb-0 mb-4">
               {loadingOrders ? (
-                <div className="flex py-8 justify-center"><Loader2 className="animate-spin text-foreground/40" /></div>
+                <div className="flex py-12 justify-center"><Loader2 className="animate-spin text-foreground/40" /></div>
+              ) : (sessionOrders.length === 0 && expenses.length === 0 && sessionSales.length === 0) ? (
+                <div className="p-10 text-center text-foreground/60 italic text-sm font-bold font-sans">Sin movimientos registrados en este turno.</div>
               ) : (
-                <div className="max-h-[350px] overflow-y-auto pr-2 scrollbar-hide">
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="border-b border-black/10 text-foreground/70 text-[10px] uppercase font-black tracking-widest bg-black/5">
-                        <th className="py-3 px-4">Movimiento</th>
-                        <th className="py-3 px-4">Tipo</th>
-                        <th className="py-3 px-4 text-right">Monto</th>
-                      </tr>
-                    </thead>
-                    <tbody className="text-sm">
-                      {sessionOrders.map((o) => (
-                        <tr key={o.id} className="border-b border-black/5 hover:bg-black/[0.02]">
-                          <td className="py-3 px-4 font-mono">
-                            <span className="text-primary font-bold">{o.ticketNumber || o.id.slice(0, 6).toUpperCase()}</span>
-                            <span className="block text-foreground/60 text-[10px] font-sans normal-case font-medium">{o.customerName}</span>
-                          </td>
-                          <td className="py-3 px-4">
-                            {o.payMethod === "YAPE" && <span className="px-2 py-0.5 rounded-full bg-[#742284]/10 text-[#742284] text-[9px] font-black uppercase">YAPE/PLIN</span>}
-                            {o.payMethod === "EFECTIVO" && <span className="px-2 py-0.5 rounded-full bg-success/10 text-success text-[9px] font-black uppercase">EFECTIVO</span>}
-                          </td>
-                          <td className="py-3 px-4 text-right text-success font-black font-mono">+ S/ {Number(o.total).toFixed(2)}</td>
-                        </tr>
-                      ))}
+                <div className="max-h-[500px] overflow-y-auto scrollbar-hide flex flex-col">
+                  {/* ORDENES */}
+                  {sessionOrders.map((o) => (
+                    <div key={o.id} className="p-4 sm:px-5 flex flex-row items-center justify-between group hover:bg-black/[0.02] transition-colors border-b border-black/5 last:border-b-0">
+                      <div className="flex flex-col pr-4">
+                        <span className="font-bold font-mono text-primary text-sm sm:text-base group-hover:text-primary-hover transition-colors truncate">
+                          {o.ticketNumber || o.id.slice(0, 6).toUpperCase()}
+                        </span>
+                        <span className="text-xs text-foreground/60 font-medium truncate">{o.customerName}</span>
+                      </div>
+                      
+                      <div className="flex items-center gap-3 sm:gap-4 shrink-0">
+                        {o.payMethod === "YAPE" && <span className="px-2 py-0.5 rounded-full bg-[#742284]/10 text-[#742284] text-[9px] sm:text-[10px] font-black uppercase">YAPE/PLIN</span>}
+                        {o.payMethod === "EFECTIVO" && <span className="px-2 py-0.5 rounded-full bg-success/10 text-success text-[9px] sm:text-[10px] font-black uppercase">EFECTIVO</span>}
+                        <span className="w-20 sm:w-24 text-right font-black text-success font-mono text-sm sm:text-base">+ S/ {Number(o.total).toFixed(2)}</span>
+                      </div>
+                    </div>
+                  ))}
 
-                      {sessionSales.map((s) => (
-                        <tr key={s.id} className="border-b border-black/5 hover:bg-black/[0.02]">
-                          <td className="py-3 px-4 font-mono">
-                            <span className="text-primary font-bold">POS VENTA</span>
-                            <span className="block text-foreground/60 text-[10px] font-sans normal-case font-medium">
-                              {s.items?.length || 0} producto(s)
-                            </span>
-                          </td>
-                          <td className="py-3 px-4">
-                            {s.payMethod === "YAPE" && <span className="px-2 py-0.5 rounded-full bg-[#742284]/10 text-[#742284] text-[9px] font-black uppercase">YAPE/PLIN</span>}
-                            {s.payMethod === "EFECTIVO" && <span className="px-2 py-0.5 rounded-full bg-success/10 text-success text-[9px] font-black uppercase">EFECTIVO</span>}
-                          </td>
-                          <td className="py-3 px-4 text-right text-success font-black font-mono">+ S/ {Number(s.total).toFixed(2)}</td>
-                        </tr>
-                      ))}
+                  {/* VENTAS DIRECTAS */}
+                  {sessionSales.map((s) => (
+                    <div key={s.id} className="p-4 sm:px-5 flex flex-row items-center justify-between group hover:bg-black/[0.02] transition-colors border-b border-black/5 last:border-b-0">
+                      <div className="flex flex-col pr-4">
+                        <span className="font-bold font-mono text-primary text-sm sm:text-base group-hover:text-primary-hover transition-colors">POS VENTA</span>
+                        <span className="text-xs text-foreground/60 font-medium">{s.items?.length || 0} producto(s)</span>
+                      </div>
+                      
+                      <div className="flex items-center gap-3 sm:gap-4 shrink-0">
+                        {s.payMethod === "YAPE" && <span className="px-2 py-0.5 rounded-full bg-[#742284]/10 text-[#742284] text-[9px] sm:text-[10px] font-black uppercase">YAPE/PLIN</span>}
+                        {s.payMethod === "EFECTIVO" && <span className="px-2 py-0.5 rounded-full bg-success/10 text-success text-[9px] sm:text-[10px] font-black uppercase">EFECTIVO</span>}
+                        <span className="w-20 sm:w-24 text-right font-black text-success font-mono text-sm sm:text-base">+ S/ {Number(s.total).toFixed(2)}</span>
+                      </div>
+                    </div>
+                  ))}
 
-                      {expenses.map((e) => (
-                        <tr key={e.id} className="border-b border-black/5 bg-error/[0.03] hover:bg-error/[0.06]">
-                          <td className="py-3 px-4 font-mono">
-                            <span className="text-error font-bold tracking-tight">EGRESO CAJA</span>
-                            <span className="block text-error/70 text-[10px] font-bold font-sans italic">{e.description}</span>
-                          </td>
-                          <td className="py-3 px-4">
-                            <span className="px-2 py-0.5 rounded-full bg-error/20 text-error text-[9px] font-black uppercase">GASTO CAJA</span>
-                          </td>
-                          <td className="py-3 px-4 text-right text-error font-black font-mono">- S/ {Number(e.amount).toFixed(2)}</td>
-                        </tr>
-                      ))}
-
-                      {(sessionOrders.length === 0 && expenses.length === 0 && sessionSales.length === 0) && (
-                        <tr>
-                          <td colSpan={3} className="py-10 text-center text-foreground/60 italic text-xs font-bold font-sans">Sin movimientos de dinero aún</td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
+                  {/* EGRESOS */}
+                  {expenses.map((e) => (
+                    <div key={e.id} className="p-4 sm:px-5 flex flex-row items-center justify-between group bg-error/[0.03] hover:bg-error/[0.06] transition-colors border-b border-black/5 last:border-b-0">
+                      <div className="flex flex-col pr-4 max-w-[60%]">
+                        <span className="font-bold font-mono text-error text-sm sm:text-base leading-tight">EGRESO CAJA</span>
+                        <span className="text-xs text-error/70 font-bold italic line-clamp-1">{e.description}</span>
+                      </div>
+                      
+                      <div className="flex items-center gap-3 sm:gap-4 shrink-0">
+                        <span className="px-2 py-0.5 rounded-full bg-error/20 text-error text-[9px] sm:text-[10px] font-black uppercase hidden sm:block">GASTO CAJA</span>
+                        <span className="w-20 sm:w-24 text-right font-black text-error font-mono text-sm sm:text-base">- S/ {Number(e.amount).toFixed(2)}</span>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
+            </div>
+            
+            <div className="flex justify-between items-center px-2">
+               <span className="text-xs text-foreground/50 tracking-wide">
+                 Órdenes Procesadas: <strong className="text-foreground">{stats.cobrados}</strong>
+               </span>
             </div>
           </div>
         </div>

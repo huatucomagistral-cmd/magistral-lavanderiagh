@@ -113,20 +113,20 @@ export default function InventarioPage() {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="flex flex-row justify-between items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
-            <Package className="text-primary" size={32} />
-            Inventario de Productos
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground flex items-center gap-2">
+            <Package className="text-primary w-6 h-6 sm:w-8 sm:h-8" />
+            Productos
           </h1>
-
         </div>
 
         <button
           onClick={() => handleOpenModal()}
-          className="bg-primary hover:bg-primary-hover text-white px-5 py-2.5 rounded-xl font-bold transition-all shadow-md flex items-center gap-2"
+          className="bg-primary hover:bg-primary-hover active:scale-95 transition-all text-white font-black rounded-xl p-3 sm:px-4 sm:py-3 flex items-center justify-center gap-2 shadow-sm shadow-primary/20 shrink-0"
         >
-          <Plus size={20} /> Nuevo Producto
+          <Plus size={20} />
+          <span className="hidden sm:inline">Nuevo Producto</span>
         </button>
       </div>
 

@@ -27,7 +27,7 @@ type TicketResult = {
 export default function StorefrontPage({ params }: PublicPageProps) {
   // En Next.js 16 "use" para desempaquetar las Promesas de params en SSR/Client
   const { storeSlug } = use(params);
-  
+
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
   const [result, setResult] = useState<TicketResult>(null);
@@ -37,7 +37,7 @@ export default function StorefrontPage({ params }: PublicPageProps) {
   const [calcItems, setCalcItems] = useState<Record<string, number>>({});
   const [storeId, setStoreId] = useState<string | null>(null);
   const [storeData, setStoreData] = useState<any>(null);
-  
+
   // Yape Inline State
   const [showPayment, setShowPayment] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -53,10 +53,10 @@ export default function StorefrontPage({ params }: PublicPageProps) {
           const id = storeSnap.docs[0].id;
           setStoreId(id);
           setStoreData(storeSnap.docs[0].data());
-          
+
           // Fetch services
           const servSnap = await getDocs(collection(db, `stores/${id}/services`));
-          setServices(servSnap.docs.map(d => ({id: d.id, ...d.data()})));
+          setServices(servSnap.docs.map(d => ({ id: d.id, ...d.data() })));
         }
       } catch (e) {
         console.error("Error fetching store", e);
@@ -76,14 +76,14 @@ export default function StorefrontPage({ params }: PublicPageProps) {
     try {
       let realStoreId = storeId;
       if (!realStoreId) {
-         const storeQ = query(collection(db, "stores"), where("slug", "==", storeSlug.toLowerCase()));
-         const storeSnap = await getDocs(storeQ);
-         if (storeSnap.empty) {
-           toast.error("La tienda configurada no existe.");
-           setIsSearching(false);
-           return;
-         }
-         realStoreId = storeSnap.docs[0].id;
+        const storeQ = query(collection(db, "stores"), where("slug", "==", storeSlug.toLowerCase()));
+        const storeSnap = await getDocs(storeQ);
+        if (storeSnap.empty) {
+          toast.error("La tienda configurada no existe.");
+          setIsSearching(false);
+          return;
+        }
+        realStoreId = storeSnap.docs[0].id;
       }
 
       // 2. Buscar por el campo ticketNumber usando el ID de la tienda encontrado
@@ -134,13 +134,13 @@ export default function StorefrontPage({ params }: PublicPageProps) {
     if (!file || !result || !storeId) {
       return toast.error("Faltan datos para subir el comprobante.");
     }
-    
+
     setIsSubmitting(true);
     try {
       const extension = file.name.split('.').pop();
       const fileName = `${result.ticket}_${Date.now()}.${extension}`;
       const storageRef = ref(storage, `stores/${storeId}/vouchers/${fileName}`);
-      
+
       const uploadResult = await uploadBytes(storageRef, file);
       const downloadURL = await getDownloadURL(uploadResult.ref);
 
@@ -151,7 +151,7 @@ export default function StorefrontPage({ params }: PublicPageProps) {
       });
 
       // Update local state to show success immediately
-      setResult(prev => prev ? {...prev, paymentStatus: 'PENDING_VERIFICATION'} : null);
+      setResult(prev => prev ? { ...prev, paymentStatus: 'PENDING_VERIFICATION' } : null);
       setShowPayment(false);
       setFile(null);
       toast.success("Comprobante enviado. En breve lo validaremos.");
@@ -177,7 +177,7 @@ export default function StorefrontPage({ params }: PublicPageProps) {
 
   return (
     <div className="flex flex-col gap-10 animate-in slide-in-from-bottom-6 fade-in duration-700 pb-10">
-      
+
       {/* Hero Section & Search */}
       <section className="text-center py-12 px-4 rounded-3xl glass relative overflow-hidden flex flex-col items-center border border-black/5 mt-4 md:mt-8 shadow-sm">
         <h1 className="text-4xl md:text-5xl font-black text-foreground tracking-tight mb-4 z-10">
@@ -188,7 +188,7 @@ export default function StorefrontPage({ params }: PublicPageProps) {
         </p>
 
         <form onSubmit={handleSearch} className="w-full max-w-md bg-white/80 backdrop-blur-md rounded-2xl p-2 flex items-center border border-black/10 mx-auto z-10 shadow-xl relative transition-all focus-within:ring-2 focus-within:ring-primary/50">
-          <input 
+          <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -207,151 +207,144 @@ export default function StorefrontPage({ params }: PublicPageProps) {
       {result && (
         <section className="animate-in fade-in slide-in-from-top-4 duration-500">
           <div className="glass-card p-6 md:p-8 max-w-2xl mx-auto border-primary/30 relative overflow-hidden">
-             
-             {/* Decoración */}
-             <div className="absolute -top-10 -right-10 w-40 h-40 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
 
-             <div className="flex justify-between items-start mb-8 relative z-10">
-               <div>
-                  <h2 className="text-2xl font-bold text-foreground uppercase flex items-center gap-2">Ticket {result.ticket}</h2>
-                  <p className="text-foreground/50 text-sm mt-1">Recibido: {result.date}</p>
-               </div>
-               <div className="text-right">
-                  <span className="font-mono text-xl font-bold text-primary">S/ {result.total.toFixed(2)}</span>
-                  <p className="text-foreground/60 text-xs mt-1">
-                    {result.totalPieces > 0 ? `${result.totalPieces} uds. (en ${result.items} serv.)` : `Total a pagar (${result.items} prendas)`}
-                  </p>
-               </div>
-             </div>
+            {/* Decoración */}
+            <div className="absolute -top-10 -right-10 w-40 h-40 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
 
-             {/* Tracking Visual */}
-             <div className="relative mb-10 pt-4 z-10">
-               <div className="absolute top-8 left-0 w-full h-1 bg-black/5 rounded-full">
-                  <div className={`h-full bg-primary rounded-full transition-all duration-1000 ${result.status === 'RECIBIDO' ? 'w-1/4' : result.status === 'EN_PROCESO' ? 'w-1/2' : 'w-full'}`} />
-               </div>
+            <div className="flex justify-between items-start mb-8 relative z-10">
+              <div>
+                <h2 className="text-2xl font-bold text-foreground uppercase flex items-center gap-2">Ticket {result.ticket}</h2>
+                <p className="text-foreground/50 text-sm mt-1">Recibido: {result.date}</p>
+              </div>
+              <div className="text-right">
+                <span className="font-mono text-xl font-bold text-primary">S/ {result.total.toFixed(2)}</span>
+                <p className="text-foreground/60 text-xs mt-1">
+                  {result.totalPieces > 0 ? `${result.totalPieces} uds. (en ${result.items} serv.)` : `Total a pagar (${result.items} prendas)`}
+                </p>
+              </div>
+            </div>
 
-               <div className="flex justify-between relative mt-2">
-                 <div className="flex flex-col items-center gap-2">
-                   <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 z-10 bg-background transition-colors ${['RECIBIDO', 'EN_PROCESO', 'LISTO'].includes(result.status) ? 'border-primary text-primary' : 'border-black/10 text-foreground/30'}`}>
-                      <Package size={20} />
-                   </div>
-                   <span className="text-xs font-bold text-foreground/70">Recibido</span>
-                 </div>
+            {/* Tracking Visual */}
+            <div className="relative mb-10 pt-4 z-10 px-8">
+              <div className="absolute top-8 left-8 right-8 h-1 bg-black/5 rounded-full">
+                <div className={`h-full bg-primary rounded-full transition-all duration-1000 ${['RECIBIDO', 'EN_PROCESO'].includes(result.status) ? 'w-1/2' : 'w-full'}`} />
+              </div>
 
-                 <div className="flex flex-col items-center gap-2">
-                   <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 z-10 bg-background transition-colors ${['EN_PROCESO', 'LISTO'].includes(result.status) ? 'border-primary text-primary' : 'border-black/10 text-foreground/30'}`}>
-                      <Clock size={20} className={result.status === 'EN_PROCESO' ? 'animate-spin-slow' : ''} />
-                   </div>
-                   <span className="text-xs font-bold text-foreground/70">Lavando</span>
-                 </div>
+              <div className="flex justify-between relative mt-2">
+                <div className="flex flex-col items-center gap-2">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 z-10 bg-background transition-colors ${['RECIBIDO', 'EN_PROCESO', 'LISTO'].includes(result.status) ? 'border-primary text-primary' : 'border-black/10 text-foreground/30'}`}>
+                    <Clock size={20} className={['RECIBIDO', 'EN_PROCESO'].includes(result.status) ? 'animate-spin-slow' : ''} />
+                  </div>
+                  <span className="text-xs font-bold text-foreground/70">EN PROCESO</span>
+                </div>
 
-                 <div className="flex flex-col items-center gap-2">
-                   <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 z-10 bg-background transition-colors ${result.status === 'LISTO' ? 'border-success text-success bg-success/10' : 'border-black/10 text-foreground/30'}`}>
-                      <CheckCircle size={20} />
-                   </div>
-                   <span className="text-xs font-bold text-foreground/70">Listo 🙌</span>
-                 </div>
-               </div>
-             </div>
+                <div className="flex flex-col items-center gap-2">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 z-10 bg-background transition-colors ${result.status === 'LISTO' ? 'border-success text-success bg-success/10' : 'border-black/10 text-foreground/30'}`}>
+                    <CheckCircle size={20} />
+                  </div>
+                  <span className="text-xs font-bold text-foreground/70">LISTO</span>
+                </div>
+              </div>
+            </div>
 
-             {/* CTA Pago (Si no está pagado ni en verificación) */}
-             {result.paymentStatus === 'UNPAID' && (
-               <div className="mt-8 pt-6 border-t border-dashed border-black/10 relative z-10 w-full overflow-hidden">
-                  
-                  {!showPayment ? (
-                      <div className="text-center">
-                         <h3 className="text-lg font-bold text-foreground mb-2">
-                           {result.status === 'LISTO' ? '¡Tu ropa ya está lista! ✨' : '¿Quieres recoger tu ropa más rápido? ⚡'}
-                         </h3>
-                         <p className="text-sm text-foreground/60 mb-6">Deja tu pago listo por Yape desde aquí mismo y ahorra tiempo.</p>
-                         
-                         <button onClick={() => setShowPayment(true)} className="bg-[#742284] hover:bg-[#742284]/80 active:scale-95 text-white w-full sm:w-auto px-8 mx-auto font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-[#742284]/20">
-                           Pagar con Yape <ChevronDown size={18} />
-                         </button>
+            {/* CTA Pago (Si no está pagado ni en verificación) */}
+            {result.paymentStatus === 'UNPAID' && (
+              <div className="mt-8 pt-6 border-t border-dashed border-black/10 relative z-10 w-full overflow-hidden">
+
+                {!showPayment ? (
+                  <div className="text-center">
+                    <h3 className="text-lg font-bold text-foreground mb-2">
+                      {result.status === 'LISTO' ? '¡Tu ropa ya está lista! ✨' : '¿Quieres recoger tu ropa más rápido? ⚡'}
+                    </h3>
+                    <p className="text-sm text-foreground/60 mb-6">Deja tu pago listo por Yape desde aquí mismo y ahorra tiempo.</p>
+
+                    <button onClick={() => setShowPayment(true)} className="bg-[#742284] hover:bg-[#742284]/80 active:scale-95 text-white w-full sm:w-auto px-8 mx-auto font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-[#742284]/20">
+                      Pagar con Yape <ChevronDown size={18} />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="bg-white rounded-2xl p-5 border border-black/10 mt-2 slide-in-from-top-4 animate-in fade-in relative shadow-xl">
+                    <div className="flex justify-between items-start mb-4 border-b border-black/10 pb-4">
+                      <div>
+                        <h4 className="text-foreground font-bold text-lg flex items-center gap-2">
+                          <span className="w-6 h-6 rounded-md bg-[#742284] text-white flex items-center justify-center text-xs font-sans tracking-tighter shadow-md">Y</span> Yape
+                        </h4>
+                        <p className="text-primary font-mono text-xl mt-1 font-bold">S/ {result.total.toFixed(2)}</p>
                       </div>
-                  ) : (
-                      <div className="bg-white rounded-2xl p-5 border border-black/10 mt-2 slide-in-from-top-4 animate-in fade-in relative shadow-xl">
-                         <div className="flex justify-between items-start mb-4 border-b border-black/10 pb-4">
-                           <div>
-                              <h4 className="text-foreground font-bold text-lg flex items-center gap-2">
-                                <span className="w-6 h-6 rounded-md bg-[#742284] text-white flex items-center justify-center text-xs font-sans tracking-tighter shadow-md">Y</span> Yape
-                              </h4>
-                              <p className="text-primary font-mono text-xl mt-1 font-bold">S/ {result.total.toFixed(2)}</p>
-                           </div>
-                           <button onClick={() => {setShowPayment(false); setFile(null);}} className="text-foreground/40 hover:text-foreground text-sm px-2 py-1 bg-black/5 rounded-lg active:scale-95">Cerrar</button>
-                         </div>
+                      <button onClick={() => { setShowPayment(false); setFile(null); }} className="text-foreground/40 hover:text-foreground text-sm px-2 py-1 bg-black/5 rounded-lg active:scale-95">Cerrar</button>
+                    </div>
 
-                         {/* Paso 1: Copiar Numero */}
-                         <div className="mb-6 bg-black/5 p-4 rounded-xl border border-black/5">
-                            <span className="text-primary font-bold text-xs uppercase tracking-wider mb-2 block">Paso 1</span>
-                            <p className="text-sm text-foreground/80 mb-3">Copia el número y envía el Yape a nombre de <strong className="text-foreground">{storeData?.yapeName || "la tienda"}</strong>.</p>
-                            
-                            {storeData?.yapeNumber ? (
-                              <button 
-                                onClick={handleCopy} 
-                                type="button"
-                                className="w-full bg-gradient-to-r from-[#742284] to-[#B03BBF] hover:shadow-[0_0_15px_rgba(116,34,132,0.4)] text-white px-4 py-3 rounded-lg font-bold flex items-center justify-center gap-2 active:scale-95 transition-all shadow-md"
-                              >
-                                 {copied ? "¡Copiado!" : <>Copiar número: {storeData.yapeNumber} <Copy size={16} /></>}
-                              </button>
-                            ) : (
-                              <p className="text-foreground/50 text-xs italic text-center p-2 bg-black/5 rounded-lg">El administrador aún no ha configurado su número oficial.</p>
-                            )}
-                         </div>
+                    {/* Paso 1: Copiar Numero */}
+                    <div className="mb-6 bg-black/5 p-4 rounded-xl border border-black/5">
+                      <span className="text-primary font-bold text-xs uppercase tracking-wider mb-2 block">Paso 1</span>
+                      <p className="text-sm text-foreground/80 mb-3">Copia el número y envía el Yape a nombre de <strong className="text-foreground">{storeData?.yapeName || "la tienda"}</strong>.</p>
 
-                         {/* Paso 2: Subir Captura */}
-                         <div className="bg-black/5 p-4 rounded-xl border border-black/5">
-                            <span className="text-primary font-bold text-xs uppercase tracking-wider mb-2 block">Paso 2</span>
-                            <p className="text-sm text-foreground/80 mb-3">Sube aquí la captura de pantalla de tu depósito para validarlo.</p>
-                            
-                            <form onSubmit={handleSubmitVoucher}>
-                              <label htmlFor="file-upload" className={`w-full border-2 ${file ? 'border-primary/50 bg-primary/10' : 'border-dashed border-black/20 hover:border-[#742284]/50 bg-white'} rounded-xl px-4 py-6 text-center cursor-pointer flex flex-col items-center justify-center transition-all group`}>
-                                {file ? (
-                                  <CheckCircle size={28} className="text-primary mb-2" />
-                                ) : (
-                                  <UploadCloud size={28} className="text-foreground/30 group-hover:text-[#742284] mb-2 transition-colors" />
-                                )}
-                                <span className={`font-medium text-sm line-clamp-1 break-all px-2 ${file ? 'text-primary' : 'text-foreground/70'}`}>
-                                  {file ? file.name : "Toca para abrir tu galería"}
-                                </span>
-                              </label>
-                              <input id="file-upload" type="file" accept="image/png, image/jpeg, application/pdf" className="hidden" onChange={(e) => {
-                                  if (e.target.files && e.target.files.length > 0) setFile(e.target.files[0]);
-                              }} />
-                              
-                              <button type="submit" disabled={isSubmitting || !file} className="w-full bg-primary hover:bg-primary-hover text-white font-extrabold py-3 rounded-xl flex items-center justify-center gap-2 transition-transform active:scale-95 disabled:opacity-30 mt-4 disabled:pointer-events-none text-sm shadow-lg shadow-primary/20">
-                                {isSubmitting ? <span className="animate-spin border-2 border-white/30 border-t-white rounded-full w-4 h-4" /> : "Enviar Comprobante"}
-                              </button>
-                            </form>
-                         </div>
-                      </div>
-                  )}
-               </div>
-             )}
+                      {storeData?.yapeNumber ? (
+                        <button
+                          onClick={handleCopy}
+                          type="button"
+                          className="w-full bg-gradient-to-r from-[#742284] to-[#B03BBF] hover:shadow-[0_0_15px_rgba(116,34,132,0.4)] text-white px-4 py-3 rounded-lg font-bold flex items-center justify-center gap-2 active:scale-95 transition-all shadow-md"
+                        >
+                          {copied ? "¡Copiado!" : <>Copiar número: {storeData.yapeNumber} <Copy size={16} /></>}
+                        </button>
+                      ) : (
+                        <p className="text-foreground/50 text-xs italic text-center p-2 bg-black/5 rounded-lg">El administrador aún no ha configurado su número oficial.</p>
+                      )}
+                    </div>
 
-             {result.paymentStatus === 'PENDING_VERIFICATION' && (
-                <div className="mt-8 pt-6 border-t border-dashed border-black/5 text-center relative z-10">
-                  <p className="text-sm text-primary flex items-center justify-center gap-2 font-bold animate-pulse">
-                     <Clock size={16} /> Pago en verificación por el administrador...
-                  </p>
-                </div>
-             )}
+                    {/* Paso 2: Subir Captura */}
+                    <div className="bg-black/5 p-4 rounded-xl border border-black/5">
+                      <span className="text-primary font-bold text-xs uppercase tracking-wider mb-2 block">Paso 2</span>
+                      <p className="text-sm text-foreground/80 mb-3">Sube aquí la captura de pantalla de tu depósito para validarlo.</p>
 
-             {result.paymentStatus === 'PAID' && (
-                <div className="mt-8 pt-6 border-t border-dashed border-black/5 text-center relative z-10">
-                  <p className="text-sm text-success flex items-center justify-center gap-2 font-bold">
-                     <CheckCircle size={16} /> Orden Pagada Correctamente
-                  </p>
-                </div>
-             )}
+                      <form onSubmit={handleSubmitVoucher}>
+                        <label htmlFor="file-upload" className={`w-full border-2 ${file ? 'border-primary/50 bg-primary/10' : 'border-dashed border-black/20 hover:border-[#742284]/50 bg-white'} rounded-xl px-4 py-6 text-center cursor-pointer flex flex-col items-center justify-center transition-all group`}>
+                          {file ? (
+                            <CheckCircle size={28} className="text-primary mb-2" />
+                          ) : (
+                            <UploadCloud size={28} className="text-foreground/30 group-hover:text-[#742284] mb-2 transition-colors" />
+                          )}
+                          <span className={`font-medium text-sm line-clamp-1 break-all px-2 ${file ? 'text-primary' : 'text-foreground/70'}`}>
+                            {file ? file.name : "Toca para abrir tu galería"}
+                          </span>
+                        </label>
+                        <input id="file-upload" type="file" accept="image/png, image/jpeg, application/pdf" className="hidden" onChange={(e) => {
+                          if (e.target.files && e.target.files.length > 0) setFile(e.target.files[0]);
+                        }} />
 
-             {result.status === 'EN_PROCESO' && (
-                <div className="mt-8 pt-6 border-t border-dashed border-black/5 text-center relative z-10">
-                  <p className="text-sm text-warning/80 flex items-center justify-center gap-2">
-                     <Clock size={16} /> Estamos trabajando en tu orden, te avisaremos cuando esté listo.
-                  </p>
-                </div>
-             )}
+                        <button type="submit" disabled={isSubmitting || !file} className="w-full bg-primary hover:bg-primary-hover text-white font-extrabold py-3 rounded-xl flex items-center justify-center gap-2 transition-transform active:scale-95 disabled:opacity-30 mt-4 disabled:pointer-events-none text-sm shadow-lg shadow-primary/20">
+                          {isSubmitting ? <span className="animate-spin border-2 border-white/30 border-t-white rounded-full w-4 h-4" /> : "Enviar Comprobante"}
+                        </button>
+                      </form>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {result.paymentStatus === 'PENDING_VERIFICATION' && (
+              <div className="mt-8 pt-6 border-t border-dashed border-black/5 text-center relative z-10">
+                <p className="text-sm text-primary flex items-center justify-center gap-2 font-bold animate-pulse">
+                  <Clock size={16} /> Pago en verificación por el administrador...
+                </p>
+              </div>
+            )}
+
+            {result.paymentStatus === 'PAID' && (
+              <div className="mt-8 pt-6 border-t border-dashed border-black/5 text-center relative z-10">
+                <p className="text-sm text-success flex items-center justify-center gap-2 font-bold">
+                  <CheckCircle size={16} /> Orden Pagada Correctamente
+                </p>
+              </div>
+            )}
+
+            {result.status === 'EN_PROCESO' && (
+              <div className="mt-8 pt-6 border-t border-dashed border-black/5 text-center relative z-10">
+                <p className="text-sm text-warning/80 flex items-center justify-center gap-2">
+                  <Clock size={16} /> Estamos trabajando en tu orden, te avisaremos cuando esté listo.
+                </p>
+              </div>
+            )}
 
           </div>
         </section>
@@ -360,91 +353,91 @@ export default function StorefrontPage({ params }: PublicPageProps) {
       {/* Tarifario y Calculadora */}
       <section className="mt-8">
         <div className="flex justify-between items-end mb-6">
-           <div>
-             <h2 className="text-2xl font-bold text-foreground mb-2">Tarifario de Servicios</h2>
-             <p className="text-foreground/50 text-sm">Precios transparentes. Calcula tu presupuesto fácilmente.</p>
-           </div>
+          <div>
+            <h2 className="text-2xl font-bold text-foreground mb-2">Tarifario de Servicios</h2>
+            <p className="text-foreground/50 text-sm">Precios transparentes. Calcula tu presupuesto fácilmente.</p>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-           {/* Slider de Servicios */}
-           <div className="lg:col-span-2 grid grid-cols-2 sm:grid-cols-3 gap-4">
-              {services.map(s => (
-                 <div key={s.id} className="glass-card p-4 flex flex-col relative group cursor-pointer hover:border-primary/50 transition-colors"
-                      onClick={() => setCalcItems(prev => ({...prev, [s.id]: (prev[s.id] || 0) + 1}))}>
-                    <div className="flex-1 mb-4">
-                      <h3 className="text-foreground font-bold leading-tight line-clamp-2 text-sm">{s.name}</h3>
-                      <p className="font-mono text-primary font-bold mt-1 text-sm">S/ {Number(s.price).toFixed(2)} <span className="text-[10px] text-foreground/30">/{s.type}</span></p>
-                    </div>
-                    <button className="bg-black/5 hover:bg-primary/20 text-foreground hover:text-white rounded-lg py-2 text-xs font-bold w-full transition-colors flex items-center justify-center gap-1">
-                      <Plus size={14} /> Añadir a cálculo
-                    </button>
-                 </div>
-              ))}
-              {services.length === 0 && (
-                 <div className="col-span-2 sm:col-span-3 text-center py-10 bg-black/5 rounded-2xl border border-black/5">
-                    <p className="text-foreground/50 text-sm">No hay servicios configurados aún.</p>
-                 </div>
-              )}
-           </div>
-
-           {/* Calculadora Flotante */}
-           <div className="lg:col-span-1">
-              <div className="glass-card p-6 sticky top-24 border-primary/20 bg-white shadow-2xl">
-                 <h3 className="text-foreground font-bold mb-4 flex items-center gap-2 border-b border-black/5 pb-4">
-                   <Clock size={18} className="text-primary" /> Mi Presupuesto
-                 </h3>
-                 
-                 {Object.keys(calcItems).length === 0 ? (
-                    <div className="text-center py-8">
-                       <Package size={32} className="text-black/10 mx-auto mb-2" />
-                       <p className="text-sm text-foreground/30">Toca "Añadir a cálculo" para estimar tu total.</p>
-                    </div>
-                 ) : (
-                    <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2">
-                       {Object.keys(calcItems).map(id => {
-                          const s = services.find(x => x.id === id);
-                          if (!s) return null;
-                          const qty = calcItems[id];
-                          return (
-                             <div key={id} className="flex justify-between items-center bg-black/5 rounded-lg p-2">
-                                <div className="flex-1">
-                                   <p className="text-xs font-bold text-foreground line-clamp-1">{s.name}</p>
-                                   <p className="text-[10px] text-primary">S/ {(s.price * qty).toFixed(2)}</p>
-                                </div>
-                                <div className="flex items-center gap-2 bg-black/5 rounded-lg px-2 py-1">
-                                   <button className="text-foreground/50 hover:text-foreground" onClick={() => setCalcItems(prev => {
-                                      const n = {...prev};
-                                      if (n[id] > 1) n[id]--; else delete n[id];
-                                      return n;
-                                   })}>-</button>
-                                   <span className="text-xs text-foreground font-bold w-4 text-center">{qty}</span>
-                                   <button className="text-foreground/50 hover:text-foreground" onClick={() => setCalcItems(prev => ({...prev, [id]: prev[id] + 1}))}>+</button>
-                                </div>
-                             </div>
-                          );
-                       })}
-                    </div>
-                 )}
-
-                 {Object.keys(calcItems).length > 0 && (
-                    <div className="mt-6 pt-4 border-t border-dashed border-black/5">
-                       <div className="flex justify-between items-end mb-4">
-                          <span className="text-foreground/60 text-sm">Total estimado</span>
-                          <span className="text-2xl font-bold text-foreground">
-                             S/ {Object.keys(calcItems).reduce((acc, id) => {
-                                const s = services.find(x => x.id === id);
-                                return acc + (s ? s.price * calcItems[id] : 0);
-                             }, 0).toFixed(2)}
-                          </span>
-                       </div>
-                       <button className="w-full text-xs text-foreground/30 hover:text-foreground/80 transition-colors underline" onClick={() => setCalcItems({})}>
-                          Limpiar cálculo
-                       </button>
-                    </div>
-                 )}
+          {/* Slider de Servicios */}
+          <div className="lg:col-span-2 grid grid-cols-2 sm:grid-cols-3 gap-4">
+            {services.map(s => (
+              <div key={s.id} className="glass-card p-4 flex flex-col relative group cursor-pointer hover:border-primary/50 transition-colors"
+                onClick={() => setCalcItems(prev => ({ ...prev, [s.id]: (prev[s.id] || 0) + 1 }))}>
+                <div className="flex-1 mb-4">
+                  <h3 className="text-foreground font-bold leading-tight line-clamp-2 text-sm">{s.name}</h3>
+                  <p className="font-mono text-primary font-bold mt-1 text-sm">S/ {Number(s.price).toFixed(2)} <span className="text-[10px] text-foreground/30">/{s.type}</span></p>
+                </div>
+                <button className="bg-black/5 hover:bg-primary/20 text-foreground hover:text-white rounded-lg py-2 text-xs font-bold w-full transition-colors flex items-center justify-center gap-1">
+                  <Plus size={14} /> Añadir a cálculo
+                </button>
               </div>
-           </div>
+            ))}
+            {services.length === 0 && (
+              <div className="col-span-2 sm:col-span-3 text-center py-10 bg-black/5 rounded-2xl border border-black/5">
+                <p className="text-foreground/50 text-sm">No hay servicios configurados aún.</p>
+              </div>
+            )}
+          </div>
+
+          {/* Calculadora Flotante */}
+          <div className="lg:col-span-1">
+            <div className="glass-card p-6 sticky top-24 border-primary/20 bg-white shadow-2xl">
+              <h3 className="text-foreground font-bold mb-4 flex items-center gap-2 border-b border-black/5 pb-4">
+                <Clock size={18} className="text-primary" /> Mi Presupuesto
+              </h3>
+
+              {Object.keys(calcItems).length === 0 ? (
+                <div className="text-center py-8">
+                  <Package size={32} className="text-black/10 mx-auto mb-2" />
+                  <p className="text-sm text-foreground/30">Toca "Añadir a cálculo" para estimar tu total.</p>
+                </div>
+              ) : (
+                <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2">
+                  {Object.keys(calcItems).map(id => {
+                    const s = services.find(x => x.id === id);
+                    if (!s) return null;
+                    const qty = calcItems[id];
+                    return (
+                      <div key={id} className="flex justify-between items-center bg-black/5 rounded-lg p-2">
+                        <div className="flex-1">
+                          <p className="text-xs font-bold text-foreground line-clamp-1">{s.name}</p>
+                          <p className="text-[10px] text-primary">S/ {(s.price * qty).toFixed(2)}</p>
+                        </div>
+                        <div className="flex items-center gap-2 bg-black/5 rounded-lg px-2 py-1">
+                          <button className="text-foreground/50 hover:text-foreground" onClick={() => setCalcItems(prev => {
+                            const n = { ...prev };
+                            if (n[id] > 1) n[id]--; else delete n[id];
+                            return n;
+                          })}>-</button>
+                          <span className="text-xs text-foreground font-bold w-4 text-center">{qty}</span>
+                          <button className="text-foreground/50 hover:text-foreground" onClick={() => setCalcItems(prev => ({ ...prev, [id]: prev[id] + 1 }))}>+</button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {Object.keys(calcItems).length > 0 && (
+                <div className="mt-6 pt-4 border-t border-dashed border-black/5">
+                  <div className="flex justify-between items-end mb-4">
+                    <span className="text-foreground/60 text-sm">Total estimado</span>
+                    <span className="text-2xl font-bold text-foreground">
+                      S/ {Object.keys(calcItems).reduce((acc, id) => {
+                        const s = services.find(x => x.id === id);
+                        return acc + (s ? s.price * calcItems[id] : 0);
+                      }, 0).toFixed(2)}
+                    </span>
+                  </div>
+                  <button className="w-full text-xs text-foreground/30 hover:text-foreground/80 transition-colors underline" onClick={() => setCalcItems({})}>
+                    Limpiar cálculo
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </section>
 

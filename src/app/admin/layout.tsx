@@ -125,7 +125,6 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
 
         <nav className="flex-1 p-4 flex flex-col gap-2 overflow-y-auto">
-          <SidebarLink href="/admin" icon={<SquaresFour size={22} weight="duotone" />} label="Principal" exact />
           <SidebarLink href="/admin/caja" icon={<Receipt size={22} weight="duotone" />} label="Caja" />
           <SidebarLink href="/admin/gastos" icon={<CurrencyDollar size={22} weight="duotone" />} label="Gastos" />
           <SidebarLink href="/admin/pos" icon={<ShoppingCart size={22} weight="duotone" />} label="Ventas" />

@@ -216,170 +216,151 @@ export default function GastosPage() {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="flex flex-row justify-between items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">Gastos y Egresos</h1>
-
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2 sm:mb-0">Gastos y Egresos</h1>
         </div>
         <button
           onClick={() => setIsModalOpen(true)}
-          className="bg-primary hover:bg-primary-hover text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-2 transition-transform active:scale-95 shadow-lg shadow-primary/20 w-full sm:w-auto justify-center"
+          className="bg-primary hover:bg-primary-hover active:scale-95 transition-all text-white font-black rounded-xl p-3 sm:px-4 sm:py-3 flex items-center justify-center gap-2 shadow-lg shadow-primary/20 shrink-0"
         >
           <Plus size={20} />
-          Nuevo Gasto
+          <span className="hidden sm:inline">Nuevo Gasto</span>
         </button>
       </div>
 
-      {/* Stats cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-        <div className="glass-card p-6 border-l-4 border-error overflow-hidden relative">
-          <div className="absolute -right-4 -top-4 text-error/10">
-            <ArrowDownCircle size={100} />
-          </div>
-          <h3 className="text-sm font-bold text-foreground/80 uppercase tracking-tight mb-1">Gastos de Hoy</h3>
-          <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-black text-error font-mono">S/ {stats.today.toFixed(2)}</span>
-          </div>
+      {/* Stats cards -> Compact Ribbon */}
+      <div className="bg-white/60 rounded-2xl border border-black/5 shadow-sm grid grid-cols-2 divide-x divide-black/5 overflow-hidden mb-6">
+        <div className="p-4 flex flex-col justify-center items-center text-center bg-error/[0.02]">
+          <span className="text-[10px] text-error/70 font-black uppercase tracking-widest flex items-center gap-1 mb-1">
+            <ArrowDownCircle size={12} /> Gastos de Hoy
+          </span>
+          <span className="text-xl sm:text-2xl font-black text-error font-mono leading-none">S/ {stats.today.toFixed(2)}</span>
         </div>
-        <div className="glass-card p-6 border-l-4 border-primary overflow-hidden relative">
-          <div className="absolute -right-4 -top-4 text-primary/10">
-            <Calendar size={100} />
-          </div>
-          <h3 className="text-sm font-bold text-foreground/80 uppercase tracking-tight mb-1">Gastos del Mes</h3>
-          <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-black text-primary font-mono">S/ {stats.month.toFixed(2)}</span>
-          </div>
+        <div className="p-4 flex flex-col justify-center items-center text-center">
+          <span className="text-[10px] text-primary/70 font-black uppercase tracking-widest flex items-center gap-1 mb-1">
+            <Calendar size={12} /> Gastos del Mes
+          </span>
+          <span className="text-xl sm:text-2xl font-black text-primary font-mono leading-none">S/ {stats.month.toFixed(2)}</span>
         </div>
       </div>
 
       {/* Expense List */}
-      <div className="glass-card overflow-hidden">
+      <div>
+        <h3 className="text-xs font-black text-foreground/50 uppercase tracking-widest mb-3 flex items-center gap-2 px-1">
+          <CreditCard size={16} /> Historial de Egresos
+        </h3>
 
-        {/* Controladores de Filtro */}
-        <div className="p-4 border-b border-black/5 bg-white/40 flex flex-col md:flex-row gap-4 items-center justify-between">
-          <div className="flex bg-white/40 p-1 rounded-xl border border-black/5 w-full md:w-auto overflow-x-auto">
-            {["HOY", "SEMANA", "MES", "TODOS", "CUSTOM"].map((f) => (
-              <button
-                key={f}
-                onClick={() => {
-                  setFilterScope(f as FilterScope);
-                  if (f !== "CUSTOM") {
+        <div className="bg-white/60 rounded-2xl border border-black/5 shadow-sm overflow-hidden flex flex-col pb-0 mb-4">
+          
+          {/* Controladores de Filtro */}
+          <div className="p-3 border-b border-black/5 bg-white/40 flex flex-col md:flex-row gap-3 items-center justify-between">
+            <div className="flex bg-white/40 p-1 rounded-xl border border-black/5 w-full md:w-auto overflow-x-auto scrollbar-hide">
+              {["HOY", "SEMANA", "MES", "CUSTOM"].map((f) => (
+                <button
+                  key={f}
+                  onClick={() => {
+                    setFilterScope(f as FilterScope);
+                    if (f !== "CUSTOM") {
+                      setStartDate("");
+                      setEndDate("");
+                    }
+                  }}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-colors ${filterScope === f ? 'bg-primary text-white shadow-md' : 'text-foreground/50 hover:text-foreground hover:bg-black/5'}`}
+                >
+                  {f === "CUSTOM" ? "Personalizado" : f}
+                </button>
+              ))}
+            </div>
+
+            {filterScope === "CUSTOM" && (
+              <div className="flex flex-col sm:flex-row items-center gap-2 w-full md:w-auto">
+                <DateRangePicker
+                  startDate={startDate}
+                  endDate={endDate}
+                  onStartDateChange={setStartDate}
+                  onEndDateChange={setEndDate}
+                  onClear={() => {
                     setStartDate("");
                     setEndDate("");
-                  }
-                }}
-                className={`px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-colors ${filterScope === f ? 'bg-primary text-white shadow-lg' : 'text-foreground/50 hover:text-foreground hover:bg-black/5'}`}
-              >
-                {f === "CUSTOM" ? "Personalizado" : f === "TODOS" ? "Todos" : f}
-              </button>
-            ))}
+                  }}
+                />
+                <button
+                  onClick={() => setSearchTrigger(prev => prev + 1)}
+                  disabled={!startDate || !endDate || loading}
+                  className="bg-primary px-4 py-2 rounded-xl font-bold text-white text-xs disabled:opacity-50 hover:bg-primary-hover transition-colors w-full sm:w-auto tracking-widest"
+                >
+                  FILTRAR
+                </button>
+              </div>
+            )}
           </div>
 
-          {filterScope === "CUSTOM" && (
-            <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
-              <DateRangePicker
-                startDate={startDate}
-                endDate={endDate}
-                onStartDateChange={setStartDate}
-                onEndDateChange={setEndDate}
-                onClear={() => {
-                  setStartDate("");
-                  setEndDate("");
-                }}
-              />
-              <button
-                onClick={() => setSearchTrigger(prev => prev + 1)}
-                disabled={!startDate || !endDate || loading}
-                className="bg-primary px-6 py-3 rounded-xl font-bold text-white text-sm disabled:opacity-50 hover:bg-primary-hover transition-colors w-full sm:w-auto tracking-widest"
-              >
-                FILTRAR
-              </button>
-            </div>
-          )}
-        </div>
+          <div className="overflow-x-auto flex-1">
+            {loading ? (
+              <div className="flex py-12 justify-center"><Loader2 className="animate-spin text-foreground/40" /></div>
+            ) : expenses.length === 0 ? (
+              <div className="p-10 text-center text-foreground/60 italic text-sm font-bold font-sans">No hay gastos registrados en este periodo.</div>
+            ) : (
+              <div className="flex flex-col divide-y divide-black/5">
+                {expenses.map((exp) => (
+                  <div key={exp.id} className="p-4 sm:px-5 flex flex-row items-center justify-between group hover:bg-black/[0.02] transition-colors relative">
+                    {/* Data Container */}
+                    <div className="flex items-center gap-4 w-full pr-12">
+                      <div className="hidden sm:flex flex-col items-center justify-center bg-black/5 rounded-xl w-12 h-12 shrink-0">
+                        <span className="text-xs font-black text-foreground/70">{exp.date?.toDate ? exp.date.toDate().toLocaleDateString('es-PE', { day: '2-digit' }) : '--'}</span>
+                        <span className="text-[9px] font-bold text-foreground/50 uppercase tracking-widest leading-none">{exp.date?.toDate ? exp.date.toDate().toLocaleDateString('es-PE', { month: 'short' }) : '---'}</span>
+                      </div>
+                      
+                      <div className="flex flex-col flex-1 min-w-0">
+                        <span className="text-sm sm:text-base font-black text-foreground truncate group-hover:text-primary transition-colors">{exp.description}</span>
+                        <div className="flex items-center gap-2 mt-0.5 whitespace-nowrap overflow-x-auto scrollbar-hide py-0.5">
+                          <span className="px-1.5 py-0.5 rounded text-[9px] font-black tracking-widest uppercase bg-black/5 text-foreground/70 shrink-0">
+                            {CATEGORIES.find(c => c.id === exp.category)?.icon} {exp.category}
+                          </span>
+                          <span className="text-[10px] text-foreground/40 font-bold uppercase tracking-tight shrink-0 flex items-center gap-1">
+                            <span className="w-1 h-1 rounded-full bg-foreground/20 shrink-0"></span> <span className="truncate">{exp.createdBy.split('@')[0]}</span>
+                          </span>
+                        </div>
+                      </div>
 
-        <div className="p-6 border-b border-black/5 bg-white/30 flex justify-between items-center">
-          <h2 className="font-bold text-lg text-foreground">Movimientos Recientes</h2>
-          <div className="text-sm text-foreground/60 font-bold flex items-center gap-2">
-            <CreditCard size={16} /> Detalle de Egresos
-          </div>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-black/10 text-foreground/80 text-[10px] uppercase tracking-widest font-black">
-                <th className="px-6 py-4">Fecha</th>
-                <th className="px-6 py-4">Descripción</th>
-                <th className="px-6 py-4">Categoría</th>
-                <th className="px-6 py-4">Fondo</th>
-                <th className="px-6 py-4 text-right">Monto</th>
-                <th className="px-6 py-4 text-center">Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-black/5">
-              {loading ? (
-                <tr>
-                  <td colSpan={6} className="py-20 text-center">
-                    <Loader2 className="animate-spin text-primary mx-auto mb-2" size={30} />
-                    <span className="text-foreground/60 font-bold">Cargando movimientos financieros...</span>
-                  </td>
-                </tr>
-              ) : expenses.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="py-20 text-center text-foreground/70 italic font-black">
-                    No hay gastos registrados en este periodo.
-                  </td>
-                </tr>
-              ) : (
-                expenses.map((exp) => (
-                  <tr key={exp.id} className="hover:bg-black/2 cursor-default transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="text-sm font-bold text-foreground/90">
-                        {exp.date?.toDate
-                          ? exp.date.toDate().toLocaleDateString('es-PE', { day: '2-digit', month: 'short' })
-                          : 'Pendiente'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="text-sm font-black text-foreground block">{exp.description}</span>
-                      <span className="text-[10px] text-foreground/60 font-bold uppercase tracking-tight">{exp.createdBy}</span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="px-2.5 py-1 rounded-lg bg-black/5 text-foreground/80 text-[10px] font-black tracking-widest uppercase">
-                        {CATEGORIES.find(c => c.id === exp.category)?.icon} {exp.category}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      {exp.subtractFromCaja ? (
-                        <div className="flex items-center gap-1.5 text-success font-black text-[10px] uppercase tracking-tight">
-                          <Wallet size={12} /> Caja Abierta
+                      <div className="flex flex-col items-end shrink-0 hidden md:flex w-24">
+                        {exp.subtractFromCaja ? (
+                          <span className="text-success font-black text-[9px] uppercase tracking-widest flex items-center gap-1"><Wallet size={10} /> De Caja</span>
+                        ) : (
+                          <span className="text-foreground/40 font-black text-[9px] uppercase tracking-widest flex items-center gap-1"><CreditCard size={10} /> Externo</span>
+                        )}
+                      </div>
+
+                      <div className="shrink-0 text-right w-24">
+                        <span className="text-base sm:text-lg font-black text-error font-mono">- S/ {Number(exp.amount).toFixed(2)}</span>
+                        <div className="md:hidden mt-0.5">
+                          {exp.subtractFromCaja ? (
+                            <span className="text-success font-black text-[8px] uppercase tracking-widest inline-block text-right w-full">DE CAJA</span>
+                          ) : (
+                            <span className="text-foreground/40 font-black text-[8px] uppercase tracking-widest inline-block text-right w-full">EXTERNO</span>
+                          )}
                         </div>
-                      ) : (
-                        <div className="text-foreground/40 text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5">
-                          <CreditCard size={12} /> Fondo Externo
-                        </div>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <span className="text-base font-black text-error font-mono">- S/ {Number(exp.amount).toFixed(2)}</span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex justify-center">
-                        <button
+                      </div>
+                    </div>
+
+                    {/* Delete Button Container - Absolute positioning */}
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center justify-center">
+                       <button
                           onClick={() => handleDelete(exp.id)}
                           disabled={isDeleting === exp.id}
-                          className={`p-2 rounded-lg transition-colors ${isDeleting === exp.id ? 'bg-black/5 text-foreground/20' : 'text-error/40 hover:text-error hover:bg-error/10'
-                            }`}
+                          className={`p-2 rounded-xl transition-colors ${isDeleting === exp.id ? 'bg-black/5 text-foreground/20' : 'bg-black/5 text-foreground/20 hover:text-error hover:bg-error/10'}`}
+                          title="Eliminar gasto"
                         >
-                          {isDeleting === exp.id ? <Loader2 size={18} className="animate-spin" /> : <Trash2 size={18} />}
+                          {isDeleting === exp.id ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
                         </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                    </div>
+
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

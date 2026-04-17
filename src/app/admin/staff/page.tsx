@@ -150,7 +150,7 @@ export default function StaffPage() {
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-foreground/70 mb-1">Correo (Usuario)</label>
+                <label className="block text-sm font-medium text-foreground/70 mb-1">Usuario</label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-foreground/40" size={16} />
                   <input type="email" value={email} onChange={e => setEmail(e.target.value)} required placeholder="personal@magistral.pe"

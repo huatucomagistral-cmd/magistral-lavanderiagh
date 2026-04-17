@@ -11,7 +11,7 @@ import { DateRangePicker } from "@/components/ui/DateRangePicker";
 
 const OrderStatusObj: any = {
   RECIBIDO: "Recibido",
-  PROCESANDO: "En Proceso",
+  EN_PROCESO: "En Proceso",
   LISTO: "Listo",
   ENTREGADO: "Entregado",
 };
@@ -160,20 +160,22 @@ export default function ReportesPage() {
     <div className="space-y-6 animate-in fade-in duration-500 pb-10">
 
       {/* Header y Exportar */}
-      <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4">
+      {/* Header y Exportar */}
+      <div className="flex flex-row justify-between items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
-            <TrendingUp className="text-primary" /> Reporte de Ganancias
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground flex items-center gap-2">
+            <TrendingUp className="text-primary w-6 h-6 sm:w-8 sm:h-8" />
+            Ganancias
           </h1>
-
         </div>
 
         <button
           onClick={handleExportExcel}
           disabled={orders.length === 0}
-          className="bg-success hover:bg-success-hover active:scale-95 disabled:opacity-50 text-white font-bold py-3 px-6 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-success/20 w-full md:w-auto"
+          className="bg-success hover:bg-success-hover active:scale-95 disabled:opacity-50 text-white font-black rounded-xl p-3 sm:px-4 sm:py-3 flex items-center justify-center gap-2 transition-all shadow-lg shadow-success/20 shrink-0"
         >
-          <Download size={18} /> Exportar Excel (.XLSX)
+          <Download size={20} />
+          <span className="hidden sm:inline">Descargar</span>
         </button>
       </div>
 
@@ -216,7 +218,7 @@ export default function ReportesPage() {
                 disabled={!startDate || !endDate || loading}
                 className="bg-primary px-6 py-3 rounded-xl font-bold text-white text-sm disabled:opacity-50 hover:bg-primary-hover transition-colors w-full sm:w-auto tracking-widest"
               >
-                FILTRAR DATA
+                FILTRAR
               </button>
             </div>
           )}

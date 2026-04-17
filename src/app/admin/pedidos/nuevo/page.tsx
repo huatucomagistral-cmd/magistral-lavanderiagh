@@ -363,7 +363,7 @@ export default function NuevaOrdenPage() {
         total,
         totalPieces: totalPieces || 0,
         payMethod,
-        status: "RECIBIDO",
+        status: "EN_PROCESO",
         paymentStatus: payMethod === "LUEGO" ? "UNPAID" : "PAID",
         ...(payMethod === "EFECTIVO" ? { paymentDate: new Date().toISOString() } : {}),
         createdByEmail: user?.email || "Desconocido"

@@ -87,76 +87,78 @@ export default function ClientesPage() {
         </div>
       </div>
 
-      <div className="glass-card overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="border-b border-black/5 bg-black/[0.02]">
-                <th className="px-6 py-4 text-xs font-black text-foreground/40 uppercase tracking-widest">Cliente</th>
-                <th className="px-6 py-4 text-xs font-black text-foreground/40 uppercase tracking-widest">Identificación</th>
-                <th className="px-6 py-4 text-xs font-black text-foreground/40 uppercase tracking-widest text-center">Fidelidad (Kgs)</th>
-                <th className="px-6 py-4 text-xs font-black text-foreground/40 uppercase tracking-widest text-right">Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-white/5">
-              {loading ? (
-                <tr>
-                  <td colSpan={4} className="px-6 py-12 text-center text-white/30">
-                    <Loader2 className="animate-spin mx-auto mb-2" size={32} />
-                    Cargando base de datos...
-                  </td>
-                </tr>
-              ) : filteredClients.length === 0 ? (
-                <tr>
-                  <td colSpan={4} className="px-6 py-12 text-center text-foreground/30">
-                    No se encontraron clientes con esa búsqueda.
-                  </td>
-                </tr>
-              ) : (
-                filteredClients.map(client => (
-                  <tr key={client.id} className="hover:bg-black/[0.02] transition-colors group border-b border-black/5">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
-                          {client.name?.charAt(0).toUpperCase() || "?"}
-                        </div>
-                        <div>
-                          <p className="text-foreground font-bold group-hover:text-primary transition-colors">{client.name || "Sin nombre"}</p>
-                          <p className="text-foreground/60 text-xs flex items-center gap-1 mt-0.5">
-                            <Phone size={12} /> {client.phone || "---"}
-                          </p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex flex-col gap-1">
-                        <span className="text-foreground/70 text-sm font-mono flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-black/5 border border-black/5">
-                          <CreditCard size={14} className="text-foreground/20" /> {client.dni || "Sin ID"}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <div className="flex flex-col items-center">
-                        <div className={`px-3 py-1 rounded-full flex items-center gap-1.5 text-xs font-black ${client.totalKgAccumulated >= 10 ? 'bg-success/20 text-success' : 'bg-black/5 text-foreground/50 border border-black/5'}`}>
-                          <Award size={14} /> {client.totalKgAccumulated || 0} KG
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <button
-                        onClick={() => setEditingClient(client)}
-                        className="p-2.5 rounded-xl bg-black/5 hover:bg-black/10 text-foreground/50 hover:text-foreground transition-all border border-black/5"
-                        title="Editar Datos"
-                      >
-                        <Edit2 size={18} />
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+      <div className="glass-card overflow-hidden flex flex-col">
+        {loading ? (
+          <div className="py-16 text-center text-foreground/40">
+            <Loader2 className="animate-spin mx-auto mb-3" size={32} />
+            <p className="font-bold text-sm">Cargando base de datos...</p>
+          </div>
+        ) : filteredClients.length === 0 ? (
+          <div className="py-16 text-center text-foreground/40">
+            <User className="mx-auto mb-3 opacity-30" size={48} />
+            <p className="font-bold text-sm">No se encontraron clientes con esa búsqueda.</p>
+          </div>
+        ) : (
+          <div className="flex flex-col divide-y divide-black/5">
+            {filteredClients.map(client => (
+              <div key={client.id} className="p-4 sm:px-6 flex flex-col md:flex-row md:items-center justify-between group hover:bg-black/[0.02] transition-colors relative gap-3">
+                
+                {/* Contenedor Principal: Cliente y DNI */}
+                <div className="flex items-center gap-4 flex-1 pr-10 md:pr-0">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 shrink-0 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-lg">
+                    {client.name?.charAt(0).toUpperCase() || "?"}
+                  </div>
+
+                  <div className="flex flex-col flex-1 min-w-0">
+                    <p className="text-foreground font-black text-sm sm:text-base group-hover:text-primary transition-colors truncate">
+                      {client.name || "Sin nombre"}
+                    </p>
+                    <div className="flex flex-wrap items-center gap-2 mt-0.5">
+                      <p className="text-foreground/60 text-[11px] font-bold tracking-wide flex items-center gap-1">
+                        <Phone size={10} /> {client.phone || "---"}
+                      </p>
+                      <span className="text-foreground/30 text-[10px] hidden sm:inline">•</span>
+                      <span className="text-foreground/70 text-[10px] font-mono font-bold tracking-widest flex items-center gap-1 px-1.5 py-0.5 rounded bg-black/5 border border-black/5">
+                        <CreditCard size={10} className="text-foreground/40" /> {client.dni || "Sin ID"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Fidelidad & Actions (Desktop on right, Mobile on bottom) */}
+                <div className="flex items-center justify-between md:justify-end gap-4 w-full md:w-auto mt-1 md:mt-0 pl-[56px] sm:pl-[64px] md:pl-0">
+                  
+                  <div className={`px-2.5 py-1 rounded-full flex items-center gap-1.5 text-[10px] sm:text-xs font-black uppercase tracking-widest ${client.totalKgAccumulated >= 10 ? 'bg-success/10 text-success border border-success/20 shadow-sm' : 'bg-black/5 text-foreground/50 border border-black/5'}`}>
+                    <Award size={12} /> {client.totalKgAccumulated || 0} KG
+                  </div>
+
+                  {/* Desktop Button */}
+                  <div className="hidden md:block">
+                    <button
+                      onClick={() => setEditingClient(client)}
+                      className="p-2.5 text-primary bg-primary/5 hover:bg-primary/20 rounded-xl transition-all active:scale-95"
+                      title="Editar Datos"
+                    >
+                      <Edit2 size={16} />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Mobile Button - Absolute top right */}
+                <div className="absolute right-4 top-4 md:hidden">
+                  <button
+                    onClick={() => setEditingClient(client)}
+                    className="p-2 text-primary bg-primary/5 hover:bg-primary/20 rounded-xl transition-all active:scale-95"
+                    title="Editar Datos"
+                  >
+                    <Edit2 size={16} />
+                  </button>
+                </div>
+
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Modal de Edición */}

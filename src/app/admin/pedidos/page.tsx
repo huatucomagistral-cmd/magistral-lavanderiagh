@@ -32,7 +32,7 @@ export default function OrdenesPage() {
   const [loading, setLoading] = useState(true);
   const [orderToCancel, setOrderToCancel] = useState<Order | null>(null);
   const [cancelReason, setCancelReason] = useState("");
-  const [activeTab, setActiveTab] = useState<OrderStatus>('RECIBIDO');
+  const [activeTab, setActiveTab] = useState<OrderStatus>('EN_PROCESO');
 
   // Cargar orders en tiempo real desde Firebase
   useEffect(() => {
@@ -168,12 +168,7 @@ export default function OrdenesPage() {
         {/* BLOQUE 4: Acciones Operativas */}
         <div className="w-full sm:w-[150px] flex items-center gap-2 shrink-0">
           <div className="flex-1">
-            {order.status === 'RECIBIDO' && (
-              <button onClick={() => updateStatus(order.id, 'EN_PROCESO')} className="w-full bg-warning/20 text-warning hover:bg-warning/30 rounded-md text-xs font-black transition-all active:scale-95 border border-warning/10 h-[32px] flex items-center justify-center gap-1">
-                Proceso <ArrowRight size={14} />
-              </button>
-            )}
-            {order.status === 'EN_PROCESO' && (
+            {(order.status === 'RECIBIDO' || order.status === 'EN_PROCESO') && (
               <button onClick={() => updateStatus(order.id, 'LISTO')} className="w-full bg-info/20 text-info hover:bg-info/40 rounded-md text-xs font-black transition-all active:scale-95 border border-info/10 h-[32px] flex items-center justify-center gap-1">
                 Listo <CheckCircle2 size={14} />
               </button>
@@ -227,16 +222,10 @@ export default function OrdenesPage() {
       {/* TABS SELECTOR */}
       <div className="flex flex-col sm:flex-row p-1 bg-white/40 rounded-xl border border-black/5 overflow-x-auto mb-4 shrink-0 shadow-sm gap-1">
         <button
-          onClick={() => setActiveTab('RECIBIDO')}
-          className={`flex-1 py-3 px-4 rounded-lg font-black text-sm transition-all whitespace-nowrap flex items-center justify-center gap-2 ${activeTab === 'RECIBIDO' ? 'bg-white text-foreground shadow-sm border border-black/5' : 'text-foreground/50 hover:text-foreground hover:bg-white/40 border border-transparent'}`}
-        >
-          <Inbox size={16} /> RECIBIDO <span className="bg-black/10 px-2 py-0.5 rounded-md text-[10px]">{filteredOrders.filter(o => o.status === 'RECIBIDO').length}</span>
-        </button>
-        <button
           onClick={() => setActiveTab('EN_PROCESO')}
-          className={`flex-1 py-3 px-4 rounded-lg font-black text-sm transition-all whitespace-nowrap flex items-center justify-center gap-2 ${activeTab === 'EN_PROCESO' ? 'bg-warning/20 text-warning shadow-sm border border-warning/20' : 'text-foreground/50 hover:text-foreground hover:bg-white/40 border border-transparent'}`}
+          className={`flex-1 py-3 px-4 rounded-lg font-black text-sm transition-all whitespace-nowrap flex items-center justify-center gap-2 ${activeTab === 'EN_PROCESO' ? 'bg-white text-foreground shadow-sm border border-black/5' : 'text-foreground/50 hover:text-foreground hover:bg-white/40 border border-transparent'}`}
         >
-          <Activity size={16} /> LAVANDO <span className="bg-warning/40 px-2 py-0.5 rounded-md text-[10px] text-warning-strong">{filteredOrders.filter(o => o.status === 'EN_PROCESO').length}</span>
+          <Activity size={16} /> EN PROCESO <span className="bg-black/10 px-2 py-0.5 rounded-md text-[10px]">{filteredOrders.filter(o => o.status === 'RECIBIDO' || o.status === 'EN_PROCESO').length}</span>
         </button>
         <button
           onClick={() => setActiveTab('LISTO')}
@@ -251,7 +240,7 @@ export default function OrdenesPage() {
         {loading ? (
           <div className="flex justify-center items-center py-20"><Loader2 className="animate-spin text-primary/50" size={32} /></div>
         ) : (
-          filteredOrders.filter(o => o.status === activeTab).length === 0 ? (
+          filteredOrders.filter(o => activeTab === 'EN_PROCESO' ? (o.status === 'EN_PROCESO' || o.status === 'RECIBIDO') : o.status === activeTab).length === 0 ? (
             <div className="text-center py-20 text-foreground/40 border-2 border-dashed border-black/10 rounded-2xl bg-white/20">
               <PackageSearch size={48} className="mx-auto mb-4 opacity-50" />
               <p className="text-lg font-black">Sin tickets en esta etapa</p>
@@ -259,7 +248,7 @@ export default function OrdenesPage() {
             </div>
           ) : (
             <div className="bg-white/60 rounded-2xl border border-black/5 divide-y divide-black/10 shadow-sm overflow-hidden">
-              {filteredOrders.filter(o => o.status === activeTab).map(order => renderRow(order))}
+              {filteredOrders.filter(o => activeTab === 'EN_PROCESO' ? (o.status === 'EN_PROCESO' || o.status === 'RECIBIDO') : o.status === activeTab).map(order => renderRow(order))}
             </div>
           )
         )}

@@ -144,26 +144,26 @@ export default function POSPage() {
           </div>
         ) : (
           <div className="flex-1 overflow-y-visible md:overflow-y-auto min-h-0 md:pb-10 scrollbar-hide py-2">
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4 h-full content-start">
-              {products.map(p => (
+            <div className="bg-white/60 rounded-2xl border border-black/5 shadow-sm overflow-hidden flex flex-col">
+              {products.map((p, index) => (
                 <button
                   key={p.id}
                   onClick={() => addToCart(p)}
                   disabled={p.stock <= 0}
-                  className={`relative bg-white rounded-2xl p-4 border border-black/5 flex flex-row items-center justify-between text-left transition-all ${p.stock > 0 ? 'hover:border-primary/40 hover:shadow-lg hover:shadow-primary/10 active:scale-95 cursor-pointer' : 'opacity-50 cursor-not-allowed grayscale'}`}
+                  className={`relative flex flex-row items-center justify-between text-left transition-all p-4 sm:px-5 sm:py-4 group ${p.stock > 0 ? 'hover:bg-white/80 active:bg-black/5 cursor-pointer' : 'opacity-50 cursor-not-allowed grayscale'} ${index !== products.length - 1 ? 'border-b border-black/5' : ''}`}
                 >
-                  {p.stock <= 0 && <span className="absolute inset-0 bg-white/60 z-10 rounded-2xl"></span>}
+                  {p.stock <= 0 && <span className="absolute inset-0 bg-white/40 z-10"></span>}
 
                   <div className="flex flex-col pr-4 relative z-20">
-                    <span className="font-bold text-foreground text-sm md:text-base leading-tight line-clamp-2">{p.name}</span>
-                    <div className="flex items-center gap-2 mt-1">
-                      <span className="text-[11px] text-foreground/50 font-bold uppercase tracking-widest">{p.stock} unidades</span>
+                    <span className="font-bold text-foreground text-base sm:text-lg leading-tight line-clamp-2 group-hover:text-primary transition-colors">{p.name}</span>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-black/5 text-foreground/60 w-max">{p.stock} unidades</span>
                       {p.stock <= 0 && <span className="bg-error font-black uppercase text-[10px] text-white px-2 py-0.5 rounded-full shadow-md">Agotado</span>}
                     </div>
                   </div>
 
                   <div className="text-right shrink-0 relative z-20">
-                    <span className="font-black text-success text-base md:text-lg font-mono">S/ {p.price.toFixed(2)}</span>
+                    <span className="font-black text-primary text-base md:text-xl font-mono">S/ {p.price.toFixed(2)}</span>
                   </div>
                 </button>
               ))}
