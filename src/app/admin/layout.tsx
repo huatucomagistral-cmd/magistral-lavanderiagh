@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { LayoutDashboard, Users, Receipt, Package, Settings, LogOut, Menu, X, ClipboardList, TrendingUp, Megaphone, DollarSign, ShoppingCart } from "lucide-react";
+import { SquaresFour, Users, Receipt, Package, Gear, SignOut, List, X, ClipboardText, ChartLineUp, Megaphone, CurrencyDollar, ShoppingCart } from "@phosphor-icons/react";
 import Link from "next/link";
 import { useStore } from "@/store/useStore";
 import { auth, db } from "@/lib/firebase";
@@ -42,7 +42,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   // Sincronización en tiempo real del estado de la CAJA y de la TIENDA
   useEffect(() => {
     if (!user) return;
-    
+
     // Escuchar el documento "sesion" para la caja de esta tienda
     const unsubCaja = onSnapshot(doc(db, `stores/${user.storeId}/caja/sesion`), (snap) => {
       if (snap.exists()) {
@@ -87,10 +87,10 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
   return (
     <div className="flex h-screen bg-background text-foreground overflow-hidden">
-      
+
       {/* Mobile Sidebar Overlay */}
       {isMobileMenuOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 md:hidden"
           onClick={() => setIsMobileMenuOpen(false)}
         />
@@ -101,17 +101,17 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         <div className="h-16 px-4 lg:px-6 border-b border-white/5 flex justify-between items-center shrink-0">
           <div className="flex items-center gap-3">
             {currentStore?.logoUrl ? (
-              <img 
-                src={currentStore.logoUrl} 
-                alt={currentStore.name} 
-                className="w-8 h-8 rounded-lg object-contain bg-white shrink-0" 
+              <img
+                src={currentStore.logoUrl}
+                alt={currentStore.name}
+                className="w-8 h-8 rounded-lg object-contain bg-white shrink-0"
               />
             ) : (
-                <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center shrink-0">
-                  <span className="font-bold text-white text-lg">
-                    {currentStore?.name ? currentStore.name.charAt(0).toUpperCase() : "M"}
-                  </span>
-                </div>
+              <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center shrink-0">
+                <span className="font-bold text-white text-lg">
+                  {currentStore?.name ? currentStore.name.charAt(0).toUpperCase() : "M"}
+                </span>
+              </div>
             )}
             <h1 className="font-bold text-sm lg:text-base leading-tight tracking-tight text-white line-clamp-2">
               {currentStore?.name || "Magistral"}
@@ -125,43 +125,43 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
 
         <nav className="flex-1 p-4 flex flex-col gap-2 overflow-y-auto">
-          <SidebarLink href="/admin" icon={<LayoutDashboard size={20} />} label="Dashboard" exact />
-          <SidebarLink href="/admin/caja" icon={<Receipt size={20} />} label="Caja" />
-          <SidebarLink href="/admin/gastos" icon={<DollarSign size={20} />} label="Gastos" />
-          <SidebarLink href="/admin/pos" icon={<ShoppingCart size={20} />} label="Punto de Venta" />
+          <SidebarLink href="/admin" icon={<SquaresFour size={22} weight="duotone" />} label="Principal" exact />
+          <SidebarLink href="/admin/caja" icon={<Receipt size={22} weight="duotone" />} label="Caja" />
+          <SidebarLink href="/admin/gastos" icon={<CurrencyDollar size={22} weight="duotone" />} label="Gastos" />
+          <SidebarLink href="/admin/pos" icon={<ShoppingCart size={22} weight="duotone" />} label="Ventas" />
           <SidebarLink
             href="/admin/pedidos"
-            icon={<Package size={20} />}
+            icon={<Package size={22} weight="duotone" />}
             label="Órdenes"
             excludePaths={["/admin/pedidos/historial"]}
           />
-          <SidebarLink href="/admin/pedidos/historial" icon={<ClipboardList size={20} />} label="Historial" />
-          <SidebarLink href="/admin/clientes" icon={<Users size={20} />} label="Clientes" />
-          
+          <SidebarLink href="/admin/pedidos/historial" icon={<ClipboardText size={22} weight="duotone" />} label="Historial" />
+          <SidebarLink href="/admin/clientes" icon={<Users size={22} weight="duotone" />} label="Clientes" />
+
           {user.role === "ADMIN" && (
             <>
-              <SidebarLink href="/admin/servicios" icon={<Settings size={20} />} label="Servicios" />
-              <SidebarLink href="/admin/inventario" icon={<Package size={20} />} label="Inventario" />
-              <SidebarLink href="/admin/staff" icon={<Users size={20} />} label="Personal" />
-              <SidebarLink href="/admin/reportes" icon={<TrendingUp size={20} />} label="Reportes" />
-              <SidebarLink href="/admin/marketing" icon={<Megaphone size={20} />} label="Marketing" />
+              <SidebarLink href="/admin/servicios" icon={<Gear size={22} weight="duotone" />} label="Servicios" />
+              <SidebarLink href="/admin/inventario" icon={<Package size={22} weight="duotone" />} label="Inventario" />
+              <SidebarLink href="/admin/staff" icon={<Users size={22} weight="duotone" />} label="Personales" />
+              <SidebarLink href="/admin/reportes" icon={<ChartLineUp size={22} weight="duotone" />} label="Reportes" />
+              <SidebarLink href="/admin/marketing" icon={<Megaphone size={22} weight="duotone" />} label="Marketing" />
             </>
           )}
         </nav>
 
         <div className="p-4 border-t border-white/10 mt-auto">
           {user.role === "ADMIN" && (
-              <SidebarLink href="/admin/configuracion" icon={<Settings size={20} />} label="Configuración" />
+            <SidebarLink href="/admin/configuracion" icon={<Gear size={22} weight="duotone" />} label="Configuración" />
           )}
           {/* Email del usuario y Rol */}
           <div className="px-3 py-2 mt-1">
-             <div className="flex items-center justify-between gap-2">
-                <span className="text-xs text-white/60 truncate" title={user.email}>{user.email}</span>
-                <span className="text-[9px] bg-white/20 px-1.5 py-0.5 rounded text-white font-black uppercase tracking-widest shrink-0">{user.role}</span>
-             </div>
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs text-white/60 truncate" title={user.email}>{user.email}</span>
+              <span className="text-[9px] bg-white/20 px-1.5 py-0.5 rounded text-white font-black uppercase tracking-widest shrink-0">{user.role}</span>
+            </div>
           </div>
           <button onClick={handleLogout} className="flex items-center gap-3 px-3 py-2 w-full text-white/70 hover:text-white transition-all rounded-xl hover:bg-black/20 mt-1 font-medium">
-            <LogOut size={20} />
+            <SignOut size={22} weight="duotone" />
             <span className="text-sm">Cerrar Sesión</span>
           </button>
         </div>
@@ -170,40 +170,40 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-w-0 relative h-full">
         <header className="glass-header h-16 flex items-center justify-between px-4 sm:px-6 shrink-0 z-30 relative md:hidden border-b border-black/5">
-           
-           {/* Left side: Logo + Store Name (mobile) */}
-           <div className="flex items-center gap-2">
-             {currentStore?.logoUrl ? (
-               <img 
-                 src={currentStore.logoUrl} 
-                 alt={currentStore.name} 
-                 className="w-7 h-7 rounded object-contain bg-white shrink-0" 
-               />
-             ) : (
-               <div className="w-7 h-7 rounded bg-gradient-to-tr from-primary to-accent flex items-center justify-center shadow-sm shrink-0">
-                 <span className="font-bold text-white text-sm">
-                   {currentStore?.name ? currentStore.name.charAt(0).toUpperCase() : "M"}
-                 </span>
-               </div>
-             )}
-             <span className="font-bold text-primary text-sm line-clamp-2 max-w-[160px] leading-tight">
-               {currentStore?.name || "Magistral"}
-             </span>
-           </div>
 
-           {/* Right side: Hamburger (mobile) */}
-           <div className="flex items-center gap-2">
-             <button 
-               onClick={() => setIsMobileMenuOpen(true)}
-               className="p-2 text-primary hover:text-primary-hover hover:bg-black/5 rounded-lg transition-colors"
-               aria-label="Abrir menú"
-             >
-               <Menu size={24} />
-             </button>
-           </div>
+          {/* Left side: Logo + Store Name (mobile) */}
+          <div className="flex items-center gap-2">
+            {currentStore?.logoUrl ? (
+              <img
+                src={currentStore.logoUrl}
+                alt={currentStore.name}
+                className="w-7 h-7 rounded object-contain bg-white shrink-0"
+              />
+            ) : (
+              <div className="w-7 h-7 rounded bg-gradient-to-tr from-primary to-accent flex items-center justify-center shadow-sm shrink-0">
+                <span className="font-bold text-white text-sm">
+                  {currentStore?.name ? currentStore.name.charAt(0).toUpperCase() : "M"}
+                </span>
+              </div>
+            )}
+            <span className="font-bold text-primary text-sm line-clamp-2 max-w-[160px] leading-tight">
+              {currentStore?.name || "Magistral"}
+            </span>
+          </div>
+
+          {/* Right side: Hamburger (mobile) */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setIsMobileMenuOpen(true)}
+              className="p-2 text-primary hover:text-primary-hover hover:bg-black/5 rounded-lg transition-colors"
+              aria-label="Abrir menú"
+            >
+              <List size={24} weight="bold" />
+            </button>
+          </div>
         </header>
 
-        
+
         <div className="flex-1 overflow-y-auto w-full bg-background md:bg-transparent">
           <div className="p-3 sm:p-5 max-w-6xl mx-auto w-full min-h-full">
             {children}
@@ -230,20 +230,19 @@ function SidebarLink({
   const isActive = !isExcluded && (
     exact ? pathname === href : pathname === href || pathname.startsWith(`${href}/`)
   );
-  
+
   return (
-    <Link 
+    <Link
       href={href}
-      className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all group ${
-        isActive 
-          ? "bg-white/20 text-white shadow-inner shadow-black/10 border border-white/20" 
-          : "text-white/70 hover:text-white hover:bg-white/10"
-      }`}
+      className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all group ${isActive
+        ? "bg-white/20 text-white shadow-inner shadow-black/10 border border-white/20"
+        : "text-white/70 hover:text-white hover:bg-white/10"
+        }`}
     >
-      <div className={`${isActive ? "text-white" : "text-white/60 group-hover:text-white"} transition-colors`}>
+      <div className="text-white transition-colors">
         {icon}
       </div>
-      <span className="font-medium text-sm">{label}</span>
+      <span className="font-medium text-[15px] leading-[20px] text-white">{label}</span>
     </Link>
   );
 }

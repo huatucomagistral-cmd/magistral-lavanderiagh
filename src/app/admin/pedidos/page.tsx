@@ -206,7 +206,7 @@ export default function OrdenesPage() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 shrink-0">
         <div>
           <h1 className="text-3xl font-bold text-foreground mb-2">Órdenes en Curso</h1>
-          <p className="text-foreground/70 font-medium">Gestiona el flujo de lavado y el estado de los pagos.</p>
+
         </div>
 
         <div className="flex items-center gap-3 w-full sm:w-auto">
@@ -219,7 +219,7 @@ export default function OrdenesPage() {
 
           <Link href="/admin/pedidos/nuevo" className="bg-primary hover:bg-primary-hover active:scale-95 transition-all text-white font-black rounded-xl px-4 py-3 flex items-center justify-center gap-2 shadow-lg shadow-primary/20 shrink-0">
             <Plus size={20} />
-            <span className="hidden sm:inline">Nuevo Pedido</span>
+            <span className="hidden sm:inline">Nueva Orden</span>
           </Link>
         </div>
       </div>
@@ -230,19 +230,19 @@ export default function OrdenesPage() {
           onClick={() => setActiveTab('RECIBIDO')}
           className={`flex-1 py-3 px-4 rounded-lg font-black text-sm transition-all whitespace-nowrap flex items-center justify-center gap-2 ${activeTab === 'RECIBIDO' ? 'bg-white text-foreground shadow-sm border border-black/5' : 'text-foreground/50 hover:text-foreground hover:bg-white/40 border border-transparent'}`}
         >
-          <Inbox size={16} /> COLA DE ESPERA <span className="bg-black/10 px-2 py-0.5 rounded-md text-[10px]">{filteredOrders.filter(o => o.status === 'RECIBIDO').length}</span>
+          <Inbox size={16} /> RECIBIDO <span className="bg-black/10 px-2 py-0.5 rounded-md text-[10px]">{filteredOrders.filter(o => o.status === 'RECIBIDO').length}</span>
         </button>
         <button
           onClick={() => setActiveTab('EN_PROCESO')}
           className={`flex-1 py-3 px-4 rounded-lg font-black text-sm transition-all whitespace-nowrap flex items-center justify-center gap-2 ${activeTab === 'EN_PROCESO' ? 'bg-warning/20 text-warning shadow-sm border border-warning/20' : 'text-foreground/50 hover:text-foreground hover:bg-white/40 border border-transparent'}`}
         >
-          <Activity size={16} /> EN LAVADO/SECADO <span className="bg-warning/40 px-2 py-0.5 rounded-md text-[10px] text-warning-strong">{filteredOrders.filter(o => o.status === 'EN_PROCESO').length}</span>
+          <Activity size={16} /> LAVANDO <span className="bg-warning/40 px-2 py-0.5 rounded-md text-[10px] text-warning-strong">{filteredOrders.filter(o => o.status === 'EN_PROCESO').length}</span>
         </button>
         <button
           onClick={() => setActiveTab('LISTO')}
           className={`flex-1 py-3 px-4 rounded-lg font-black text-sm transition-all whitespace-nowrap flex items-center justify-center gap-2 ${activeTab === 'LISTO' ? 'bg-success/20 text-success shadow-sm border border-success/20' : 'text-foreground/50 hover:text-foreground hover:bg-white/40 border border-transparent'}`}
         >
-          <CheckCircle2 size={16} /> LISTOS PARA ENTREGA <span className="bg-success/40 px-2 py-0.5 rounded-md text-[10px] text-success-strong">{filteredOrders.filter(o => o.status === 'LISTO').length}</span>
+          <CheckCircle2 size={16} /> LISTO <span className="bg-success/40 px-2 py-0.5 rounded-md text-[10px] text-success-strong">{filteredOrders.filter(o => o.status === 'LISTO').length}</span>
         </button>
       </div>
 

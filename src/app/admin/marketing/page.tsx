@@ -104,7 +104,7 @@ export default function MarketingPage() {
         <h1 className="text-3xl font-bold text-foreground mb-2 flex items-center gap-3">
           <Zap size={28} className="text-primary" /> Promociones
         </h1>
-        <p className="text-foreground/60">Gestiona tus cupones de descuento y el QR de vitrina para captar clientes.</p>
+
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-5 gap-8">

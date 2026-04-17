@@ -25,7 +25,7 @@ export default function ClientesPage() {
 
   useEffect(() => {
     if (!user?.storeId) return;
-    
+
     const q = query(collection(db, `stores/${user.storeId}/clients`), orderBy("name", "asc"));
     const unsub = onSnapshot(q, (snap) => {
       const data = snap.docs.map(d => ({
@@ -35,14 +35,14 @@ export default function ClientesPage() {
       setClients(data);
       setLoading(false);
     });
-    
+
     return () => unsub();
   }, [user]);
 
   const handleUpdateClient = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingClient || !user?.storeId) return;
-    
+
     setIsSaving(true);
     try {
       const clientRef = doc(db, `stores/${user.storeId}/clients`, editingClient.id);
@@ -61,7 +61,7 @@ export default function ClientesPage() {
     }
   };
 
-  const filteredClients = clients.filter(c => 
+  const filteredClients = clients.filter(c =>
     (c.name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
     (c.dni || "").includes(searchTerm) ||
     (c.phone || "").includes(searchTerm)
@@ -71,15 +71,15 @@ export default function ClientesPage() {
     <div className="space-y-8 animate-in fade-in duration-500">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">Base de Clientes</h1>
-          <p className="text-foreground/60">Gestiona la información y fidelidad de tus clientes recurrentes.</p>
+          <h1 className="text-3xl font-bold text-foreground mb-2">Clientes</h1>
+
         </div>
-        
+
         <div className="relative w-full sm:w-80">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-foreground/40" size={20} />
-          <input 
-            type="text" 
-            placeholder="Buscar por nombre, DNI o celular..." 
+          <input
+            type="text"
+            placeholder="Buscar por nombre, DNI o celular..."
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
             className="w-full bg-white/50 border border-black/10 rounded-xl pl-11 pr-4 py-3 text-foreground focus:outline-none focus:ring-2 focus:ring-primary shadow-sm"
@@ -136,14 +136,14 @@ export default function ClientesPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4 text-center">
-                       <div className="flex flex-col items-center">
-                          <div className={`px-3 py-1 rounded-full flex items-center gap-1.5 text-xs font-black ${client.totalKgAccumulated >= 10 ? 'bg-success/20 text-success' : 'bg-black/5 text-foreground/50 border border-black/5'}`}>
-                             <Award size={14} /> {client.totalKgAccumulated || 0} KG
-                          </div>
-                       </div>
+                      <div className="flex flex-col items-center">
+                        <div className={`px-3 py-1 rounded-full flex items-center gap-1.5 text-xs font-black ${client.totalKgAccumulated >= 10 ? 'bg-success/20 text-success' : 'bg-black/5 text-foreground/50 border border-black/5'}`}>
+                          <Award size={14} /> {client.totalKgAccumulated || 0} KG
+                        </div>
+                      </div>
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <button 
+                      <button
                         onClick={() => setEditingClient(client)}
                         className="p-2.5 rounded-xl bg-black/5 hover:bg-black/10 text-foreground/50 hover:text-foreground transition-all border border-black/5"
                         title="Editar Datos"
@@ -167,7 +167,7 @@ export default function ClientesPage() {
               <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
                 <User className="text-primary" size={24} /> Editar Cliente
               </h2>
-              <button 
+              <button
                 onClick={() => setEditingClient(null)}
                 className="p-2 hover:bg-black/5 rounded-full transition-colors text-foreground/50"
               >
@@ -178,9 +178,9 @@ export default function ClientesPage() {
             <form onSubmit={handleUpdateClient} className="p-6 space-y-4">
               <div>
                 <label className="block text-xs font-black text-foreground/50 uppercase tracking-widest mb-1.5 ml-1">Nombre Completo</label>
-                <input 
+                <input
                   type="text" required value={editingClient.name}
-                  onChange={e => setEditingClient({...editingClient, name: e.target.value})}
+                  onChange={e => setEditingClient({ ...editingClient, name: e.target.value })}
                   className="w-full bg-white border border-black/10 rounded-xl px-4 py-3 text-foreground focus:ring-2 focus:ring-primary outline-none shadow-sm"
                 />
               </div>
@@ -188,17 +188,17 @@ export default function ClientesPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-black text-foreground/50 uppercase tracking-widest mb-1.5 ml-1">DNI / ID</label>
-                  <input 
+                  <input
                     type="text" maxLength={8} value={editingClient.dni}
-                    onChange={e => setEditingClient({...editingClient, dni: e.target.value.replace(/\D/g, '')})}
+                    onChange={e => setEditingClient({ ...editingClient, dni: e.target.value.replace(/\D/g, '') })}
                     className="w-full bg-white border border-black/10 rounded-xl px-4 py-3 text-foreground font-mono focus:ring-2 focus:ring-primary outline-none shadow-sm"
                   />
                 </div>
                 <div>
                   <label className="block text-xs font-black text-foreground/50 uppercase tracking-widest mb-1.5 ml-1">Celular</label>
-                  <input 
+                  <input
                     type="text" maxLength={9} value={editingClient.phone}
-                    onChange={e => setEditingClient({...editingClient, phone: e.target.value.replace(/\D/g, '')})}
+                    onChange={e => setEditingClient({ ...editingClient, phone: e.target.value.replace(/\D/g, '') })}
                     className="w-full bg-white border border-black/10 rounded-xl px-4 py-3 text-foreground font-mono focus:ring-2 focus:ring-primary outline-none shadow-sm"
                   />
                 </div>
@@ -212,7 +212,7 @@ export default function ClientesPage() {
                 <span className="text-xl font-black text-primary font-mono">{editingClient.totalKgAccumulated} KG</span>
               </div>
 
-              <button 
+              <button
                 type="submit" disabled={isSaving}
                 className="w-full bg-primary hover:bg-primary-hover text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-primary/20 mt-6"
               >

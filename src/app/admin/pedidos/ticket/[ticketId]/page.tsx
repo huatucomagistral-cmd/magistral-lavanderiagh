@@ -77,7 +77,7 @@ export default function TicketViewPage({
     window.open(url, '_blank');
   };
 
-  const handleCopyImage = () => {
+  const handleCopyImage = async () => {
     if (!ticketData) return;
 
     const W = 220; // Ajustado a 58mm
@@ -94,6 +94,29 @@ export default function TicketViewPage({
     const isPaid = ticketData.paymentStatus === "PAID";
     const atendidoPor = ticketData.createdByEmail ? ticketData.createdByEmail.split('@')[0] : '';
     const dateText = dateStr.split(',')[0]; // O separar si quieres
+
+    // Pre Carga Logo
+    const logoUrl = storeData?.showLogoOnTicket ? storeData?.logoUrl : null;
+    let logoImg: HTMLImageElement | null = null;
+    let logoHeight = 0;
+
+    if (logoUrl) {
+      try {
+        logoImg = await new Promise((resolve, reject) => {
+          const loadedImg = new window.Image();
+          loadedImg.crossOrigin = "anonymous";
+          loadedImg.onload = () => resolve(loadedImg);
+          loadedImg.onerror = reject;
+          loadedImg.src = `/api/proxy-image?url=${encodeURIComponent(logoUrl)}`;
+        });
+        if (logoImg) {
+          logoHeight = Math.floor(30 * (logoImg.height / logoImg.width));
+        }
+      } catch (e) {
+        console.error("Error loading logo for canvas", e);
+        logoImg = null;
+      }
+    }
 
     // Helper para auto-wrap (máximo ~22 caracteres por fila)
     const splitText = (text: string, maxLen: number) => {
@@ -128,6 +151,7 @@ export default function TicketViewPage({
     // Ajustamos la altura total
     const totalH =
       PAD +
+      (logoImg ? logoHeight + 4 : 0) + // Logo space
       24 +            // store name
       LINE * 2 +      // address + ruc
       10 +            // gap
@@ -148,7 +172,7 @@ export default function TicketViewPage({
     canvas.width = W * SCALE;
     canvas.height = totalH * SCALE;
     const ctx = canvas.getContext("2d")!;
-    
+
     // Aplicamos el escalado interno; todo se dibujará 3x más grande y súper nítido
     ctx.scale(SCALE, SCALE);
     ctx.imageSmoothingEnabled = false;
@@ -176,6 +200,14 @@ export default function TicketViewPage({
 
     let y = PAD + 10;
     ctx.textBaseline = "alphabetic";
+
+    if (logoImg) {
+      ctx.filter = "grayscale(100%) contrast(200%)";
+      const W_logo = 30;
+      ctx.drawImage(logoImg, W / 2 - (W_logo / 2), y - 10, W_logo, logoHeight);
+      ctx.filter = "none";
+      y += logoHeight;
+    }
 
     // ── Header ────────────────────────────────────────────────────────────────
     ctx.fillStyle = "#000";
@@ -208,15 +240,15 @@ export default function TicketViewPage({
     if (atendidoPor) {
       ctx.fillText(`ATENDIDO: ${atendidoPor}`, PAD, y); y += LINE;
     }
-    
+
     // Total de Piezas en Imagen
     if (ticketData.totalPieces && ticketData.totalPieces > 0) {
-      dashed(y - 8); 
+      dashed(y - 8);
       setFont(9, "bold");
       ctx.fillText(`TOTAL PRENDAS: ${ticketData.totalPieces} uds.`, PAD, y); y += LINE;
     }
 
-    solid(y - LINE/2, 1); y += 6;
+    solid(y - LINE / 2, 1); y += 6;
 
     // ── Table header ─────────────────────────────────────────────────────────
     setFont(9, "900");
@@ -233,7 +265,7 @@ export default function TicketViewPage({
       const price = (ci.item.price * ci.qty).toFixed(2);
       ctx.textAlign = "left";
       ctx.fillText(`${ci.qty}`, PAD, y);
-      
+
       // Dibujar texto multi-línea
       ci.nameLines.forEach((textLine: string, index: number) => {
         ctx.textAlign = "left";
@@ -243,7 +275,7 @@ export default function TicketViewPage({
       // El precio se dibuja en la primera línea
       ctx.textAlign = "right";
       ctx.fillText(price, W - PAD, y);
-      
+
       // Avanzar 'y' la cantidad de líneas que ocupó este ítem
       y += ci.nameLines.length * LINE;
     }
@@ -254,7 +286,7 @@ export default function TicketViewPage({
     ctx.textAlign = "left";
     setFont(10, "900");
     ctx.fillStyle = "#000";
-    
+
     // Dibujar recuadro para el estado
     const statusText = isPaid ? "PAGADO" : "POR COBRAR";
     const statusW = ctx.measureText(statusText).width + 6;
@@ -338,15 +370,15 @@ export default function TicketViewPage({
         </Link>
 
         <div className="glass-card p-6 flex flex-col gap-3">
-          <h2 className="text-foreground font-bold mb-2">Acciones de Emisión</h2>
+          <h2 className="text-foreground font-bold mb-2">Acciones de Envío</h2>
           <button onClick={handlePrint} className="bg-primary hover:bg-primary-hover active:scale-95 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-all">
-            <Printer size={18} /> Imprimir (80mm)
+            <Printer size={18} /> Imprimir
           </button>
           <button onClick={handleCopyImage} className="bg-black/5 hover:bg-black/10 active:scale-95 text-foreground font-medium py-3 rounded-xl flex items-center justify-center gap-2 transition-all border border-black/10">
-            <Copy size={18} /> Copiar Imagen
+            <Copy size={18} /> Copiar
           </button>
           <button onClick={handleWhatsApp} className="bg-success/20 hover:bg-success/30 active:scale-95 text-success font-medium py-3 rounded-xl flex items-center justify-center gap-2 transition-all border border-success/30">
-            <Share2 size={18} /> Mandar por WhatsApp
+            <Share2 size={18} /> WhatsApp
           </button>
         </div>
 
@@ -397,13 +429,24 @@ export default function TicketViewPage({
           </div>
         )}
 
+        {storeData?.showLogoOnTicket && storeData?.logoUrl && (
+          <div className="flex justify-center mb-2">
+            <img
+              src={storeData.logoUrl}
+              alt="Logo"
+              style={{ width: '30px', height: '30px', objectFit: 'contain' }}
+              className="grayscale contrast-200"
+            />
+          </div>
+        )}
+
         <div className="text-center mb-1 pb-1">
           <h1 className="text-sm font-black leading-none mb-0.5 truncate whitespace-nowrap overflow-hidden">{storeData?.storeName || "Cargando..."}</h1>
           <p className="text-[9px] font-semibold leading-tight">{storeData?.address || "Av. Principal 123"}</p>
           <p className="text-[9px] leading-tight">{storeData?.ruc ? `RUC: ${storeData.ruc}` : "RUC: 20123456789"}</p>
         </div>
 
-         <div className="mb-1 text-[10px] font-bold leading-[1.2] space-y-0">
+        <div className="mb-1 text-[10px] font-bold leading-[1.2] space-y-0">
           <p>FECHA: {dateStr}</p>
           <p>TICKET: <span className="text-[11px] font-bold">{ticketData.ticketNumber || ticketId.slice(0, 6).toUpperCase()}</span></p>
           <p className="truncate">CLIENTE: {ticketData.customerName || "Cliente"}</p>

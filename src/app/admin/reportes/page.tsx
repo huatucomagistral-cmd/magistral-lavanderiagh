@@ -23,7 +23,7 @@ export default function ReportesPage() {
   const [loading, setLoading] = useState(false);
   const [orders, setOrders] = useState<any[]>([]);
   const [filterType, setFilterType] = useState<ReportFilter>("MES");
-  
+
   // Rango personalizado
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -91,7 +91,7 @@ export default function ReportesPage() {
 
   // ---- CÁLCULOS FINANCIEROS ----
   const ingresosReales = orders.filter(o => o.paymentStatus === 'PAID');
-  
+
   const totalEfectivo = ingresosReales.filter(o => o.payMethod === 'EFECTIVO').reduce((acc, o) => acc + Number(o.total || 0), 0);
   const totalYape = ingresosReales.filter(o => o.payMethod === 'YAPE').reduce((acc, o) => acc + Number(o.total || 0), 0);
   const totalPagado = totalEfectivo + totalYape;
@@ -101,7 +101,7 @@ export default function ReportesPage() {
   // Ranking de Servicios Vendidos
   const getTopServices = () => {
     const services = new Map<string, { qty: number, revenue: number, type: string }>();
-    
+
     orders.forEach(o => {
       if (o.items && Array.isArray(o.items)) {
         o.items.forEach((c: any) => {
@@ -134,7 +134,7 @@ export default function ReportesPage() {
         "Cliente": o.customerName || "Sin Nombre",
         "DNI": o.customerDni !== "0" ? o.customerDni : "-",
         "Total (S/)": Number(o.total).toFixed(2),
-        "Servicios Llevados": o.items?.map((i:any) => `${i.qty}x ${i.item.name}`).join(", ") || "",
+        "Servicios Llevados": o.items?.map((i: any) => `${i.qty}x ${i.item.name}`).join(", ") || "",
         "Estado Entrega": OrderStatusObj[o.status as keyof typeof OrderStatusObj] || o.status,
         "Estado Pago": o.paymentStatus === "PAID" ? "PAGADO" : "DEBE",
         "Método Pago": o.payMethod || "-"
@@ -148,27 +148,27 @@ export default function ReportesPage() {
 
     // Anchos de columna agradables
     worksheet["!cols"] = [
-      { wch: 12 }, { wch: 12 }, { wch: 10 }, { wch: 25 }, { wch: 10 }, 
+      { wch: 12 }, { wch: 12 }, { wch: 10 }, { wch: 25 }, { wch: 10 },
       { wch: 10 }, { wch: 40 }, { wch: 15 }, { wch: 12 }, { wch: 15 }
     ];
 
     // Exportar el archivo
-    XLSX.writeFile(workbook, `Reporte_Magistral_${new Date().toISOString().slice(0,10)}.xlsx`);
+    XLSX.writeFile(workbook, `Reporte_Magistral_${new Date().toISOString().slice(0, 10)}.xlsx`);
   };
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-10">
-      
+
       {/* Header y Exportar */}
       <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4">
         <div>
           <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
-            <TrendingUp className="text-primary" /> Reportes Financieros
+            <TrendingUp className="text-primary" /> Reporte de Ganancias
           </h1>
-          <p className="text-foreground/50 text-sm mt-1">Analíticas confidenciales y flujos de caja del negocio.</p>
+
         </div>
-        
-        <button 
+
+        <button
           onClick={handleExportExcel}
           disabled={orders.length === 0}
           className="bg-success hover:bg-success-hover active:scale-95 disabled:opacity-50 text-white font-bold py-3 px-6 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-success/20 w-full md:w-auto"
@@ -180,44 +180,44 @@ export default function ReportesPage() {
       {/* Controladores de Filtro */}
       <div className="glass-card p-4">
         <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-          
+
           <div className="flex bg-white/40 p-1 rounded-xl border border-black/5 w-full md:w-auto overflow-x-auto">
             {["HOY", "SEMANA", "MES", "CUSTOM"].map((f) => (
-               <button 
-                 key={f}
-                 onClick={() => {
-                   setFilterType(f as ReportFilter);
-                   if (f !== "CUSTOM") {
-                     setStartDate("");
-                     setEndDate("");
-                   }
-                 }}
-                 className={`px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-colors ${filterType === f ? 'bg-primary text-white shadow-lg' : 'text-foreground/50 hover:text-foreground hover:bg-black/5'}`}
-               >
-                 {f === "CUSTOM" ? "Personalizado" : f}
-               </button>
+              <button
+                key={f}
+                onClick={() => {
+                  setFilterType(f as ReportFilter);
+                  if (f !== "CUSTOM") {
+                    setStartDate("");
+                    setEndDate("");
+                  }
+                }}
+                className={`px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-colors ${filterType === f ? 'bg-primary text-white shadow-lg' : 'text-foreground/50 hover:text-foreground hover:bg-black/5'}`}
+              >
+                {f === "CUSTOM" ? "Personalizado" : f}
+              </button>
             ))}
           </div>
 
           {filterType === "CUSTOM" && (
             <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
-               <DateRangePicker 
-                 startDate={startDate}
-                 endDate={endDate}
-                 onStartDateChange={setStartDate}
-                 onEndDateChange={setEndDate}
-                 onClear={() => {
-                   setStartDate("");
-                   setEndDate("");
-                 }}
-               />
-               <button 
-                 onClick={fetchReportData} 
-                 disabled={!startDate || !endDate || loading}
-                 className="bg-primary px-6 py-3 rounded-xl font-bold text-white text-sm disabled:opacity-50 hover:bg-primary-hover transition-colors w-full sm:w-auto tracking-widest"
-               >
-                 FILTRAR DATA
-               </button>
+              <DateRangePicker
+                startDate={startDate}
+                endDate={endDate}
+                onStartDateChange={setStartDate}
+                onEndDateChange={setEndDate}
+                onClear={() => {
+                  setStartDate("");
+                  setEndDate("");
+                }}
+              />
+              <button
+                onClick={fetchReportData}
+                disabled={!startDate || !endDate || loading}
+                className="bg-primary px-6 py-3 rounded-xl font-bold text-white text-sm disabled:opacity-50 hover:bg-primary-hover transition-colors w-full sm:w-auto tracking-widest"
+              >
+                FILTRAR DATA
+              </button>
             </div>
           )}
         </div>
@@ -230,67 +230,67 @@ export default function ReportesPage() {
         </div>
       ) : (
         <div className="space-y-6">
-          
+
           {/* Tarjetas Financieras */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="glass-card p-6 border-t-4 border-t-success flex flex-col gap-2 bg-white/60">
-               <span className="text-sm font-medium text-foreground/50">Total Real Ingresado (Pagado)</span>
-               <h3 className="text-4xl font-black text-foreground">S/ {totalPagado.toFixed(2)}</h3>
-               <div className="flex items-center gap-4 mt-2 pt-2 border-t border-white/5 text-xs font-medium">
-                  <span className="text-white/70">Efectivo: <b className="text-white">S/ {totalEfectivo.toFixed(2)}</b></span>
-                  <span className="text-[#742284] px-2 py-0.5 rounded bg-[#742284]/10">Yape: <b>S/ {totalYape.toFixed(2)}</b></span>
-               </div>
+              <span className="text-sm font-medium text-foreground/50">Total Real Ingresado (Pagado)</span>
+              <h3 className="text-4xl font-black text-foreground">S/ {totalPagado.toFixed(2)}</h3>
+              <div className="flex items-center gap-4 mt-2 pt-2 border-t border-white/5 text-xs font-medium">
+                <span className="text-white/70">Efectivo: <b className="text-white">S/ {totalEfectivo.toFixed(2)}</b></span>
+                <span className="text-[#742284] px-2 py-0.5 rounded bg-[#742284]/10">Yape: <b>S/ {totalYape.toFixed(2)}</b></span>
+              </div>
             </div>
 
             <div className="glass-card p-6 border-t-4 border-t-error flex flex-col gap-2 bg-white/60">
-               <span className="text-sm font-medium text-foreground/50">Cuentas por Cobrar (Deuda)</span>
-               <h3 className="text-4xl font-black text-error">S/ {totalCuentasCobrar.toFixed(2)}</h3>
-               <p className="text-xs text-foreground/40 mt-auto">Dinero bloqueado en órdenes pendientes de pago.</p>
+              <span className="text-sm font-medium text-foreground/50">Cuentas por Cobrar (Deuda)</span>
+              <h3 className="text-4xl font-black text-error">S/ {totalCuentasCobrar.toFixed(2)}</h3>
+              <p className="text-xs text-foreground/40 mt-auto">Dinero bloqueado en órdenes pendientes de pago.</p>
             </div>
 
             <div className="glass-card p-6 border-t-4 border-t-primary flex flex-col gap-2 bg-white/60">
-               <span className="text-sm font-medium text-foreground/50">Volumen Operativo</span>
-               <h3 className="text-4xl font-black text-foreground">{orders.length}</h3>
-               <p className="text-xs text-foreground/40 mt-auto">Órdenes gestionadas en este rango de tiempo.</p>
+              <span className="text-sm font-medium text-foreground/50">Volumen Operativo</span>
+              <h3 className="text-4xl font-black text-foreground">{orders.length}</h3>
+              <p className="text-xs text-foreground/40 mt-auto">Órdenes gestionadas en este rango de tiempo.</p>
             </div>
           </div>
 
           {/* Ranking de Servicios */}
           <div className="glass-card p-6 bg-white/60">
-             <h2 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
-                <BarChart2 className="text-primary" /> Servicios Más Vendidos
-             </h2>
-             
-             {topServices.length === 0 ? (
-                <div className="text-center py-8 text-foreground/30 text-sm italic">
-                  No hay ventas registradas en este periodo.
-                </div>
-             ) : (
-               <div className="overflow-x-auto">
-                 <table className="w-full text-left">
-                    <thead>
-                       <tr className="border-b border-black/5 text-xs font-bold text-foreground/50 uppercase">
-                          <th className="pb-3 pl-2">Servicio</th>
-                          <th className="pb-3 text-center">Tipo</th>
-                          <th className="pb-3 text-right">Cantidad Vendida</th>
-                          <th className="pb-3 text-right pr-2">Ingreso Generado</th>
-                       </tr>
-                    </thead>
-                    <tbody className="divide-y divide-black/5">
-                       {topServices.map((srv, i) => (
-                         <tr key={i} className="hover:bg-black/5">
-                            <td className="py-3 pl-2 text-sm font-medium text-foreground">{srv.name}</td>
-                            <td className="py-3 text-center text-[10px] text-foreground/40 uppercase tracking-widest">{srv.type}</td>
-                            <td className="py-3 text-right font-mono text-sm text-foreground/80">{srv.qty} <span className="text-[10px] text-foreground/30">{srv.type === 'KG' ? 'Kilos' : 'Unids'}</span></td>
-                            <td className="py-3 text-right pr-2 font-mono font-bold text-primary">S/ {srv.revenue.toFixed(2)}</td>
-                         </tr>
-                       ))}
-                    </tbody>
-                 </table>
-               </div>
-             )}
+            <h2 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
+              <BarChart2 className="text-primary" /> Servicios Más Vendidos
+            </h2>
+
+            {topServices.length === 0 ? (
+              <div className="text-center py-8 text-foreground/30 text-sm italic">
+                No hay ventas registradas en este periodo.
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="border-b border-black/5 text-xs font-bold text-foreground/50 uppercase">
+                      <th className="pb-3 pl-2">Servicio</th>
+                      <th className="pb-3 text-center">Tipo</th>
+                      <th className="pb-3 text-right">Cantidad Vendida</th>
+                      <th className="pb-3 text-right pr-2">Ingreso Generado</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-black/5">
+                    {topServices.map((srv, i) => (
+                      <tr key={i} className="hover:bg-black/5">
+                        <td className="py-3 pl-2 text-sm font-medium text-foreground">{srv.name}</td>
+                        <td className="py-3 text-center text-[10px] text-foreground/40 uppercase tracking-widest">{srv.type}</td>
+                        <td className="py-3 text-right font-mono text-sm text-foreground/80">{srv.qty} <span className="text-[10px] text-foreground/30">{srv.type === 'KG' ? 'Kilos' : 'Unids'}</span></td>
+                        <td className="py-3 text-right pr-2 font-mono font-bold text-primary">S/ {srv.revenue.toFixed(2)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
-          
+
         </div>
       )}
     </div>

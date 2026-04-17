@@ -22,6 +22,7 @@ export default function ConfigPage() {
 
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [showLogoOnTicket, setShowLogoOnTicket] = useState(false);
 
   useEffect(() => {
     const fetchConfig = async () => {
@@ -37,6 +38,7 @@ export default function ConfigPage() {
           setRuc(data.ruc || "");
           setYapeNumber(data.yapeNumber || "");
           setYapeName(data.yapeName || "");
+          if (typeof data.showLogoOnTicket === 'boolean') setShowLogoOnTicket(data.showLogoOnTicket);
           if (data.logoUrl) setLogoPreview(data.logoUrl);
         }
       } catch (err) {
@@ -80,6 +82,7 @@ export default function ConfigPage() {
         yapeNumber,
         yapeName,
         logoUrl: uploadedLogoUrl,
+        showLogoOnTicket,
         updatedAt: new Date().toISOString()
       }, { merge: true });
 
@@ -104,70 +107,83 @@ export default function ConfigPage() {
 
       <div className="max-w-3xl">
         <form onSubmit={handleSave} className="space-y-6">
-          
+
           {/* Datos Generales */}
           <section className="glass-card p-6 space-y-6 bg-white/60 border-black/5">
             <h2 className="text-lg font-semibold text-foreground border-b border-black/10 pb-2">Datos Generales</h2>
-            
-            <div className="flex flex-col md:flex-row gap-6">
-               <label className="w-24 h-24 rounded-2xl bg-black/5 border border-black/10 flex flex-col items-center justify-center shrink-0 hover:bg-black/10 transition-colors cursor-pointer group overflow-hidden relative">
-                  {logoPreview ? (
-                     <img src={logoPreview} alt="Logo" className="w-full h-full object-contain bg-white" />
-                  ) : (
-                     <>
-                        <UploadCloud className="text-foreground/50 group-hover:text-primary transition-colors" size={24} />
-                        <span className="text-xs text-foreground/50 mt-2 font-medium text-center leading-tight px-1">Subir Logo</span>
-                     </>
-                  )}
-                  <input type="file" accept="image/*" className="hidden" onChange={handleLogoChange} />
-               </label>
-               
-               <div className="flex-1 space-y-4">
-                 <div>
-                   <label className="block text-sm font-medium text-foreground/70 mb-1">Nombre Comercial</label>
-                   <input type="text" value={storeName} onChange={(e) => setStoreName(e.target.value)} required
-                     className="w-full bg-white/50 border border-black/10 rounded-xl px-4 py-2.5 text-foreground focus:outline-none focus:ring-2 focus:ring-primary shadow-sm"
-                   />
-                 </div>
-                 
-                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                   <div>
-                     <label className="block text-sm font-medium text-foreground/70 mb-1">URL Pública (Slug)</label>
-                     <div className="flex items-center">
-                       <span className="bg-white/5 border border-black/10 border-r-0 rounded-l-xl px-3 py-2.5 text-foreground/40 text-sm">/</span>
-                       <input type="text" value={slug} onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/\s+/g, '-'))}
-                         className="flex-1 bg-white/50 border border-black/10 rounded-r-xl px-4 py-2.5 text-foreground focus:outline-none focus:ring-2 focus:ring-primary shadow-sm"
-                       />
-                     </div>
-                   </div>
-                   <div>
-                     <label className="block text-sm font-medium text-foreground/70 mb-1">Color Principal</label>
-                     <div className="flex items-center gap-3">
-                       <input type="color" value={color} onChange={(e) => setColor(e.target.value)}
-                         className="w-10 h-10 rounded-xl bg-transparent border-0 p-0 cursor-pointer"
-                       />
-                       <span className="text-foreground/50 text-sm uppercase font-mono">{color}</span>
-                     </div>
-                   </div>
-                 </div>
 
-                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4 pt-4 border-t border-black/5">
-                   <div>
-                     <label className="block text-sm font-medium text-foreground/70 mb-1">Dirección (para el Ticket)</label>
-                     <input type="text" value={address} onChange={(e) => setAddress(e.target.value)}
-                       placeholder="Ej. Calle Principal 123"
-                       className="w-full bg-white/50 border border-black/10 rounded-xl px-4 py-2.5 text-foreground focus:outline-none focus:ring-2 focus:ring-primary shadow-sm"
-                     />
-                   </div>
-                   <div>
-                     <label className="block text-sm font-medium text-foreground/70 mb-1">RUC/Identificación</label>
-                     <input type="text" value={ruc} onChange={(e) => setRuc(e.target.value)}
-                       placeholder="Ej. 20123456789"
-                       className="w-full bg-white/50 border border-black/10 rounded-xl px-4 py-2.5 text-foreground focus:outline-none focus:ring-2 focus:ring-primary shadow-sm"
-                     />
-                   </div>
-                 </div>
-               </div>
+            <div className="flex flex-col md:flex-row gap-6">
+              <label className="w-24 h-24 rounded-2xl bg-black/5 border border-black/10 flex flex-col items-center justify-center shrink-0 hover:bg-black/10 transition-colors cursor-pointer group overflow-hidden relative">
+                {logoPreview ? (
+                  <img src={logoPreview} alt="Logo" className="w-full h-full object-contain bg-white" />
+                ) : (
+                  <>
+                    <UploadCloud className="text-foreground/50 group-hover:text-primary transition-colors" size={24} />
+                    <span className="text-xs text-foreground/50 mt-2 font-medium text-center leading-tight px-1">Subir Logo</span>
+                  </>
+                )}
+                <input type="file" accept="image/*" className="hidden" onChange={handleLogoChange} />
+              </label>
+
+              <div className="flex-1 space-y-4">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between bg-black/5 p-4 rounded-xl border border-black/10">
+                  <div>
+                    <p className="text-sm font-bold text-foreground">Mostrar logo en el Ticket</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowLogoOnTicket(!showLogoOnTicket)}
+                    className={`w-12 h-6 rounded-full transition-colors relative outline-none mt-2 sm:mt-0 flex items-center ${showLogoOnTicket ? 'bg-primary' : 'bg-black/20'}`}
+                  >
+                    <span className={`block w-4 h-4 rounded-full bg-white absolute transition-all ${showLogoOnTicket ? 'left-7' : 'left-1'}`} />
+                  </button>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-foreground/70 mb-1">Nombre Comercial</label>
+                  <input type="text" value={storeName} onChange={(e) => setStoreName(e.target.value)} required
+                    className="w-full bg-white/50 border border-black/10 rounded-xl px-4 py-2.5 text-foreground focus:outline-none focus:ring-2 focus:ring-primary shadow-sm"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-foreground/70 mb-1">URL Pública (Slug)</label>
+                    <div className="flex items-center">
+                      <span className="bg-white/5 border border-black/10 border-r-0 rounded-l-xl px-3 py-2.5 text-foreground/40 text-sm">/</span>
+                      <input type="text" value={slug} onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/\s+/g, '-'))}
+                        className="flex-1 bg-white/50 border border-black/10 rounded-r-xl px-4 py-2.5 text-foreground focus:outline-none focus:ring-2 focus:ring-primary shadow-sm"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-foreground/70 mb-1">Color Principal</label>
+                    <div className="flex items-center gap-3">
+                      <input type="color" value={color} onChange={(e) => setColor(e.target.value)}
+                        className="w-10 h-10 rounded-xl bg-transparent border-0 p-0 cursor-pointer"
+                      />
+                      <span className="text-foreground/50 text-sm uppercase font-mono">{color}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4 pt-4 border-t border-black/5">
+                  <div>
+                    <label className="block text-sm font-medium text-foreground/70 mb-1">Dirección (para el Ticket)</label>
+                    <input type="text" value={address} onChange={(e) => setAddress(e.target.value)}
+                      placeholder="Ej. Calle Principal 123"
+                      className="w-full bg-white/50 border border-black/10 rounded-xl px-4 py-2.5 text-foreground focus:outline-none focus:ring-2 focus:ring-primary shadow-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-foreground/70 mb-1">RUC/Identificación</label>
+                    <input type="text" value={ruc} onChange={(e) => setRuc(e.target.value)}
+                      placeholder="Ej. 20123456789"
+                      className="w-full bg-white/50 border border-black/10 rounded-xl px-4 py-2.5 text-foreground focus:outline-none focus:ring-2 focus:ring-primary shadow-sm"
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
           </section>
 
@@ -175,29 +191,27 @@ export default function ConfigPage() {
           <section className="glass-card p-6 space-y-6 bg-white/60 border-black/5">
             <h2 className="text-lg font-semibold text-foreground border-b border-black/10 pb-2">Configuración de Pagos (Yape/Plin)</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                 <div>
-                   <label className="block text-sm font-medium text-foreground/70 mb-1">Número Destino</label>
-                   <input type="tel" value={yapeNumber} onChange={(e) => setYapeNumber(e.target.value)} required
-                     className="w-full bg-white/50 border border-black/10 rounded-xl px-4 py-2.5 text-foreground focus:outline-none focus:ring-2 focus:ring-[#742284] shadow-sm"
-                   />
-                 </div>
-                 <div>
-                   <label className="block text-sm font-medium text-foreground/70 mb-1">Nombre del Titular</label>
-                   <input type="text" value={yapeName} onChange={(e) => setYapeName(e.target.value)} required
-                     className="w-full bg-white/50 border border-black/10 rounded-xl px-4 py-2.5 text-foreground focus:outline-none focus:ring-2 focus:ring-[#742284] shadow-sm"
-                   />
-                 </div>
-             </div>
-             <p className="text-xs text-warning/80 bg-warning/10 p-3 rounded-lg border border-warning/20">
-               Estos datos se usarán para la pantalla de cobro integrada mediante Yape.
-             </p>
+              <div>
+                <label className="block text-sm font-medium text-foreground/70 mb-1">Número Destino</label>
+                <input type="tel" value={yapeNumber} onChange={(e) => setYapeNumber(e.target.value)} required
+                  className="w-full bg-white/50 border border-black/10 rounded-xl px-4 py-2.5 text-foreground focus:outline-none focus:ring-2 focus:ring-[#742284] shadow-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-foreground/70 mb-1">Nombre del Titular</label>
+                <input type="text" value={yapeName} onChange={(e) => setYapeName(e.target.value)} required
+                  className="w-full bg-white/50 border border-black/10 rounded-xl px-4 py-2.5 text-foreground focus:outline-none focus:ring-2 focus:ring-[#742284] shadow-sm"
+                />
+              </div>
+            </div>
+
           </section>
 
           <div className="flex justify-end">
-             <button type="submit" disabled={isLoading} className="bg-primary hover:bg-primary-hover active:scale-95 transition-all text-white font-semibold rounded-xl px-6 py-3 flex items-center gap-2">
-               {isLoading ? <span className="animate-spin border-2 border-white/30 border-t-white rounded-full w-5 h-5" /> : <Save size={20} />}
-               <span>Guardar Cambios</span>
-             </button>
+            <button type="submit" disabled={isLoading} className="bg-primary hover:bg-primary-hover active:scale-95 transition-all text-white font-semibold rounded-xl px-6 py-3 flex items-center gap-2">
+              {isLoading ? <span className="animate-spin border-2 border-white/30 border-t-white rounded-full w-5 h-5" /> : <Save size={20} />}
+              <span>Guardar Cambios</span>
+            </button>
           </div>
         </form>
 

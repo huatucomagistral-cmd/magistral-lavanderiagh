@@ -2,26 +2,26 @@
 
 import { useState, useEffect } from "react";
 import { useStore } from "@/store/useStore";
-import { 
-  Plus, 
-  Trash2, 
-  DollarSign, 
-  Calendar, 
-  Loader2, 
-  ArrowDownCircle, 
+import {
+  Plus,
+  Trash2,
+  DollarSign,
+  Calendar,
+  Loader2,
+  ArrowDownCircle,
   Wallet,
   X,
   CreditCard,
   Search
 } from "lucide-react";
-import { 
-  collection, 
-  onSnapshot, 
-  query, 
-  orderBy, 
-  addDoc, 
-  deleteDoc, 
-  doc, 
+import {
+  collection,
+  onSnapshot,
+  query,
+  orderBy,
+  addDoc,
+  deleteDoc,
+  doc,
   serverTimestamp,
   where
 } from "firebase/firestore";
@@ -34,7 +34,7 @@ interface Expense {
   description: string;
   amount: number;
   category: string;
-  date: any; 
+  date: any;
   subtractFromCaja: boolean;
   createdBy: string;
 }
@@ -91,7 +91,7 @@ export default function GastosPage() {
     if (!user?.storeId) return;
 
     let q;
-    
+
     if (filterScope === "TODOS") {
       q = query(
         collection(db, `stores/${user.storeId}/expenses`),
@@ -219,9 +219,9 @@ export default function GastosPage() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold text-foreground mb-2">Gastos y Egresos</h1>
-          <p className="text-foreground/70 font-medium">Registra tus salidas de dinero para cuadrar balances financieros.</p>
+
         </div>
-        <button 
+        <button
           onClick={() => setIsModalOpen(true)}
           className="bg-primary hover:bg-primary-hover text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-2 transition-transform active:scale-95 shadow-lg shadow-primary/20 w-full sm:w-auto justify-center"
         >
@@ -242,7 +242,7 @@ export default function GastosPage() {
           </div>
         </div>
         <div className="glass-card p-6 border-l-4 border-primary overflow-hidden relative">
-           <div className="absolute -right-4 -top-4 text-primary/10">
+          <div className="absolute -right-4 -top-4 text-primary/10">
             <Calendar size={100} />
           </div>
           <h3 className="text-sm font-bold text-foreground/80 uppercase tracking-tight mb-1">Gastos del Mes</h3>
@@ -254,55 +254,55 @@ export default function GastosPage() {
 
       {/* Expense List */}
       <div className="glass-card overflow-hidden">
-        
+
         {/* Controladores de Filtro */}
         <div className="p-4 border-b border-black/5 bg-white/40 flex flex-col md:flex-row gap-4 items-center justify-between">
           <div className="flex bg-white/40 p-1 rounded-xl border border-black/5 w-full md:w-auto overflow-x-auto">
             {["HOY", "SEMANA", "MES", "TODOS", "CUSTOM"].map((f) => (
-               <button 
-                 key={f}
-                 onClick={() => {
-                   setFilterScope(f as FilterScope);
-                   if (f !== "CUSTOM") {
-                     setStartDate("");
-                     setEndDate("");
-                   }
-                 }}
-                 className={`px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-colors ${filterScope === f ? 'bg-primary text-white shadow-lg' : 'text-foreground/50 hover:text-foreground hover:bg-black/5'}`}
-               >
-                 {f === "CUSTOM" ? "Personalizado" : f === "TODOS" ? "Todos" : f}
-               </button>
+              <button
+                key={f}
+                onClick={() => {
+                  setFilterScope(f as FilterScope);
+                  if (f !== "CUSTOM") {
+                    setStartDate("");
+                    setEndDate("");
+                  }
+                }}
+                className={`px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-colors ${filterScope === f ? 'bg-primary text-white shadow-lg' : 'text-foreground/50 hover:text-foreground hover:bg-black/5'}`}
+              >
+                {f === "CUSTOM" ? "Personalizado" : f === "TODOS" ? "Todos" : f}
+              </button>
             ))}
           </div>
 
           {filterScope === "CUSTOM" && (
             <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
-               <DateRangePicker 
-                 startDate={startDate}
-                 endDate={endDate}
-                 onStartDateChange={setStartDate}
-                 onEndDateChange={setEndDate}
-                 onClear={() => {
-                   setStartDate("");
-                   setEndDate("");
-                 }}
-               />
-               <button 
-                 onClick={() => setSearchTrigger(prev => prev + 1)} 
-                 disabled={!startDate || !endDate || loading}
-                 className="bg-primary px-6 py-3 rounded-xl font-bold text-white text-sm disabled:opacity-50 hover:bg-primary-hover transition-colors w-full sm:w-auto tracking-widest"
-               >
-                 FILTRAR
-               </button>
+              <DateRangePicker
+                startDate={startDate}
+                endDate={endDate}
+                onStartDateChange={setStartDate}
+                onEndDateChange={setEndDate}
+                onClear={() => {
+                  setStartDate("");
+                  setEndDate("");
+                }}
+              />
+              <button
+                onClick={() => setSearchTrigger(prev => prev + 1)}
+                disabled={!startDate || !endDate || loading}
+                className="bg-primary px-6 py-3 rounded-xl font-bold text-white text-sm disabled:opacity-50 hover:bg-primary-hover transition-colors w-full sm:w-auto tracking-widest"
+              >
+                FILTRAR
+              </button>
             </div>
           )}
         </div>
 
         <div className="p-6 border-b border-black/5 bg-white/30 flex justify-between items-center">
-            <h2 className="font-bold text-lg text-foreground">Movimientos Recientes</h2>
-            <div className="text-sm text-foreground/60 font-bold flex items-center gap-2">
-               <CreditCard size={16} /> Detalle de Egresos
-            </div>
+          <h2 className="font-bold text-lg text-foreground">Movimientos Recientes</h2>
+          <div className="text-sm text-foreground/60 font-bold flex items-center gap-2">
+            <CreditCard size={16} /> Detalle de Egresos
+          </div>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
@@ -326,55 +326,54 @@ export default function GastosPage() {
                 </tr>
               ) : expenses.length === 0 ? (
                 <tr>
-                   <td colSpan={6} className="py-20 text-center text-foreground/70 italic font-black">
-                      No hay gastos registrados en este periodo.
-                   </td>
+                  <td colSpan={6} className="py-20 text-center text-foreground/70 italic font-black">
+                    No hay gastos registrados en este periodo.
+                  </td>
                 </tr>
               ) : (
                 expenses.map((exp) => (
                   <tr key={exp.id} className="hover:bg-black/2 cursor-default transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap">
-                       <span className="text-sm font-bold text-foreground/90">
-                         {exp.date?.toDate 
-                           ? exp.date.toDate().toLocaleDateString('es-PE', { day:'2-digit', month:'short' }) 
-                           : 'Pendiente'}
-                       </span>
+                      <span className="text-sm font-bold text-foreground/90">
+                        {exp.date?.toDate
+                          ? exp.date.toDate().toLocaleDateString('es-PE', { day: '2-digit', month: 'short' })
+                          : 'Pendiente'}
+                      </span>
                     </td>
                     <td className="px-6 py-4">
-                       <span className="text-sm font-black text-foreground block">{exp.description}</span>
-                       <span className="text-[10px] text-foreground/60 font-bold uppercase tracking-tight">{exp.createdBy}</span>
+                      <span className="text-sm font-black text-foreground block">{exp.description}</span>
+                      <span className="text-[10px] text-foreground/60 font-bold uppercase tracking-tight">{exp.createdBy}</span>
                     </td>
                     <td className="px-6 py-4">
-                       <span className="px-2.5 py-1 rounded-lg bg-black/5 text-foreground/80 text-[10px] font-black tracking-widest uppercase">
-                          {CATEGORIES.find(c => c.id === exp.category)?.icon} {exp.category}
-                       </span>
+                      <span className="px-2.5 py-1 rounded-lg bg-black/5 text-foreground/80 text-[10px] font-black tracking-widest uppercase">
+                        {CATEGORIES.find(c => c.id === exp.category)?.icon} {exp.category}
+                      </span>
                     </td>
                     <td className="px-6 py-4">
-                       {exp.subtractFromCaja ? (
-                         <div className="flex items-center gap-1.5 text-success font-black text-[10px] uppercase tracking-tight">
-                            <Wallet size={12} /> Caja Abierta
-                         </div>
-                       ) : (
-                         <div className="text-foreground/40 text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5">
-                            <CreditCard size={12} /> Fondo Externo
-                         </div>
-                       )}
+                      {exp.subtractFromCaja ? (
+                        <div className="flex items-center gap-1.5 text-success font-black text-[10px] uppercase tracking-tight">
+                          <Wallet size={12} /> Caja Abierta
+                        </div>
+                      ) : (
+                        <div className="text-foreground/40 text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5">
+                          <CreditCard size={12} /> Fondo Externo
+                        </div>
+                      )}
                     </td>
                     <td className="px-6 py-4 text-right">
-                       <span className="text-base font-black text-error font-mono">- S/ {Number(exp.amount).toFixed(2)}</span>
+                      <span className="text-base font-black text-error font-mono">- S/ {Number(exp.amount).toFixed(2)}</span>
                     </td>
                     <td className="px-6 py-4">
-                       <div className="flex justify-center">
-                          <button 
-                            onClick={() => handleDelete(exp.id)}
-                            disabled={isDeleting === exp.id}
-                            className={`p-2 rounded-lg transition-colors ${
-                              isDeleting === exp.id ? 'bg-black/5 text-foreground/20' : 'text-error/40 hover:text-error hover:bg-error/10'
+                      <div className="flex justify-center">
+                        <button
+                          onClick={() => handleDelete(exp.id)}
+                          disabled={isDeleting === exp.id}
+                          className={`p-2 rounded-lg transition-colors ${isDeleting === exp.id ? 'bg-black/5 text-foreground/20' : 'text-error/40 hover:text-error hover:bg-error/10'
                             }`}
-                          >
-                            {isDeleting === exp.id ? <Loader2 size={18} className="animate-spin" /> : <Trash2 size={18} />}
-                          </button>
-                       </div>
+                        >
+                          {isDeleting === exp.id ? <Loader2 size={18} className="animate-spin" /> : <Trash2 size={18} />}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -387,96 +386,95 @@ export default function GastosPage() {
       {/* Modal - Nuevo Gasto */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-           {/* Overlay */}
-           <div 
-             className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300" 
-             onClick={() => !isSaving && setIsModalOpen(false)}
-           />
-           
-           {/* Content */}
-           <div className="bg-white rounded-3xl w-full max-w-md p-8 relative z-10 shadow-2xl animate-in zoom-in-95 duration-300 border border-black/5">
-              <button 
-                onClick={() => setIsModalOpen(false)} 
-                className="absolute top-6 right-6 text-foreground/40 hover:text-foreground transition-colors"
-                disabled={isSaving}
-              >
-                <X size={24} />
-              </button>
+          {/* Overlay */}
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300"
+            onClick={() => !isSaving && setIsModalOpen(false)}
+          />
 
-              <div className="flex items-center gap-3 mb-6">
-                 <div className="w-12 h-12 rounded-2xl bg-error/10 flex items-center justify-center text-error shadow-inner shadow-error/10">
-                    <ArrowDownCircle size={24} />
-                 </div>
-                 <div>
-                    <h2 className="text-2xl font-bold text-foreground tracking-tight">Nuevo Egreso</h2>
-                    <p className="text-foreground/60 text-sm font-bold">Registra una salida de dinero real</p>
-                 </div>
+          {/* Content */}
+          <div className="bg-white rounded-3xl w-full max-w-md p-8 relative z-10 shadow-2xl animate-in zoom-in-95 duration-300 border border-black/5">
+            <button
+              onClick={() => setIsModalOpen(false)}
+              className="absolute top-6 right-6 text-foreground/40 hover:text-foreground transition-colors"
+              disabled={isSaving}
+            >
+              <X size={24} />
+            </button>
+
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-12 h-12 rounded-2xl bg-error/10 flex items-center justify-center text-error shadow-inner shadow-error/10">
+                <ArrowDownCircle size={24} />
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold text-foreground tracking-tight">Nuevo Egreso</h2>
+                <p className="text-foreground/60 text-sm font-bold">Registra una salida de dinero real</p>
+              </div>
+            </div>
+
+            <form onSubmit={handleAddExpense} className="space-y-5">
+              <div>
+                <label className="block text-[10px] font-black text-foreground/60 uppercase tracking-[0.2em] mb-2 ml-1">Descripción del Gasto</label>
+                <input
+                  type="text" value={description} onChange={e => setDescription(e.target.value)} required
+                  className="w-full bg-black/5 border-none rounded-2xl px-5 py-4 text-foreground font-bold focus:ring-2 focus:ring-error transition-all placeholder:text-foreground/20"
+                  placeholder="Ej. Detergente, Luz, Alquiler..."
+                />
               </div>
 
-              <form onSubmit={handleAddExpense} className="space-y-5">
-                 <div>
-                    <label className="block text-[10px] font-black text-foreground/60 uppercase tracking-[0.2em] mb-2 ml-1">Descripción del Gasto</label>
-                    <input 
-                      type="text" value={description} onChange={e => setDescription(e.target.value)} required
-                      className="w-full bg-black/5 border-none rounded-2xl px-5 py-4 text-foreground font-bold focus:ring-2 focus:ring-error transition-all placeholder:text-foreground/20"
-                      placeholder="Ej. Detergente, Luz, Alquiler..."
-                    />
-                 </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[10px] font-black text-foreground/60 uppercase tracking-[0.2em] mb-2 ml-1">Monto (S/)</label>
+                  <input
+                    type="number" step="0.10" value={amount} onChange={e => setAmount(e.target.value)} required
+                    className="w-full bg-black/5 border-none rounded-2xl px-5 py-4 text-foreground font-mono text-xl focus:ring-2 focus:ring-error transition-all font-black"
+                    placeholder="0.00"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-foreground/60 uppercase tracking-[0.2em] mb-2 ml-1">Categoría</label>
+                  <select
+                    value={category} onChange={e => setCategory(e.target.value)}
+                    className="w-full bg-black/5 border-none rounded-2xl px-5 py-4 text-foreground font-bold focus:ring-2 focus:ring-error transition-all appearance-none cursor-pointer"
+                  >
+                    {CATEGORIES.map(c => (
+                      <option key={c.id} value={c.id}>{c.icon} {c.label}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
 
-                 <div className="grid grid-cols-2 gap-4">
-                    <div>
-                        <label className="block text-[10px] font-black text-foreground/60 uppercase tracking-[0.2em] mb-2 ml-1">Monto (S/)</label>
-                        <input 
-                          type="number" step="0.10" value={amount} onChange={e => setAmount(e.target.value)} required
-                          className="w-full bg-black/5 border-none rounded-2xl px-5 py-4 text-foreground font-mono text-xl focus:ring-2 focus:ring-error transition-all font-black"
-                          placeholder="0.00"
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-[10px] font-black text-foreground/60 uppercase tracking-[0.2em] mb-2 ml-1">Categoría</label>
-                        <select 
-                           value={category} onChange={e => setCategory(e.target.value)}
-                           className="w-full bg-black/5 border-none rounded-2xl px-5 py-4 text-foreground font-bold focus:ring-2 focus:ring-error transition-all appearance-none cursor-pointer"
-                        >
-                           {CATEGORIES.map(c => (
-                             <option key={c.id} value={c.id}>{c.icon} {c.label}</option>
-                           ))}
-                        </select>
-                    </div>
-                 </div>
+              <label className={`flex items-center gap-3 p-4 bg-black/5 rounded-2xl transition-colors group ${!isCajaOpen ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:bg-black/[0.08]'}`}>
+                <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${subtractFromCaja && isCajaOpen ? "bg-error border-error text-white" : "border-black/20 group-hover:border-error/30"
+                  }`}>
+                  {subtractFromCaja && isCajaOpen && <div className="w-2 h-2 bg-white rounded-full animate-in zoom-in" />}
+                </div>
+                <input
+                  type="checkbox" className="hidden" checked={subtractFromCaja && isCajaOpen}
+                  disabled={!isCajaOpen}
+                  onChange={e => setSubtractFromCaja(e.target.checked)}
+                />
+                <div>
+                  <span className="text-sm font-bold text-foreground block">Descontar de Caja Abierta</span>
+                  {isCajaOpen ? (
+                    <span className="text-[10px] text-foreground/60 font-bold uppercase tracking-tight">Afecta directamente al balance del día</span>
+                  ) : (
+                    <span className="text-[10px] text-error font-bold uppercase tracking-tight">Caja registradora cerrada</span>
+                  )}
+                </div>
+              </label>
 
-                 <label className={`flex items-center gap-3 p-4 bg-black/5 rounded-2xl transition-colors group ${!isCajaOpen ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:bg-black/[0.08]'}`}>
-                    <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${
-                      subtractFromCaja && isCajaOpen ? "bg-error border-error text-white" : "border-black/20 group-hover:border-error/30"
-                    }`}>
-                       {subtractFromCaja && isCajaOpen && <div className="w-2 h-2 bg-white rounded-full animate-in zoom-in" />}
-                    </div>
-                    <input 
-                       type="checkbox" className="hidden" checked={subtractFromCaja && isCajaOpen} 
-                       disabled={!isCajaOpen}
-                       onChange={e => setSubtractFromCaja(e.target.checked)} 
-                    />
-                    <div>
-                       <span className="text-sm font-bold text-foreground block">Descontar de Caja Abierta</span>
-                       {isCajaOpen ? (
-                          <span className="text-[10px] text-foreground/60 font-bold uppercase tracking-tight">Afecta directamente al balance del día</span>
-                       ) : (
-                          <span className="text-[10px] text-error font-bold uppercase tracking-tight">Caja registradora cerrada</span>
-                       )}
-                    </div>
-                 </label>
-
-                 <div className="pt-4">
-                    <button 
-                      type="submit" disabled={isSaving}
-                      className="w-full bg-error hover:bg-error/90 text-white font-black py-5 rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg shadow-error/20"
-                    >
-                      {isSaving ? <Loader2 size={24} className="animate-spin" /> : <DollarSign size={24} />}
-                      <span>Registrar Movimiento</span>
-                    </button>
-                 </div>
-              </form>
-           </div>
+              <div className="pt-4">
+                <button
+                  type="submit" disabled={isSaving}
+                  className="w-full bg-error hover:bg-error/90 text-white font-black py-5 rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg shadow-error/20"
+                >
+                  {isSaving ? <Loader2 size={24} className="animate-spin" /> : <DollarSign size={24} />}
+                  <span>Registrar Movimiento</span>
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>

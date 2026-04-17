@@ -33,7 +33,7 @@ export default function HistorialPage() {
       try {
         const ordersRef = collection(db, `stores/${user.storeId}/orders`);
         let q;
-        
+
         if (user.role === "ADMIN") {
           // ADMIN: Ve los últimos 100 pedidos por defecto
           q = query(ordersRef, orderBy("date", "desc"), limit(100));
@@ -41,10 +41,10 @@ export default function HistorialPage() {
           // PERSONAL: Ve solo las últimas 48 horas
           const date48hAgo = new Date();
           date48hAgo.setHours(date48hAgo.getHours() - 48);
-          
+
           q = query(
-            ordersRef, 
-            where("date", ">=", date48hAgo.toISOString()), 
+            ordersRef,
+            where("date", ">=", date48hAgo.toISOString()),
             orderBy("date", "desc")
           );
         }
@@ -86,20 +86,20 @@ export default function HistorialPage() {
       }
 
       const snap = await getDocs(q);
-      
+
       const searchLower = searchString.toLowerCase().trim();
       let results = snap.docs.map(doc => ({ id: doc.id, ...doc.data() as any }));
 
       // Filtrado por texto localmente
       if (searchLower) {
-        results = results.filter(o => 
+        results = results.filter(o =>
           (o.customerDni && o.customerDni.includes(searchLower)) ||
           (o.customerName && o.customerName.toLowerCase().includes(searchLower)) ||
           (o.ticketNumber && o.ticketNumber.toLowerCase().includes(searchLower)) ||
           (o.customerPhone && o.customerPhone.includes(searchLower))
         );
       }
-      
+
       setOrders(results);
     } catch (e) {
       console.error("Error en búsqueda:", e);
@@ -126,7 +126,7 @@ export default function HistorialPage() {
           <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
             <History className="text-primary" /> Historial Inteligente
           </h1>
-          <p className="text-foreground/50 text-sm mt-1">Busca cualquier orden filtrando por fechas, DNI, Nombre o Ticket.</p>
+
         </div>
       </div>
 
@@ -134,7 +134,7 @@ export default function HistorialPage() {
         <div className="bg-primary/10 border border-primary/20 p-3 rounded-lg flex items-start gap-3">
           <Info className="text-primary shrink-0 mt-0.5" size={18} />
           <p className="text-sm text-foreground/70">
-            Estás en <strong className="text-foreground">Modo Personal</strong>. 
+            Estás en <strong className="text-foreground">Modo Personal</strong>.
             Solo ves las órdenes de las últimas 48 horas de forma automática.
             Para buscar órdenes antiguas, utiliza el buscador y el selector de fechas.
           </p>
@@ -144,9 +144,9 @@ export default function HistorialPage() {
       {/* Barra de Filtros */}
       <div className="glass-card p-4 md:p-6">
         <form onSubmit={handleSearch} className="flex flex-col xl:flex-row gap-6 items-start xl:items-end w-full">
-          
+
           <div className="flex-shrink-0 w-full xl:w-auto">
-            <DateRangePicker 
+            <DateRangePicker
               startDate={startDate}
               endDate={endDate}
               onStartDateChange={setStartDate}
@@ -238,14 +238,14 @@ export default function HistorialPage() {
                         </span>
                         {order.status === 'CANCELADO' && order.cancelReason && (
                           <div className="mt-1 flex flex-col">
-                             <span className="text-[10px] text-error font-medium italic break-words max-w-[200px]">
-                               Motivo: {order.cancelReason}
-                             </span>
-                             {order.cancelledAt && (
-                               <span className="text-[9px] text-white/30 uppercase mt-0.5">
-                                 {new Date(order.cancelledAt).toLocaleString([], { dateStyle: 'short', timeStyle: 'short'})}
-                               </span>
-                             )}
+                            <span className="text-[10px] text-error font-medium italic break-words max-w-[200px]">
+                              Motivo: {order.cancelReason}
+                            </span>
+                            {order.cancelledAt && (
+                              <span className="text-[9px] text-white/30 uppercase mt-0.5">
+                                {new Date(order.cancelledAt).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
+                              </span>
+                            )}
                           </div>
                         )}
                       </td>
@@ -276,7 +276,7 @@ export default function HistorialPage() {
                         <p className="text-[10px] text-foreground/40 mt-1 uppercase">{order.payMethod}</p>
                       </td>
                       <td className="p-4 align-middle text-right">
-                        <Link 
+                        <Link
                           href={`/admin/pedidos/ticket/${order.id}`}
                           className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-black/5 hover:bg-black/10 text-foreground text-xs font-medium rounded-lg transition-colors border border-black/5"
                         >
