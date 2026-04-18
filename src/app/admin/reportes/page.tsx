@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useStore } from "@/store/useStore";
 import { collection, query, where, getDocs, orderBy } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { TrendingUp, Download, Calendar, DollarSign, Loader2, BarChart2, Activity } from "lucide-react";
+import { TrendingUp, Download, DollarSign, Loader2, BarChart2, AlertCircle, ShoppingBag } from "lucide-react";
 import { toast } from "react-hot-toast";
 import * as XLSX from "xlsx";
 import { DateRangePicker } from "@/components/ui/DateRangePicker";
@@ -21,7 +21,7 @@ type ReportFilter = "HOY" | "SEMANA" | "MES" | "CUSTOM";
 export default function ReportesPage() {
   const { user } = useStore();
   const [loading, setLoading] = useState(false);
-  const [orders, setOrders] = useState<any[]>([]);
+  const [orders, setOrders] = useState<{ byDate: any[], paidInPeriod: any[] }>({ byDate: [], paidInPeriod: [] });
   const [filterType, setFilterType] = useState<ReportFilter>("MES");
 
   // Rango personalizado
@@ -64,18 +64,38 @@ export default function ReportesPage() {
         end = range.end;
       }
 
-      const q = query(
+      const startISO = start.toISOString();
+      const endISO = end.toISOString();
+
+      // Consulta 1: Órdenes CREADAS en el período (volumen operativo + cuentas por cobrar)
+      const qByDate = query(
         collection(db, `stores/${user.storeId}/orders`),
-        where("date", ">=", start.toISOString()),
-        where("date", "<=", end.toISOString()),
+        where("date", ">=", startISO),
+        where("date", "<=", endISO),
         orderBy("date", "desc")
       );
 
-      const snap = await getDocs(q);
-      const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      setOrders(data);
+      // Consulta 2: Órdenes PAGADAS en el período (ingresos reales por fecha de cobro)
+      const qByPayment = query(
+        collection(db, `stores/${user.storeId}/orders`),
+        where("paymentDate", ">=", startISO),
+        where("paymentDate", "<=", endISO)
+      );
+
+      const [snapByDate, snapByPayment] = await Promise.all([
+        getDocs(qByDate),
+        getDocs(qByPayment)
+      ]);
+
+      const ordersByDate = snapByDate.docs.map(d => ({ id: d.id, ...d.data() })) as any[];
+      const paidInPeriod = snapByPayment.docs.map(d => ({ id: d.id, ...d.data() })).filter((o: any) => o.paymentStatus === 'PAID') as any[];
+
+      // Combinar: los displays de volumen/cuentas usan ordersByDate
+      // Los ingresos reales usan paidInPeriod
+      setOrders({ byDate: ordersByDate, paidInPeriod } as any);
     } catch (e) {
       console.error("Error fetching report data", e);
+      toast.error("Error al cargar reportes.");
     } finally {
       setLoading(false);
     }
@@ -90,19 +110,23 @@ export default function ReportesPage() {
 
 
   // ---- CÁLCULOS FINANCIEROS ----
-  const ingresosReales = orders.filter(o => o.paymentStatus === 'PAID');
-
-  const totalEfectivo = ingresosReales.filter(o => o.payMethod === 'EFECTIVO').reduce((acc, o) => acc + Number(o.total || 0), 0);
-  const totalYape = ingresosReales.filter(o => o.payMethod === 'YAPE').reduce((acc, o) => acc + Number(o.total || 0), 0);
+  // Ingresos: órdenes PAGADAS en el período (por paymentDate)
+  const ingresosReales = orders.paidInPeriod;
+  const totalEfectivo = ingresosReales.filter((o: any) => o.payMethod === 'EFECTIVO').reduce((acc: number, o: any) => acc + Number(o.total || 0), 0);
+  const totalYape = ingresosReales.filter((o: any) => o.payMethod === 'YAPE').reduce((acc: number, o: any) => acc + Number(o.total || 0), 0);
   const totalPagado = totalEfectivo + totalYape;
 
-  const totalCuentasCobrar = orders.filter(o => o.paymentStatus !== 'PAID').reduce((acc, o) => acc + Number(o.total || 0), 0);
+  // Cuentas por cobrar y volumen: órdenes CREADAS en el período
+  const totalCuentasCobrar = orders.byDate.filter((o: any) => o.paymentStatus !== 'PAID').reduce((acc: number, o: any) => acc + Number(o.total || 0), 0);
+  const volumenOperativo = orders.byDate.length;
+
+  // Ranking: combinar ambos conjuntos eliminando duplicados
+  const allOrdersForServices = [...orders.byDate, ...orders.paidInPeriod.filter((p: any) => !orders.byDate.some((d: any) => d.id === p.id))];
 
   // Ranking de Servicios Vendidos
   const getTopServices = () => {
     const services = new Map<string, { qty: number, revenue: number, type: string }>();
-
-    orders.forEach(o => {
+    allOrdersForServices.forEach((o: any) => {
       if (o.items && Array.isArray(o.items)) {
         o.items.forEach((c: any) => {
           const name = c.item.name;
@@ -113,7 +137,6 @@ export default function ReportesPage() {
         });
       }
     });
-
     return Array.from(services.entries())
       .map(([name, data]) => ({ name, ...data }))
       .sort((a, b) => b.qty - a.qty)
@@ -123,14 +146,15 @@ export default function ReportesPage() {
 
   // Exportar a Excel usando XLSX
   const handleExportExcel = () => {
-    if (orders.length === 0) return toast.error("No hay datos para exportar en este rango.");
+    if (allOrdersForServices.length === 0) return toast.error("No hay datos para exportar en este rango.");
 
-    const excelData = orders.map(o => {
+    const excelData = allOrdersForServices.map((o: any) => {
       const dateObj = new Date(o.date);
       return {
         "Ticket": o.ticketNumber || o.id.slice(0, 6),
-        "Fecha": dateObj.toLocaleDateString(),
+        "Fecha Recepción": dateObj.toLocaleDateString(),
         "Hora": dateObj.toLocaleTimeString(),
+        "Fecha Pago": o.paymentDate ? new Date(o.paymentDate).toLocaleDateString() : "-",
         "Cliente": o.customerName || "Sin Nombre",
         "DNI": o.customerDni !== "0" ? o.customerDni : "-",
         "Total (S/)": Number(o.total).toFixed(2),
@@ -171,7 +195,7 @@ export default function ReportesPage() {
 
         <button
           onClick={handleExportExcel}
-          disabled={orders.length === 0}
+          disabled={allOrdersForServices.length === 0}
           className="bg-success hover:bg-success-hover active:scale-95 disabled:opacity-50 text-white font-black rounded-xl p-3 sm:px-4 sm:py-3 flex items-center justify-center gap-2 transition-all shadow-lg shadow-success/20 shrink-0"
         >
           <Download size={20} />
@@ -233,29 +257,56 @@ export default function ReportesPage() {
       ) : (
         <div className="space-y-6">
 
-          {/* Tarjetas Financieras */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="glass-card p-6 border-t-4 border-t-success flex flex-col gap-2 bg-white/60">
-              <span className="text-sm font-medium text-foreground/50">Total Real Ingresado (Pagado)</span>
-              <h3 className="text-4xl font-black text-foreground">S/ {totalPagado.toFixed(2)}</h3>
-              <div className="flex items-center gap-4 mt-2 pt-2 border-t border-white/5 text-xs font-medium">
-                <span className="text-white/70">Efectivo: <b className="text-white">S/ {totalEfectivo.toFixed(2)}</b></span>
-                <span className="text-[#742284] px-2 py-0.5 rounded bg-[#742284]/10">Yape: <b>S/ {totalYape.toFixed(2)}</b></span>
+          {/* Métricas — Cobrado arriba completo, Deuda + Órdenes abajo */}
+          <div className="space-y-2">
+
+            {/* Fila 1: Cobrado — ancho completo */}
+            <div className="glass-card bg-white/75 p-4 flex flex-col gap-2">
+              <div className="flex items-center gap-1.5 text-success">
+                <DollarSign size={13} strokeWidth={2.5} />
+                <span className="text-[10px] font-black uppercase tracking-widest">Total Cobrado</span>
+              </div>
+              <p className="text-3xl font-black text-foreground font-mono leading-none">
+                S/ {totalPagado.toFixed(2)}
+              </p>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs font-bold px-2 py-1 rounded-full bg-success/10 text-success whitespace-nowrap">
+                  💵 Efectivo: S/ {totalEfectivo.toFixed(2)}
+                </span>
+                <span className="text-xs font-bold px-2 py-1 rounded-full bg-[#742284]/10 text-[#742284] whitespace-nowrap">
+                  📱 Yape: S/ {totalYape.toFixed(2)}
+                </span>
               </div>
             </div>
 
-            <div className="glass-card p-6 border-t-4 border-t-error flex flex-col gap-2 bg-white/60">
-              <span className="text-sm font-medium text-foreground/50">Cuentas por Cobrar (Deuda)</span>
-              <h3 className="text-4xl font-black text-error">S/ {totalCuentasCobrar.toFixed(2)}</h3>
-              <p className="text-xs text-foreground/40 mt-auto">Dinero bloqueado en órdenes pendientes de pago.</p>
-            </div>
+            {/* Fila 2: Deuda + Órdenes en 2 columnas */}
+            <div className="grid grid-cols-2 gap-2">
 
-            <div className="glass-card p-6 border-t-4 border-t-primary flex flex-col gap-2 bg-white/60">
-              <span className="text-sm font-medium text-foreground/50">Volumen Operativo</span>
-              <h3 className="text-4xl font-black text-foreground">{orders.length}</h3>
-              <p className="text-xs text-foreground/40 mt-auto">Órdenes gestionadas en este rango de tiempo.</p>
+              <div className="glass-card bg-white/75 p-4 flex flex-col gap-1.5">
+                <div className="flex items-center gap-1.5 text-error">
+                  <AlertCircle size={13} strokeWidth={2.5} />
+                  <span className="text-[10px] font-black uppercase tracking-widest">Por Cobrar</span>
+                </div>
+                <p className="text-2xl font-black text-error font-mono leading-none">
+                  S/ {totalCuentasCobrar.toFixed(2)}
+                </p>
+                <span className="text-[10px] text-foreground/30">Pendiente de cobro</span>
+              </div>
+
+              <div className="glass-card bg-white/75 p-4 flex flex-col gap-1.5">
+                <div className="flex items-center gap-1.5 text-primary">
+                  <ShoppingBag size={13} strokeWidth={2.5} />
+                  <span className="text-[10px] font-black uppercase tracking-widest">Órdenes</span>
+                </div>
+                <p className="text-2xl font-black text-foreground font-mono leading-none">
+                  {volumenOperativo}
+                </p>
+                <span className="text-[10px] text-foreground/30">En el período</span>
+              </div>
+
             </div>
           </div>
+
 
           {/* Ranking de Servicios */}
           <div className="glass-card p-6 bg-white/60">

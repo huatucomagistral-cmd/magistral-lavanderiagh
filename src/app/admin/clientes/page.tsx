@@ -111,7 +111,7 @@ export default function ClientesPage() {
 
                   <div className="flex flex-col flex-1 min-w-0">
                     <p className="text-foreground font-medium text-sm sm:text-base group-hover:text-primary transition-colors truncate">
-                      {(client.name || "Sin nombre").toLowerCase().replace(/\b\w/g, c => c.toUpperCase())}
+                      {(client.name || "Sin nombre").toLowerCase().replace(/\b\w/g, (c: string) => c.toUpperCase())}
                     </p>
                     <div className="flex flex-wrap items-center gap-2 mt-0.5">
                       <p className="text-foreground/60 text-[11px] font-bold tracking-wide flex items-center gap-1">

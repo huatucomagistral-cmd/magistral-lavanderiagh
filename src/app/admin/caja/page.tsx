@@ -328,7 +328,7 @@ export default function CajaPage() {
                       </div>
                       {/* Fila 2: nombre cliente cortado sin puntos suspensivos */}
                       <span className="text-xs text-foreground/60 font-medium overflow-hidden whitespace-nowrap mt-0.5">
-                        {o.customerName.toLowerCase().replace(/\b\w/g, c => c.toUpperCase())}
+                        {o.customerName.toLowerCase().replace(/\b\w/g, (c: string) => c.toUpperCase())}
                       </span>
                     </div>
                   ))}

@@ -210,7 +210,7 @@ export default function OrdenesPage() {
           {/* Fila 2: Nombre <- -> Estado Financiero */}
           <div className="flex items-center justify-between gap-2">
             <h4 className="font-medium text-sm line-clamp-1 leading-tight text-foreground/90 capitalize w-full min-w-0" style={{ textTransform: 'capitalize' }}>
-              {order.customerName.toLowerCase().replace(/\b\w/g, c => c.toUpperCase())}
+              {order.customerName.toLowerCase().replace(/\b\w/g, (c: string) => c.toUpperCase())}
             </h4>
             <div className="flex items-center justify-end gap-1.5 shrink-0">
               {renderPaymentStatus(true)}
@@ -233,7 +233,7 @@ export default function OrdenesPage() {
               <span className="text-foreground/40 text-[10px] font-bold">{order.date}</span>
             </div>
             <h4 className="font-medium text-base line-clamp-1 leading-tight text-foreground/90 capitalize" style={{ textTransform: 'capitalize' }}>
-              {order.customerName.toLowerCase().replace(/\b\w/g, c => c.toUpperCase())}
+              {order.customerName.toLowerCase().replace(/\b\w/g, (c: string) => c.toUpperCase())}
             </h4>
           </div>
 

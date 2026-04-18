@@ -210,7 +210,7 @@ export default function HistorialPage() {
                         #{order.ticketNumber || order.id.slice(0, 6)}
                       </Link>
                       <span className="text-foreground font-medium text-sm sm:text-base truncate group-hover:text-primary transition-colors">
-                        {order.customerName.toLowerCase().replace(/\b\w/g, c => c.toUpperCase())}
+                        {order.customerName.toLowerCase().replace(/\b\w/g, (c: string) => c.toUpperCase())}
                       </span>
                     </div>
 
