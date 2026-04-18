@@ -221,10 +221,10 @@ export default function CajaPage() {
               <DollarSign size={32} />
             </div>
             <h2 className="text-2xl font-bold text-foreground">Apertura de Caja</h2>
-            <p className="text-foreground/70 text-sm font-medium">Ingresa el monto de efectivo con el que estás empezando este turno para poder cobrar órdenes.</p>
+
 
             <div className="text-left mt-6">
-              <label className="block text-sm font-medium text-foreground/70 mb-2 text-center">Efectivo Inicial (Para Vuelto)</label>
+              <label className="block text-sm font-medium text-foreground/70 mb-2 text-center">Efectivo Inicial</label>
               <div className="relative max-w-xs mx-auto">
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-foreground/70 font-bold">S/</span>
                 <input
@@ -254,10 +254,10 @@ export default function CajaPage() {
                 <p className="text-3xl sm:text-4xl font-black text-foreground font-mono leading-none">S/ {saldoFinalEfectivo.toFixed(2)}</p>
               </div>
             </div>
-            
-            <button 
-              onClick={handleCloseCaja} 
-              disabled={isProcessing} 
+
+            <button
+              onClick={handleCloseCaja}
+              disabled={isProcessing}
               className="w-full sm:w-auto bg-error hover:bg-error/90 text-white font-bold py-3 px-6 rounded-xl flex items-center justify-center gap-2 transition-transform active:scale-95 shadow-md shadow-error/20 shrink-0"
             >
               {isProcessing ? <span className="animate-spin border-2 border-white/30 border-t-white rounded-full w-5 h-5" /> : <LockKeyhole size={20} />}
@@ -273,7 +273,7 @@ export default function CajaPage() {
               </span>
               <span className="text-base sm:text-lg font-bold text-foreground font-mono">S/ {currentInitial.toFixed(2)}</span>
             </div>
-             <div className="p-3 sm:p-4 flex flex-col justify-center items-center text-center">
+            <div className="p-3 sm:p-4 flex flex-col justify-center items-center text-center">
               <span className="text-[9px] sm:text-[10px] text-success/70 font-black uppercase tracking-widest flex items-center gap-1 mb-1">
                 <DollarSign size={12} /> Entradas Efectivo
               </span>
@@ -304,7 +304,7 @@ export default function CajaPage() {
             <h3 className="text-xs font-black text-foreground/50 uppercase tracking-widest mb-3 flex items-center gap-2 px-1">
               <Activity size={16} /> Actividad de Caja y Movimientos
             </h3>
-            
+
             <div className="bg-white/60 rounded-2xl border border-black/5 shadow-sm overflow-hidden flex flex-col pb-0 mb-4">
               {loadingOrders ? (
                 <div className="flex py-12 justify-center"><Loader2 className="animate-spin text-foreground/40" /></div>
@@ -321,7 +321,7 @@ export default function CajaPage() {
                         </span>
                         <span className="text-xs text-foreground/60 font-medium truncate">{o.customerName}</span>
                       </div>
-                      
+
                       <div className="flex items-center gap-3 sm:gap-4 shrink-0">
                         {o.payMethod === "YAPE" && <span className="px-2 py-0.5 rounded-full bg-[#742284]/10 text-[#742284] text-[9px] sm:text-[10px] font-black uppercase">YAPE/PLIN</span>}
                         {o.payMethod === "EFECTIVO" && <span className="px-2 py-0.5 rounded-full bg-success/10 text-success text-[9px] sm:text-[10px] font-black uppercase">EFECTIVO</span>}
@@ -337,7 +337,7 @@ export default function CajaPage() {
                         <span className="font-bold font-mono text-primary text-sm sm:text-base group-hover:text-primary-hover transition-colors">POS VENTA</span>
                         <span className="text-xs text-foreground/60 font-medium">{s.items?.length || 0} producto(s)</span>
                       </div>
-                      
+
                       <div className="flex items-center gap-3 sm:gap-4 shrink-0">
                         {s.payMethod === "YAPE" && <span className="px-2 py-0.5 rounded-full bg-[#742284]/10 text-[#742284] text-[9px] sm:text-[10px] font-black uppercase">YAPE/PLIN</span>}
                         {s.payMethod === "EFECTIVO" && <span className="px-2 py-0.5 rounded-full bg-success/10 text-success text-[9px] sm:text-[10px] font-black uppercase">EFECTIVO</span>}
@@ -353,7 +353,7 @@ export default function CajaPage() {
                         <span className="font-bold font-mono text-error text-sm sm:text-base leading-tight">EGRESO CAJA</span>
                         <span className="text-xs text-error/70 font-bold italic line-clamp-1">{e.description}</span>
                       </div>
-                      
+
                       <div className="flex items-center gap-3 sm:gap-4 shrink-0">
                         <span className="px-2 py-0.5 rounded-full bg-error/20 text-error text-[9px] sm:text-[10px] font-black uppercase hidden sm:block">GASTO CAJA</span>
                         <span className="w-20 sm:w-24 text-right font-black text-error font-mono text-sm sm:text-base">- S/ {Number(e.amount).toFixed(2)}</span>
@@ -363,11 +363,11 @@ export default function CajaPage() {
                 </div>
               )}
             </div>
-            
+
             <div className="flex justify-between items-center px-2">
-               <span className="text-xs text-foreground/50 tracking-wide">
-                 Órdenes Procesadas: <strong className="text-foreground">{stats.cobrados}</strong>
-               </span>
+              <span className="text-xs text-foreground/50 tracking-wide">
+                Órdenes Procesadas: <strong className="text-foreground">{stats.cobrados}</strong>
+              </span>
             </div>
           </div>
         </div>

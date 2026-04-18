@@ -114,83 +114,145 @@ export default function OrdenesPage() {
   );
 
   const renderRow = (order: Order) => {
-    return (
-      <div key={order.id} className="hover:bg-white text-foreground p-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-colors group w-full">
-        {/* BLOQUE 1: ID y Fecha */}
-        <div className="flex flex-col min-w-[120px] shrink-0">
-          <Link href={`/admin/pedidos/ticket/${order.id}`} className="text-primary font-black font-mono bg-primary/10 px-2 py-0.5 rounded text-sm hover:underline self-start mb-1">
-            {order.ticketNumber || order.id.slice(0, 6).toUpperCase()}
-          </Link>
-          <span className="text-foreground/50 text-[10px] font-bold">{order.date}</span>
-        </div>
-
-        {/* BLOQUE 2: Cliente y Servicio */}
-        <div className="flex-1 flex flex-col min-w-0 w-full">
-          <h4 className="font-black text-base line-clamp-1 leading-tight mb-1">{order.customerName}</h4>
-          <div className="flex items-center gap-3 text-xs font-medium">
-            <span className="flex items-center gap-1 text-foreground/60 font-bold"><PackageSearch size={14} /> {order.items?.length || 0} serv.</span>
-            <span className="font-mono bg-primary/5 px-2 py-0.5 rounded text-primary font-black border border-primary/10">S/ {Number(order.total).toFixed(2)}</span>
-          </div>
-        </div>
-
-        {/* BLOQUE 3: Estado Financiero */}
-        <div className="w-full sm:w-[220px] flex flex-col justify-center gap-2 shrink-0">
+    // Componentes parciales para reutilizar en Móvil y Escritorio sin duplicar lógica
+    const renderPaymentStatus = (isMobile: boolean = false) => {
+      const px = isMobile ? "px-1.5 py-0.5" : "px-2 py-1";
+      return (
+        <>
           {order.paymentStatus === 'PAID' && (
-            <div className={`border rounded-md flex items-center justify-center w-full h-[32px] ${(order.payMethod || order.paymentMethod)?.toUpperCase() === 'YAPE' ? 'bg-[#742284]/10 text-[#742284] border-[#742284]/20' : 'bg-success/10 text-success border-success/20'}`}>
-              <span className="text-[10px] font-black uppercase flex items-center gap-1"><CheckCircle2 size={13} /> Pagado ({(order.payMethod || order.paymentMethod || 'EFECTIVO')})</span>
-            </div>
+            (() => {
+              const method = (order.payMethod || order.paymentMethod || 'EFECTIVO').toUpperCase();
+              const isYape = method === 'YAPE';
+              const colorClass = isYape ? 'border-[#742284]/20 bg-[#742284]/5 text-[#742284]' : 'border-success/20 bg-success/5 text-success';
+              const dotColor = isYape ? 'bg-[#742284] shadow-[0_0_4px_rgba(116,34,132,0.5)]' : 'bg-success shadow-[0_0_4px_rgba(16,185,129,0.5)]';
+              const label = isYape ? 'PAGADO YAPE' : 'PAGADO EFEC.';
+              return (
+                <div className={`flex items-center gap-1.5 border rounded h-fit w-fit shrink-0 ${px} ${colorClass}`}>
+                  <div className={`w-1.5 h-1.5 rounded-full ${dotColor}`}></div>
+                  <span className="text-[10px] font-black uppercase tracking-wider whitespace-nowrap">
+                    {label}
+                  </span>
+                </div>
+              );
+            })()
           )}
           {order.paymentStatus === 'PENDING_VERIFICATION' && (
-            <button onClick={() => setPreviewVoucherOrder(order)} className="w-full bg-warning text-white hover:bg-warning/80 rounded-md text-[10px] font-black transition-colors shadow-sm h-[32px] shadow-warning/20 uppercase flex items-center justify-center gap-1 animate-pulse">
-              <Info size={14} /> Validar Yape
+            <button onClick={() => setPreviewVoucherOrder(order)} className={`flex items-center gap-1.5 bg-warning/10 text-warning hover:bg-warning/20 border border-warning/20 rounded transition-colors w-fit shrink-0 ${px}`}>
+              <div className="w-1.5 h-1.5 rounded-full bg-warning animate-pulse"></div>
+              <span className="text-[10px] font-black uppercase tracking-wider whitespace-nowrap">Validar{isMobile ? '' : ' Yape'}</span>
             </button>
           )}
           {order.paymentStatus === 'UNPAID' && (
-            <div className="flex gap-2 w-full h-[32px]">
+            <div className="flex gap-1 shrink-0">
               <button
                 onClick={() => confirmPayment(order.id, 'EFECTIVO', order.status === 'LISTO')}
                 disabled={!isCajaOpen}
-                className={`flex-1 text-[10px] rounded-md font-black transition-colors border flex items-center justify-center gap-1 ${isCajaOpen ? 'bg-success/10 hover:bg-success/20 text-success border-success/20' : 'bg-black/5 text-foreground/40 border-black/5 cursor-not-allowed'}`}
+                className={`text-[10px] rounded font-black transition-colors border flex items-center gap-1 shrink-0 ${px} ${isCajaOpen ? 'bg-success/10 hover:bg-success/20 text-success border-success/20' : 'bg-black/5 text-foreground/30 border-black/5 cursor-not-allowed'}`}
               >
-                {isCajaOpen ? <><Banknote size={13} /> Efectivo</> : <><Lock size={12} /> Cerrada</>}
+                {isCajaOpen ? <><Banknote size={10} /> {isMobile ? 'EFEC' : 'Efectivo'}</> : <><Lock size={10} /> {isMobile ? '' : 'Caja Cerr.'}</>}
               </button>
               <button
                 onClick={() => confirmPayment(order.id, 'YAPE', order.status === 'LISTO')}
                 disabled={!isCajaOpen}
-                className={`flex-1 text-[10px] rounded-md font-black border flex items-center justify-center gap-1 transition-colors ${isCajaOpen ? 'bg-[#742284]/10 hover:bg-[#742284]/20 text-[#742284] border-[#742284]/20' : 'bg-black/5 text-error/40 border-black/5 cursor-not-allowed'}`}
+                className={`text-[10px] rounded font-black border flex items-center gap-1 transition-colors shrink-0 ${px} ${isCajaOpen ? 'bg-[#742284]/10 hover:bg-[#742284]/20 text-[#742284] border-[#742284]/20' : 'bg-black/5 text-error/30 border-black/5 cursor-not-allowed'}`}
               >
-                {isCajaOpen ? <><Smartphone size={13} /> Yape</> : <><Lock size={12} /> Cerrada</>}
+                {isCajaOpen ? <><Smartphone size={10} /> Yape</> : <><Lock size={10} /> {isMobile ? '' : 'Caja Cerr.'}</>}
               </button>
             </div>
           )}
+        </>
+      );
+    };
+
+    const renderActions = (isMobile: boolean = false) => {
+      const btnClass = "rounded-lg px-3 py-1.5 text-xs font-black transition-all flex items-center justify-center gap-1.5 " + (isMobile ? "flex-1" : "flex-none");
+      return (
+        <>
+          {(order.status === 'RECIBIDO' || order.status === 'EN_PROCESO') && (
+            <button onClick={() => updateStatus(order.id, 'LISTO')} className={`${btnClass} bg-info/10 text-info hover:bg-info hover:text-white border border-info/20`}>
+              Listo <CheckCircle2 size={14} />
+            </button>
+          )}
+          {order.status === 'LISTO' && (
+            <button onClick={() => { if (order.paymentStatus === 'PAID') updateStatus(order.id, 'ENTREGADO'); else alert('Debe cobrar el pago antes de entregar la ropa.'); }} className={`${btnClass} ${order.paymentStatus === 'PAID' ? 'bg-primary text-white hover:bg-primary-hover shadow-sm' : 'bg-black/5 text-foreground/40 cursor-not-allowed'}`}>
+              Entregar <ShoppingBag size={14} />
+            </button>
+          )}
+          {user?.role === 'ADMIN' && (
+            <button
+              onClick={() => setOrderToCancel(order)}
+              className="text-foreground/30 hover:text-error hover:bg-error/10 transition-colors p-1.5 rounded flex items-center justify-center shrink-0"
+              title="Cancelar Orden"
+            >
+              <Trash2 size={16} />
+            </button>
+          )}
+        </>
+      );
+    };
+
+    return (
+      <div key={order.id} className="relative hover:bg-white text-foreground p-3 sm:px-5 sm:py-3 transition-colors group w-full border-b border-black/5 last:border-0">
+        
+        {/* === SOLUCIÓN MÓVIL (COMPACTA) === */}
+        <div className="flex flex-col sm:hidden gap-1.5">
+          {/* Fila 1: Ticket + Fecha -> Precio */}
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <Link href={`/admin/pedidos/ticket/${order.id}`} className="font-black font-mono text-foreground hover:text-primary transition-colors text-sm" title="Abrir Ticket">
+                #{order.ticketNumber || order.id.slice(0, 6).toUpperCase()}
+              </Link>
+              <span className="text-foreground/40 text-[10px] font-bold">{order.date}</span>
+            </div>
+            <span className="font-black text-primary text-sm shrink-0 mt-0.5">S/ {Number(order.total).toFixed(2)}</span>
+          </div>
+          
+          {/* Fila 2: Nombre <- -> Estado Financiero */}
+          <div className="flex items-center justify-between gap-2">
+            <h4 className="font-bold text-sm line-clamp-1 leading-tight text-foreground/90 capitalize w-full min-w-0" style={{ textTransform: 'capitalize' }}>
+              {order.customerName.toLowerCase()}
+            </h4>
+            <div className="flex items-center justify-end gap-1.5 shrink-0">
+              {renderPaymentStatus(true)}
+            </div>
+          </div>
+          
+          {/* Fila 3: Acciones Operativas */}
+          <div className="flex items-center justify-end gap-2 shrink-0 border-t border-black/5 pt-2 mt-1">
+            {renderActions(true)}
+          </div>
         </div>
 
-        {/* BLOQUE 4: Acciones Operativas */}
-        <div className="w-full sm:w-[150px] flex items-center gap-2 shrink-0">
-          <div className="flex-1">
-            {(order.status === 'RECIBIDO' || order.status === 'EN_PROCESO') && (
-              <button onClick={() => updateStatus(order.id, 'LISTO')} className="w-full bg-info/20 text-info hover:bg-info/40 rounded-md text-xs font-black transition-all active:scale-95 border border-info/10 h-[32px] flex items-center justify-center gap-1">
-                Listo <CheckCircle2 size={14} />
-              </button>
-            )}
-            {order.status === 'LISTO' && (
-              <button onClick={() => { if (order.paymentStatus === 'PAID') updateStatus(order.id, 'ENTREGADO'); else alert('Debe cobrar el pago antes de entregar la ropa.'); }} className={`w-full rounded-md text-xs font-black transition-all active:scale-95 h-[32px] flex items-center justify-center gap-1 ${order.paymentStatus === 'PAID' ? 'bg-primary text-white hover:bg-primary-hover shadow-sm shadow-primary/20' : 'bg-black/5 text-foreground/40 cursor-not-allowed border border-black/10'}`}>
-                Entregar <ShoppingBag size={14} />
-              </button>
-            )}
-          </div>
-          {user?.role === 'ADMIN' && (
-            <div className="flex h-[32px] items-center shrink-0">
-              <button
-                onClick={() => setOrderToCancel(order)}
-                className="text-foreground/30 hover:text-error hover:bg-error/10 transition-colors p-1.5 rounded-lg flex items-center justify-center"
-                title="Cancelar Orden"
-              >
-                <Trash2 size={16} />
-              </button>
+        {/* === SOLUCIÓN ESCRITORIO (GRID) === */}
+        <div className="hidden sm:grid sm:grid-cols-[2fr_1fr_minmax(180px,auto)_auto] sm:items-center gap-4">
+          <div className="flex flex-col min-w-0 pr-2">
+            <div className="flex items-center gap-2 mb-0.5">
+              <Link href={`/admin/pedidos/ticket/${order.id}`} className="font-black font-mono text-foreground hover:text-primary transition-colors text-sm" title="Abrir Ticket">
+                #{order.ticketNumber || order.id.slice(0, 6).toUpperCase()}
+              </Link>
+              <span className="text-foreground/40 text-[10px] font-bold">{order.date}</span>
             </div>
-          )}
+            <h4 className="font-bold text-base line-clamp-1 leading-tight text-foreground/90 capitalize" style={{ textTransform: 'capitalize' }}>
+              {order.customerName.toLowerCase()}
+            </h4>
+          </div>
+
+          <div className="flex flex-col items-start gap-0.5">
+            <span className="font-black text-primary text-base leading-none">S/ {Number(order.total).toFixed(2)}</span>
+            <span className="text-foreground/50 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
+              <PackageSearch size={12} /> {order.items?.length || 0} serv.
+            </span>
+          </div>
+
+          <div className="flex flex-col justify-center gap-2 shrink-0">
+            {renderPaymentStatus(false)}
+          </div>
+           
+          <div className="flex items-center justify-end gap-2 shrink-0">
+            {renderActions(false)}
+          </div>
         </div>
+
       </div>
     );
   };
@@ -220,7 +282,7 @@ export default function OrdenesPage() {
       </div>
 
       {/* TABS SELECTOR */}
-      <div className="flex flex-col sm:flex-row p-1 bg-white/40 rounded-xl border border-black/5 overflow-x-auto mb-4 shrink-0 shadow-sm gap-1">
+      <div className="flex flex-row p-1 bg-white/40 rounded-xl border border-black/5 mb-4 shrink-0 shadow-sm gap-1 overflow-visible">
         <button
           onClick={() => setActiveTab('EN_PROCESO')}
           className={`flex-1 py-3 px-4 rounded-lg font-black text-sm transition-all whitespace-nowrap flex items-center justify-center gap-2 ${activeTab === 'EN_PROCESO' ? 'bg-white text-foreground shadow-sm border border-black/5' : 'text-foreground/50 hover:text-foreground hover:bg-white/40 border border-transparent'}`}
@@ -247,7 +309,7 @@ export default function OrdenesPage() {
               <p className="text-sm font-medium mt-1">Limpio y ordenado.</p>
             </div>
           ) : (
-            <div className="bg-white/60 rounded-2xl border border-black/5 divide-y divide-black/10 shadow-sm overflow-hidden">
+            <div className="bg-white/60 rounded-2xl border border-black/5 shadow-sm overflow-hidden flex flex-col">
               {filteredOrders.filter(o => activeTab === 'EN_PROCESO' ? (o.status === 'EN_PROCESO' || o.status === 'RECIBIDO') : o.status === activeTab).map(order => renderRow(order))}
             </div>
           )

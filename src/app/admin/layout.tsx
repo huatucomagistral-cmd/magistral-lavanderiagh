@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { SquaresFour, Users, Receipt, Package, Gear, SignOut, List, X, ClipboardText, ChartLineUp, Megaphone, CurrencyDollar, ShoppingCart } from "@phosphor-icons/react";
+import { SquaresFour, Users, Receipt, Package, Gear, SignOut, List, X, ClipboardText, ChartLineUp, CurrencyDollar, ShoppingCart } from "@phosphor-icons/react";
 import Link from "next/link";
 import { useStore } from "@/store/useStore";
 import { auth, db } from "@/lib/firebase";
@@ -18,6 +18,25 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const pathname = usePathname();
   const { user, setUser, currentStore } = useStore();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isHeaderVisible, setIsHeaderVisible] = useState(true);
+  const lastScrollY = useRef(0);
+
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const currentScrollY = e.currentTarget.scrollTop;
+    
+    // Ignorar si estamos en menú móvil para no crear glitches
+    if (isMobileMenuOpen) return;
+
+    if (currentScrollY > lastScrollY.current + 15) {
+      // Scrolling down -> ocultamos si bajó más de 15px
+      setIsHeaderVisible(false);
+      lastScrollY.current = currentScrollY;
+    } else if (currentScrollY < lastScrollY.current - 15 || currentScrollY < 10) {
+      // Scrolling up -> mostramos si subió más de 15px o está casi arriba
+      setIsHeaderVisible(true);
+      lastScrollY.current = currentScrollY;
+    }
+  };
 
   // Cerrar menú móvil al cambiar de ruta
   useEffect(() => {
@@ -32,7 +51,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     }
 
     if (user.role === "PERSONAL") {
-      const blockedPaths = ["/admin/servicios", "/admin/staff", "/admin/configuracion", "/admin/reportes", "/admin/marketing", "/admin/inventario"];
+      const blockedPaths = ["/admin/servicios", "/admin/staff", "/admin/configuracion", "/admin/reportes", "/admin/inventario"];
       if (blockedPaths.some(p => pathname.startsWith(p))) {
         router.push("/admin"); // Kick them back to dashboard
       }
@@ -127,7 +146,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         <nav className="flex-1 p-4 flex flex-col gap-2 overflow-y-auto">
           <SidebarLink href="/admin/caja" icon={<Receipt size={22} weight="duotone" />} label="Caja" />
           <SidebarLink href="/admin/gastos" icon={<CurrencyDollar size={22} weight="duotone" />} label="Gastos" />
-          <SidebarLink href="/admin/pos" icon={<ShoppingCart size={22} weight="duotone" />} label="Ventas" />
+          <SidebarLink href="/admin/pos" icon={<ShoppingCart size={22} weight="duotone" />} label="Tienda" />
           <SidebarLink
             href="/admin/pedidos"
             icon={<Package size={22} weight="duotone" />}
@@ -139,11 +158,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
           {user.role === "ADMIN" && (
             <>
-              <SidebarLink href="/admin/servicios" icon={<Gear size={22} weight="duotone" />} label="Servicios" />
-              <SidebarLink href="/admin/inventario" icon={<Package size={22} weight="duotone" />} label="Inventario" />
               <SidebarLink href="/admin/staff" icon={<Users size={22} weight="duotone" />} label="Personales" />
               <SidebarLink href="/admin/reportes" icon={<ChartLineUp size={22} weight="duotone" />} label="Reportes" />
-              <SidebarLink href="/admin/marketing" icon={<Megaphone size={22} weight="duotone" />} label="Marketing" />
             </>
           )}
         </nav>
@@ -168,7 +184,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-w-0 relative h-full">
-        <header className="glass-header h-16 flex items-center justify-between px-4 sm:px-6 shrink-0 z-30 relative md:hidden border-b border-black/5">
+        <header className={`glass-header h-16 flex items-center justify-between px-4 sm:px-6 shrink-0 z-30 relative md:hidden border-b border-black/5 transition-all duration-300 ease-in-out ${isHeaderVisible ? "mt-0" : "-mt-16"}`}>
 
           {/* Left side: Logo + Store Name (mobile) */}
           <div className="flex items-center gap-2">
@@ -203,7 +219,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         </header>
 
 
-        <div className="flex-1 overflow-y-auto w-full bg-background md:bg-transparent">
+        <div className="flex-1 overflow-y-auto w-full bg-background md:bg-transparent" onScroll={handleScroll}>
           <div className="p-3 sm:p-5 max-w-6xl mx-auto w-full min-h-full">
             {children}
           </div>

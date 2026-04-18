@@ -252,7 +252,7 @@ export default function GastosPage() {
         </h3>
 
         <div className="bg-white/60 rounded-2xl border border-black/5 shadow-sm overflow-hidden flex flex-col pb-0 mb-4">
-          
+
           {/* Controladores de Filtro */}
           <div className="p-3 border-b border-black/5 bg-white/40 flex flex-col md:flex-row gap-3 items-center justify-between">
             <div className="flex bg-white/40 p-1 rounded-xl border border-black/5 w-full md:w-auto overflow-x-auto scrollbar-hide">
@@ -311,7 +311,7 @@ export default function GastosPage() {
                         <span className="text-xs font-black text-foreground/70">{exp.date?.toDate ? exp.date.toDate().toLocaleDateString('es-PE', { day: '2-digit' }) : '--'}</span>
                         <span className="text-[9px] font-bold text-foreground/50 uppercase tracking-widest leading-none">{exp.date?.toDate ? exp.date.toDate().toLocaleDateString('es-PE', { month: 'short' }) : '---'}</span>
                       </div>
-                      
+
                       <div className="flex flex-col flex-1 min-w-0">
                         <span className="text-sm sm:text-base font-black text-foreground truncate group-hover:text-primary transition-colors">{exp.description}</span>
                         <div className="flex items-center gap-2 mt-0.5 whitespace-nowrap overflow-x-auto scrollbar-hide py-0.5">
@@ -346,14 +346,14 @@ export default function GastosPage() {
 
                     {/* Delete Button Container - Absolute positioning */}
                     <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center justify-center">
-                       <button
-                          onClick={() => handleDelete(exp.id)}
-                          disabled={isDeleting === exp.id}
-                          className={`p-2 rounded-xl transition-colors ${isDeleting === exp.id ? 'bg-black/5 text-foreground/20' : 'bg-black/5 text-foreground/20 hover:text-error hover:bg-error/10'}`}
-                          title="Eliminar gasto"
-                        >
-                          {isDeleting === exp.id ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
-                        </button>
+                      <button
+                        onClick={() => handleDelete(exp.id)}
+                        disabled={isDeleting === exp.id}
+                        className={`p-2 rounded-xl transition-colors ${isDeleting === exp.id ? 'bg-black/5 text-foreground/20' : 'bg-black/5 text-foreground/20 hover:text-error hover:bg-error/10'}`}
+                        title="Eliminar gasto"
+                      >
+                        {isDeleting === exp.id ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
+                      </button>
                     </div>
 
                   </div>
@@ -389,7 +389,6 @@ export default function GastosPage() {
               </div>
               <div>
                 <h2 className="text-2xl font-bold text-foreground tracking-tight">Nuevo Egreso</h2>
-                <p className="text-foreground/60 text-sm font-bold">Registra una salida de dinero real</p>
               </div>
             </div>
 
@@ -438,7 +437,7 @@ export default function GastosPage() {
                 <div>
                   <span className="text-sm font-bold text-foreground block">Descontar de Caja Abierta</span>
                   {isCajaOpen ? (
-                    <span className="text-[10px] text-foreground/60 font-bold uppercase tracking-tight">Afecta directamente al balance del día</span>
+                    <span className="text-[10px] text-foreground/60 font-bold uppercase tracking-tight">Descuenta de caja</span>
                   ) : (
                     <span className="text-[10px] text-error font-bold uppercase tracking-tight">Caja registradora cerrada</span>
                   )}
@@ -451,7 +450,7 @@ export default function GastosPage() {
                   className="w-full bg-error hover:bg-error/90 text-white font-black py-5 rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg shadow-error/20"
                 >
                   {isSaving ? <Loader2 size={24} className="animate-spin" /> : <DollarSign size={24} />}
-                  <span>Registrar Movimiento</span>
+                  <span>Registrar Egreso</span>
                 </button>
               </div>
             </form>

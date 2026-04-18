@@ -124,7 +124,7 @@ export default function HistorialPage() {
       <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <History className="text-primary" /> Historial Inteligente
+            <History className="text-primary" /> Historial
           </h1>
 
         </div>
@@ -199,21 +199,24 @@ export default function HistorialPage() {
               const dateObj = new Date(order.date);
               return (
                 <div key={order.id} className="p-4 sm:px-6 flex flex-col md:flex-row md:items-center justify-between group hover:bg-black/[0.02] transition-colors relative gap-4 border-b border-black/5 last:border-0">
-                  
+
                   {/* Left Side: Ticket, Customer, Date */}
                   <div className="flex flex-col gap-1.5 flex-1 min-w-0 pr-10 md:pr-0">
                     <div className="flex items-center gap-2">
-                       <span className="font-mono text-xs font-bold bg-primary/10 text-primary px-2 py-0.5 rounded border border-primary/20 shrink-0">
-                         #{order.ticketNumber || order.id.slice(0, 6)}
-                       </span>
-                       <span className="text-foreground font-black text-sm sm:text-base truncate group-hover:text-primary transition-colors">
-                         {order.customerName}
-                       </span>
+                      <Link 
+                        href={`/admin/pedidos/ticket/${order.id}`}
+                        className="font-mono text-xs font-bold bg-primary/10 hover:bg-primary active:scale-95 text-primary hover:text-white transition-all px-2 py-0.5 rounded border border-primary/20 hover:border-primary shrink-0"
+                      >
+                        #{order.ticketNumber || order.id.slice(0, 6)}
+                      </Link>
+                      <span className="text-foreground font-black text-sm sm:text-base truncate group-hover:text-primary transition-colors">
+                        {order.customerName}
+                      </span>
                     </div>
-                    
+
                     <div className="flex flex-wrap items-center gap-2 mt-0.5">
                       <div className="flex items-center gap-1 text-foreground/60 text-[11px] font-bold tracking-wide">
-                         <Calendar size={10} /> {dateObj.toLocaleDateString()} {dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        <Calendar size={10} /> {dateObj.toLocaleDateString()} {dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </div>
                       {order.customerDni !== "0" && (
                         <>
@@ -228,67 +231,74 @@ export default function HistorialPage() {
 
                   {/* Middle / Info Badges */}
                   <div className="flex flex-wrap items-center gap-2 sm:gap-4 flex-none md:justify-end mt-1 md:mt-0 w-full md:w-auto pl-[56px] sm:pl-[64px] md:pl-0">
-                     <div className="flex flex-col flex-1 sm:flex-none">
-                       <span className={`px-2 py-1.5 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-widest text-center ${getStatusColor(order.status)}`}>
-                         {OrderStatus[order.status as keyof typeof OrderStatus] || order.status}
-                       </span>
-                       {order.status === 'CANCELADO' && order.cancelReason && (
-                          <div className="mt-1 flex flex-col text-center">
-                            <span className="text-[10px] text-error font-medium italic break-words max-w-[200px]">
-                              Motivo: {order.cancelReason}
+                    <div className="flex flex-col flex-1 sm:flex-none">
+                      <span className={`px-2 py-1.5 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-widest text-center ${getStatusColor(order.status)}`}>
+                        {OrderStatus[order.status as keyof typeof OrderStatus] || order.status}
+                      </span>
+                      {order.status === 'CANCELADO' && order.cancelReason && (
+                        <div className="mt-1 flex flex-col text-center">
+                          <span className="text-[10px] text-error font-medium italic break-words max-w-[200px]">
+                            Motivo: {order.cancelReason}
+                          </span>
+                          {order.cancelledAt && (
+                            <span className="text-[9px] text-foreground/30 uppercase mt-0.5">
+                              {new Date(order.cancelledAt).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
                             </span>
-                            {order.cancelledAt && (
-                              <span className="text-[9px] text-foreground/30 uppercase mt-0.5">
-                                {new Date(order.cancelledAt).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
-                              </span>
-                            )}
-                          </div>
-                       )}
-                     </div>
-
-                     <div className="flex flex-col items-center justify-center bg-black/5 rounded-xl px-3 py-1.5 min-w-[70px] shrink-0 border border-black/5">
-                        {order.paymentStatus === "PAID" ? (
-                          <span className="text-success text-[10px] font-black uppercase tracking-wider">PAGADO</span>
-                        ) : order.paymentStatus === "PENDING_VERIFICATION" ? (
-                          <span className="text-yellow-600 text-[10px] font-black uppercase tracking-wider text-center">VERIFICAR</span>
-                        ) : (
-                          <span className="text-error text-[10px] font-black uppercase tracking-wider">DEBE</span>
-                        )}
-                        <p className="text-[9px] text-foreground/40 mt-0.5 uppercase tracking-wider font-bold">{order.payMethod}</p>
-                     </div>
-
-                     {/* Total and Date */}
-                     <div className="flex flex-col items-end min-w-[80px] shrink-0">
-                       <p className="text-sm sm:text-lg text-foreground font-mono font-black">S/ {Number(order.total).toFixed(2)}</p>
-                       {order.status === 'ENTREGADO' && order.deliveredAt ? (
-                          <div className="flex items-center gap-1 text-[9px] text-foreground/40 mt-0.5 font-medium uppercase tracking-wider bg-black/5 px-2 py-0.5 rounded-lg">
-                            <Clock size={10} /> {new Date(order.deliveredAt).toLocaleDateString()}
-                          </div>
-                        ) : order.status === 'ENTREGADO' ? (
-                          <span className="text-[9px] text-foreground/30 italic mt-0.5 uppercase tracking-wider">Sin fecha</span>
-                        ) : null}
-                     </div>
-
-                    {/* Desktop Button */}
-                    <div className="hidden md:block pl-4 border-l border-black/5 ml-2">
-                      <Link
-                        href={`/admin/pedidos/ticket/${order.id}`}
-                        className="inline-flex items-center justify-center p-2.5 bg-black/5 hover:bg-black/10 active:scale-95 text-foreground rounded-xl transition-all"
-                        title="Ver Ticket"
-                      >
-                        <ArrowRight size={18} />
-                      </Link>
+                          )}
+                        </div>
+                      )}
                     </div>
-                  </div>
 
-                  {/* Mobile Button - Absolute top right */}
-                  <div className="absolute right-4 top-4 md:hidden">
-                    <Link
-                      href={`/admin/pedidos/ticket/${order.id}`}
-                      className="inline-flex items-center justify-center p-2 bg-black/5 hover:bg-black/10 active:scale-95 text-foreground rounded-xl transition-all"
-                    >
-                      <ArrowRight size={16} />
-                    </Link>
+                    <div className="flex flex-col items-center justify-center min-w-[85px] shrink-0">
+                      {(() => {
+                        if (order.paymentStatus === 'PAID') {
+                          const method = (order.payMethod || order.paymentMethod || 'EFECTIVO').toUpperCase();
+                          const isYape = method === 'YAPE';
+                          const colorClass = isYape ? 'border-[#742284]/20 bg-[#742284]/5 text-[#742284]' : 'border-success/20 bg-success/5 text-success';
+                          const dotColor = isYape ? 'bg-[#742284] shadow-[0_0_4px_rgba(116,34,132,0.5)]' : 'bg-success shadow-[0_0_4px_rgba(16,185,129,0.5)]';
+                          const label = isYape ? 'PAGADO YAPE' : 'PAGADO EFEC.';
+                          return (
+                            <div className={`flex items-center gap-1.5 border rounded px-2 py-1 w-full justify-center ${colorClass}`}>
+                              <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${dotColor}`}></div>
+                              <span className="text-[9px] font-black uppercase tracking-wider whitespace-nowrap">
+                                {label}
+                              </span>
+                            </div>
+                          );
+                        } else if (order.paymentStatus === 'PENDING_VERIFICATION') {
+                          return (
+                            <div className="flex items-center gap-1.5 border rounded px-2 py-1 w-full justify-center bg-warning/10 text-warning border-warning/20 hover:bg-warning/20 transition-colors">
+                              <div className="w-1.5 h-1.5 rounded-full shrink-0 bg-warning animate-pulse"></div>
+                              <span className="text-[9px] font-black uppercase tracking-wider whitespace-nowrap">
+                                VERIFICAR
+                              </span>
+                            </div>
+                          );
+                        } else {
+                          return (
+                            <div className="flex items-center gap-1.5 border rounded px-2 py-1 w-full justify-center bg-error/10 text-error border-error/20">
+                              <div className="w-1.5 h-1.5 rounded-full shrink-0 bg-error"></div>
+                              <span className="text-[9px] font-black uppercase tracking-wider whitespace-nowrap">
+                                DEBE
+                              </span>
+                            </div>
+                          );
+                        }
+                      })()}
+                    </div>
+
+                    {/* Total and Date */}
+                    <div className="flex flex-col items-end min-w-[80px] shrink-0">
+                      <p className="text-sm sm:text-lg text-foreground font-mono font-black">S/ {Number(order.total).toFixed(2)}</p>
+                      {order.status === 'ENTREGADO' && order.deliveredAt ? (
+                        <div className="flex items-center gap-1 text-[9px] text-foreground/40 mt-0.5 font-medium uppercase tracking-wider bg-black/5 px-2 py-0.5 rounded-lg">
+                          <Clock size={10} /> {new Date(order.deliveredAt).toLocaleDateString()}
+                        </div>
+                      ) : order.status === 'ENTREGADO' ? (
+                        <span className="text-[9px] text-foreground/30 italic mt-0.5 uppercase tracking-wider">Sin fecha</span>
+                      ) : null}
+                    </div>
+
                   </div>
 
                 </div>

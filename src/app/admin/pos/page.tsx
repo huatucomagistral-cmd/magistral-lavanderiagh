@@ -3,27 +3,42 @@
 import { useState, useEffect } from "react";
 import { useStore } from "@/store/useStore";
 import { toast } from "react-hot-toast";
-import { collection, query, onSnapshot, addDoc, doc, updateDoc, orderBy, where, writeBatch } from "firebase/firestore";
+import { collection, query, onSnapshot, addDoc, doc, updateDoc, writeBatch, deleteDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { ShoppingCart, Plus, Minus, X, CreditCard, Banknote, Loader2, PackageOpen } from "lucide-react";
-import { Product } from "../inventario/page"; // Reusing the interface from inventario
+import { ShoppingCart, Plus, Minus, X, CreditCard, Banknote, Loader2, PackageOpen, Pencil, Trash2, SwitchCamera } from "lucide-react";
+
+export interface Product {
+  id: string;
+  name: string;
+  price: number;
+  stock: number;
+  status: "ACTIVE" | "INACTIVE";
+  createdAt: number;
+}
 
 export default function POSPage() {
   const { user, isCajaOpen } = useStore();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Edit Mode State
+  const [editMode, setEditMode] = useState(false);
+
   // Cart State (Local to POS)
   const [cart, setCart] = useState<{ product: Product; quantity: number }[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
 
+  // Modal State (From Inventario)
+  const [showModal, setShowModal] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [formData, setFormData] = useState({ name: "", price: "", stock: "", status: "ACTIVE" });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   useEffect(() => {
     if (!user?.storeId) return;
-    // Solo mostramos productos activos
-    const q = query(
-      collection(db, `stores/${user.storeId}/products`),
-      where("status", "==", "ACTIVE")
-    );
+
+    // Obtenemos todos los productos. Filtramos visualmente después si no estamos en editMode.
+    const q = query(collection(db, `stores/${user.storeId}/products`));
     const unsub = onSnapshot(q, (snap) => {
       const data: Product[] = snap.docs.map(d => ({ id: d.id, ...d.data() } as Product));
       data.sort((a, b) => a.name.localeCompare(b.name));
@@ -32,6 +47,10 @@ export default function POSPage() {
     });
     return () => unsub();
   }, [user]);
+
+  const visibleProducts = editMode
+    ? products
+    : products.filter(p => p.status === "ACTIVE");
 
   const addToCart = (product: Product) => {
     setCart(prev => {
@@ -46,7 +65,7 @@ export default function POSPage() {
         );
       }
       if (product.stock <= 0) {
-        toast.error("Producto sin stock dispónible.");
+        toast.error("Producto sin stock disponible.");
         return prev;
       }
       return [...prev, { product, quantity: 1 }];
@@ -96,7 +115,7 @@ export default function POSPage() {
         })),
         total: cartTotal,
         payMethod,
-        date: new Date().toISOString(), // Usamos ISO en string o Timestamp
+        date: new Date().toISOString(),
         employeeId: user.email || user.uid,
       };
 
@@ -106,7 +125,7 @@ export default function POSPage() {
       const batch = writeBatch(db);
       cart.forEach(item => {
         const pRef = doc(db, `stores/${user.storeId}/products`, item.product.id);
-        const newStock = Math.max(item.product.stock - item.quantity, 0); // Evitar negativos
+        const newStock = Math.max(item.product.stock - item.quantity, 0);
         batch.update(pRef, { stock: newStock });
       });
       await batch.commit();
@@ -121,59 +140,197 @@ export default function POSPage() {
     }
   };
 
+  const handleOpenModal = (product?: Product) => {
+    if (product) {
+      setEditingProduct(product);
+      setFormData({
+        name: product.name,
+        price: product.price.toString(),
+        stock: product.stock.toString(),
+        status: product.status
+      });
+    } else {
+      setEditingProduct(null);
+      setFormData({ name: "", price: "", stock: "", status: "ACTIVE" });
+    }
+    setShowModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setEditingProduct(null);
+  };
+
+  const handleSubmitModal = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user?.storeId) return;
+    if (!formData.name || !formData.price || !formData.stock) {
+      toast.error("Llena todos los campos vacíos.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const payload = {
+        name: formData.name,
+        price: parseFloat(formData.price),
+        stock: parseInt(formData.stock),
+        status: formData.status as "ACTIVE" | "INACTIVE",
+        createdAt: editingProduct ? editingProduct.createdAt : Date.now(),
+      };
+
+      if (editingProduct) {
+        await updateDoc(doc(db, `stores/${user.storeId}/products`, editingProduct.id), payload);
+
+        // Update cart items if price or name changed
+        setCart(prev => prev.map(item => {
+          if (item.product.id === editingProduct.id) {
+            return {
+              ...item,
+              product: { ...item.product, ...payload, id: editingProduct.id } as Product
+            }
+          }
+          return item;
+        }));
+
+        toast.success("Producto modificado correctamente.");
+      } else {
+        await addDoc(collection(db, `stores/${user.storeId}/products`), payload);
+        toast.success("Producto nuevo creado.");
+      }
+      handleCloseModal();
+    } catch (error) {
+      console.error(error);
+      toast.error("Ocurrió un error.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDelete = async (id: string, name: string) => {
+    if (!user?.storeId) return;
+    if (confirm(`¿Seguro que deseas eliminar definitivamente ${name}? Esto no afectará las ventas pasadas.`)) {
+      try {
+        await deleteDoc(doc(db, `stores/${user.storeId}/products`, id));
+        // Remove from cart if it was there
+        setCart(prev => prev.filter(item => item.product.id !== id));
+        toast.success("Producto eliminado.");
+      } catch (err) {
+        toast.error("Error al eliminar.");
+      }
+    }
+  };
+
   return (
     <div className="animate-in fade-in flex flex-col md:flex-row gap-6 h-auto md:h-[calc(100vh-120px)] pb-10 md:pb-0">
 
       {/* Zona de Productos */}
       <div className="flex-1 flex flex-col min-h-[400px] md:min-h-0 bg-transparent">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-foreground flex items-center gap-2 mb-2">
+        <div className="flex items-center justify-between mb-4">
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground flex items-center gap-2">
             <ShoppingCart className="text-primary" size={32} />
-            Ventas
+            Tienda
           </h1>
 
+          {user?.role === "ADMIN" && (
+            <div className="flex items-center gap-3">
+              <label className="flex items-center gap-2 cursor-pointer bg-white/50 px-3 py-1.5 rounded-xl border border-black/5 select-none hover:bg-white transition-colors">
+                <div className="relative">
+                  <input type="checkbox" className="sr-only" checked={editMode} onChange={(e) => setEditMode(e.target.checked)} />
+                  <div className={`block w-9 h-5 rounded-full transition-colors ${editMode ? 'bg-[#10b981]' : 'bg-black/20'}`}></div>
+                  <div className={`absolute left-0.5 top-0.5 bg-white w-4 h-4 rounded-full transition-transform ${editMode ? 'translate-x-4' : ''}`}></div>
+                </div>
+                <span className="text-sm font-bold text-foreground/80">Modo Edición</span>
+              </label>
+
+              {editMode && (
+                <button
+                  onClick={() => handleOpenModal()}
+                  className="bg-primary hover:bg-primary-hover active:scale-95 transition-all text-white font-black rounded-xl p-2 sm:px-3 sm:py-1.5 flex items-center justify-center gap-2 shadow-sm shadow-primary/20 shrink-0"
+                >
+                  <Plus size={16} strokeWidth={3} />
+                  <span className="hidden sm:inline text-sm">Nuevo Producto</span>
+                </button>
+              )}
+            </div>
+          )}
         </div>
 
         {loading ? (
           <div className="flex-1 flex justify-center items-center"><Loader2 size={32} className="animate-spin text-primary" /></div>
-        ) : products.length === 0 ? (
+        ) : visibleProducts.length === 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center text-foreground/40 glass-card">
             <PackageOpen size={48} className="mb-4 opacity-50" />
-            <p className="font-bold text-lg">No hay productos en venta</p>
-            <p className="text-sm">Ve a Inventario para registrar productos.</p>
+            <p className="font-bold text-lg">No hay productos disponibles</p>
+            {editMode ? (
+              <p className="text-sm">Empieza agregando tu primer producto.</p>
+            ) : (
+              <p className="text-sm">Pide a tu administrador que añada productos.</p>
+            )}
           </div>
         ) : (
           <div className="flex-1 overflow-y-visible md:overflow-y-auto min-h-0 md:pb-10 scrollbar-hide py-2">
             <div className="bg-white/60 rounded-2xl border border-black/5 shadow-sm overflow-hidden flex flex-col">
-              {products.map((p, index) => (
-                <button
-                  key={p.id}
-                  onClick={() => addToCart(p)}
-                  disabled={p.stock <= 0}
-                  className={`relative flex flex-row items-center justify-between text-left transition-all p-4 sm:px-5 sm:py-4 group ${p.stock > 0 ? 'hover:bg-white/80 active:bg-black/5 cursor-pointer' : 'opacity-50 cursor-not-allowed grayscale'} ${index !== products.length - 1 ? 'border-b border-black/5' : ''}`}
-                >
-                  {p.stock <= 0 && <span className="absolute inset-0 bg-white/40 z-10"></span>}
+              {visibleProducts.map((p, index) => {
+                const isOutOfStock = p.stock <= 0;
+                const canAddToCart = p.status === "ACTIVE" && p.stock > 0;
 
-                  <div className="flex flex-col pr-4 relative z-20">
-                    <span className="font-bold text-foreground text-base sm:text-lg leading-tight line-clamp-2 group-hover:text-primary transition-colors">{p.name}</span>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-black/5 text-foreground/60 w-max">{p.stock} unidades</span>
-                      {p.stock <= 0 && <span className="bg-error font-black uppercase text-[10px] text-white px-2 py-0.5 rounded-full shadow-md">Agotado</span>}
+                return (
+                  <div
+                    key={p.id}
+                    className={`relative flex flex-row items-center justify-between text-left transition-all p-4 sm:px-5 sm:py-4 group ${canAddToCart || editMode ? 'hover:bg-white/80' : 'opacity-60 grayscale'} ${index !== visibleProducts.length - 1 ? 'border-b border-black/5' : ''}`}
+                  >
+                    {!editMode && isOutOfStock && <span className="absolute inset-0 bg-white/40 z-10"></span>}
+                    {editMode && p.status === "INACTIVE" && <span className="absolute inset-0 bg-[repeating-linear-gradient(45deg,_transparent,_transparent_10px,_rgba(0,0,0,0.02)_10px,_rgba(0,0,0,0.02)_20px)] z-0 pointer-events-none"></span>}
+
+                    <div
+                      className={`flex flex-col pr-4 relative z-20 flex-1 ${(!editMode && canAddToCart) ? 'cursor-pointer active:bg-black/5' : ''}`}
+                      onClick={() => {
+                        if (!editMode && canAddToCart) {
+                          addToCart(p);
+                        }
+                      }}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className={`font-bold text-base sm:text-lg leading-tight line-clamp-2 transition-colors ${!editMode && canAddToCart ? 'group-hover:text-primary text-foreground' : 'text-foreground'}`}>
+                          {p.name}
+                        </span>
+                        {editMode && p.status === "INACTIVE" && (
+                          <span className="bg-black/10 text-foreground/60 uppercase text-[10px] px-2 py-0.5 rounded font-black tracking-widest shrink-0">Oculto</span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-black/5 text-foreground/60 w-max">{p.stock} unidades</span>
+                        {isOutOfStock && <span className="bg-error/10 font-black uppercase text-[10px] text-error px-2 py-0.5 rounded-full shadow-sm">Agotado</span>}
+                      </div>
+                    </div>
+
+                    <div className="text-right shrink-0 relative z-20 flex items-center gap-4">
+
+                      {editMode ? (
+                        <div className="flex items-center gap-1 bg-white/50 rounded-xl p-1 shadow-sm border border-black/5">
+                          <button onClick={() => handleOpenModal(p)} className="flex items-center gap-2 px-3 py-2 text-primary bg-primary/10 hover:bg-primary hover:text-white font-bold text-xs rounded-lg transition-colors" title="Editar Producto">
+                            <Pencil size={14} /> Editar
+                          </button>
+                          <div className="w-px h-6 bg-black/5 mx-1"></div>
+                          <button onClick={() => handleDelete(p.id, p.name)} className="p-2 text-foreground/30 hover:bg-error/10 hover:text-error rounded-lg transition-colors" title="Eliminar definitivamente">
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      ) : (
+                        <span className="font-black text-primary text-base md:text-xl font-mono">S/ {p.price.toFixed(2)}</span>
+                      )}
                     </div>
                   </div>
-
-                  <div className="text-right shrink-0 relative z-20">
-                    <span className="font-black text-primary text-base md:text-xl font-mono">S/ {p.price.toFixed(2)}</span>
-                  </div>
-                </button>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
       </div>
 
       {/* Zona del Carrito */}
-      <div className="w-full md:w-[320px] lg:w-[380px] shrink-0 flex flex-col glass-card h-[600px] md:h-full overflow-hidden border-2 border-primary/10 shadow-2xl shadow-primary/5">
+      <div className="w-full md:w-[320px] lg:w-[380px] shrink-0 flex flex-col glass-card h-fit min-h-[250px] max-h-[600px] md:max-h-[calc(100vh-120px)] overflow-hidden border-2 border-primary/10 shadow-lg shadow-primary/5 transition-all duration-300 ease-in-out">
         <div className="bg-gradient-to-r from-primary/10 to-transparent p-4 border-b border-black/5 flex items-center justify-between shrink-0">
           <h2 className="font-black text-foreground tracking-tight flex items-center gap-2">
             <ShoppingCart size={18} className="text-primary" />
@@ -184,11 +341,11 @@ export default function POSPage() {
           </span>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-4 bg-white/50 relative">
+        <div className="flex-auto overflow-y-auto p-4 bg-white/50 flex flex-col relative transition-all duration-300">
           {cart.length === 0 ? (
-            <div className="absolute inset-0 flex flex-col items-center justify-center text-foreground/30 p-8 text-center gap-3">
+            <div className="flex-1 flex flex-col items-center justify-center text-foreground/30 py-6 text-center gap-3">
               <ShoppingCart size={40} className="opacity-20" />
-              <p className="font-bold text-sm">El carrito está vacío. Toca los productos para empezar.</p>
+              <p className="font-bold text-sm">El carrito está vacío.</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -249,6 +406,71 @@ export default function POSPage() {
           </div>
         </div>
       </div>
+
+      {/* Modal de Nuevo/Editar Producto */}
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={handleCloseModal} />
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm relative z-10 animate-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between p-6 border-b border-black/5">
+              <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
+                {editingProduct ? <Pencil size={20} className="text-primary" /> : <PackageOpen size={20} className="text-primary" />}
+                {editingProduct ? "Editar Producto" : "Nuevo Producto"}
+              </h2>
+              <button onClick={handleCloseModal} className="text-foreground/50 hover:text-foreground">
+                <X size={20} />
+              </button>
+            </div>
+            <form onSubmit={handleSubmitModal} className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-bold text-foreground mb-1">Nombre del Producto</label>
+                <input
+                  type="text" required value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })}
+                  placeholder="Ej. Suavizante Suavitel 500ml"
+                  className="w-full bg-white/50 border border-black/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-bold text-foreground mb-1">Precio Venta (S/)</label>
+                  <input
+                    type="number" step="0.1" min="0" required value={formData.price} onChange={e => setFormData({ ...formData, price: e.target.value })}
+                    className="w-full bg-white/50 border border-black/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-foreground mb-1">Stock Disp.</label>
+                  <input
+                    type="number" step="1" required value={formData.stock} onChange={e => setFormData({ ...formData, stock: e.target.value })}
+                    className="w-full bg-white/50 border border-black/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-foreground mb-1">Estado de Visibilidad</label>
+                <select
+                  value={formData.status}
+                  onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                  className="w-full bg-white/50 border border-black/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary transition-all"
+                >
+                  <option value="ACTIVE">Activo (Visible en Tienda)</option>
+                  <option value="INACTIVE">Inactivo (Oculto)</option>
+                </select>
+              </div>
+
+              <div className="pt-4">
+                <button
+                  type="submit" disabled={isSubmitting}
+                  className="w-full bg-primary hover:bg-primary-hover text-white font-bold py-3.5 rounded-xl transition-transform active:scale-95 shadow-md flex items-center justify-center gap-2"
+                >
+                  {isSubmitting ? <Loader2 size={20} className="animate-spin" /> : "Guardar Producto"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
