@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { useStore } from "@/store/useStore";
 import { toast } from "react-hot-toast";
 import { searchDNI } from "@/app/actions/reniec";
-import { collection, onSnapshot, addDoc, runTransaction, doc, getDoc, getDocs, query, where, setDoc, increment, orderBy } from "firebase/firestore";
+import { collection, onSnapshot, addDoc, runTransaction, doc, getDoc, getDocs, query, where, setDoc, increment, orderBy, deleteDoc, updateDoc } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "@/lib/firebase";
 
