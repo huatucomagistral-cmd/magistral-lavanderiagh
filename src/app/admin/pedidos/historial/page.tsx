@@ -123,8 +123,8 @@ export default function HistorialPage() {
     <div className="space-y-6 animate-in fade-in duration-500 pb-10">
       <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <History className="text-primary" /> Historial
+          <h1 className="text-xl font-bold text-foreground flex items-center gap-2">
+            <History className="text-primary" size={20} /> Historial
           </h1>
 
         </div>

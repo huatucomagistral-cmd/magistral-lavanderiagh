@@ -75,9 +75,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   if (loading) {
     return (
-      <div className="fixed inset-0 min-h-screen bg-background flex flex-col items-center justify-center text-white/50 z-50">
-        <Loader2 className="animate-spin mb-4" size={40} />
-        <p className="font-mono text-sm tracking-wider uppercase font-bold text-primary">Cargando...</p>
+      <div className="fixed inset-0 min-h-screen flex flex-col items-center justify-center z-50" style={{ backgroundColor: '#0d7b8a' }}>
+        <Loader2 className="animate-spin text-white mb-4" size={32} />
+        {/* Texto */}
+        <p className="font-mono text-xs tracking-widest uppercase font-bold text-white/70">Cargando...</p>
       </div>
     );
   }

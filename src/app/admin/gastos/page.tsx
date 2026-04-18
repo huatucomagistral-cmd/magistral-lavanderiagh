@@ -215,10 +215,10 @@ export default function GastosPage() {
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
+    <div className="space-y-3 animate-in fade-in duration-500">
       <div className="flex flex-row justify-between items-center gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2 sm:mb-0">Gastos y Egresos</h1>
+          <h1 className="text-2xl font-bold text-foreground">Gastos y Egresos</h1>
         </div>
         <button
           onClick={() => setIsModalOpen(true)}
@@ -349,7 +349,7 @@ export default function GastosPage() {
                       <button
                         onClick={() => handleDelete(exp.id)}
                         disabled={isDeleting === exp.id}
-                        className={`p-2 rounded-xl transition-colors ${isDeleting === exp.id ? 'bg-black/5 text-foreground/20' : 'bg-black/5 text-foreground/20 hover:text-error hover:bg-error/10'}`}
+                        className={`p-2 rounded-xl transition-colors ${isDeleting === exp.id ? 'bg-black/5 text-foreground/20' : 'bg-black/5 text-error hover:text-error hover:bg-error/10'}`}
                         title="Eliminar gasto"
                       >
                         {isDeleting === exp.id ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}

@@ -195,10 +195,10 @@ export default function CajaPage() {
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
+    <div className="space-y-3 animate-in fade-in duration-500">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">Control de Caja</h1>
+          <h1 className="text-2xl font-bold text-foreground">Control de Caja</h1>
 
         </div>
 
@@ -207,7 +207,7 @@ export default function CajaPage() {
             <History size={18} />
             <span className="hidden sm:inline">Historial</span>
           </button>
-          <div className={`px-4 py-2 rounded-xl flex items-center gap-2 font-bold ${isCajaOpen ? 'bg-success/20 text-success' : 'bg-error/20 text-error'}`}>
+          <div className={`px-4  rounded-xl flex items-center gap-2 font-bold ${isCajaOpen ? 'bg-success/20 text-success' : 'bg-error/20 text-error'}`}>
             {isCajaOpen ? <LockOpen size={18} /> : <LockKeyhole size={18} />}
             {isCajaOpen ? 'CAJA ABIERTA' : 'CAJA CERRADA'}
           </div>
@@ -242,23 +242,23 @@ export default function CajaPage() {
           </form>
         </div>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-3">
           {/* Header Action Row (Balance & Closing) */}
-          <div className="bg-white/60 rounded-2xl border border-black/5 shadow-sm p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-4 w-full sm:w-auto">
-              <div className="bg-primary/20 w-12 h-12 rounded-full flex items-center justify-center text-primary shrink-0">
-                <Wallet size={24} />
+          <div className="bg-white/60 rounded-2xl border border-black/5 shadow-sm p-3 sm:p-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div className="flex items-center gap-3 w-full sm:w-auto">
+              <div className="bg-primary/20 w-10 h-10 rounded-full flex items-center justify-center text-primary shrink-0">
+                <Wallet size={20} />
               </div>
               <div>
                 <p className="text-[10px] text-foreground/50 font-black uppercase tracking-widest mb-0.5">Balance Actual Efectivo</p>
-                <p className="text-3xl sm:text-4xl font-black text-foreground font-mono leading-none">S/ {saldoFinalEfectivo.toFixed(2)}</p>
+                <p className="text-2xl sm:text-3xl font-black text-foreground font-mono leading-none">S/ {saldoFinalEfectivo.toFixed(2)}</p>
               </div>
             </div>
 
             <button
               onClick={handleCloseCaja}
               disabled={isProcessing}
-              className="w-full sm:w-auto bg-error hover:bg-error/90 text-white font-bold py-3 px-6 rounded-xl flex items-center justify-center gap-2 transition-transform active:scale-95 shadow-md shadow-error/20 shrink-0"
+              className="w-full sm:w-auto bg-error hover:bg-error/90 text-white font-bold py-2 px-6 rounded-xl flex items-center justify-center gap-2 transition-transform active:scale-95 shadow-md shadow-error/20 shrink-0"
             >
               {isProcessing ? <span className="animate-spin border-2 border-white/30 border-t-white rounded-full w-5 h-5" /> : <LockKeyhole size={20} />}
               Cerrar Caja
@@ -275,13 +275,13 @@ export default function CajaPage() {
             </div>
             <div className="p-3 sm:p-4 flex flex-col justify-center items-center text-center">
               <span className="text-[9px] sm:text-[10px] text-success/70 font-black uppercase tracking-widest flex items-center gap-1 mb-1">
-                <DollarSign size={12} /> Entradas Efectivo
+                <DollarSign size={12} /> Ingresos
               </span>
               <span className="text-base sm:text-lg font-bold text-success font-mono">+ S/ {stats.efectivo.toFixed(2)}</span>
             </div>
             <div className="p-3 sm:p-4 flex flex-col justify-center items-center text-center">
               <span className="text-[9px] sm:text-[10px] text-error/70 font-black uppercase tracking-widest flex items-center gap-1 mb-1">
-                <ArrowRightLeft size={12} /> Salidas Efectivo
+                <ArrowRightLeft size={12} /> Egresos
               </span>
               <span className="text-base sm:text-lg font-bold text-error font-mono">- S/ {totalGastosCaja.toFixed(2)}</span>
             </div>
@@ -314,50 +314,59 @@ export default function CajaPage() {
                 <div className="max-h-[500px] overflow-y-auto scrollbar-hide flex flex-col">
                   {/* ORDENES */}
                   {sessionOrders.map((o) => (
-                    <div key={o.id} className="p-4 sm:px-5 flex flex-row items-center justify-between group hover:bg-black/[0.02] transition-colors border-b border-black/5 last:border-b-0">
-                      <div className="flex flex-col pr-4">
-                        <span className="font-bold font-mono text-primary text-sm sm:text-base group-hover:text-primary-hover transition-colors truncate">
+                    <div key={o.id} className="px-4 sm:px-5 py-3 flex flex-col group hover:bg-black/[0.02] transition-colors border-b border-black/5 last:border-b-0">
+                      {/* Fila 1: ticket + badge + precio */}
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-bold font-mono text-primary text-sm shrink-0 group-hover:text-primary-hover transition-colors">
                           {o.ticketNumber || o.id.slice(0, 6).toUpperCase()}
                         </span>
-                        <span className="text-xs text-foreground/60 font-medium truncate">{o.customerName}</span>
+                        <div className="flex items-center gap-2 shrink-0">
+                          {o.payMethod === "YAPE" && <span className="px-2 py-0.5 rounded-full bg-[#742284]/10 text-[#742284] text-[9px] sm:text-[10px] font-black uppercase">YAPE/PLIN</span>}
+                          {o.payMethod === "EFECTIVO" && <span className="px-2 py-0.5 rounded-full bg-success/10 text-success text-[9px] sm:text-[10px] font-black uppercase">EFECTIVO</span>}
+                          <span className="font-black text-success font-mono text-sm sm:text-base">+ S/ {Number(o.total).toFixed(2)}</span>
+                        </div>
                       </div>
-
-                      <div className="flex items-center gap-3 sm:gap-4 shrink-0">
-                        {o.payMethod === "YAPE" && <span className="px-2 py-0.5 rounded-full bg-[#742284]/10 text-[#742284] text-[9px] sm:text-[10px] font-black uppercase">YAPE/PLIN</span>}
-                        {o.payMethod === "EFECTIVO" && <span className="px-2 py-0.5 rounded-full bg-success/10 text-success text-[9px] sm:text-[10px] font-black uppercase">EFECTIVO</span>}
-                        <span className="w-20 sm:w-24 text-right font-black text-success font-mono text-sm sm:text-base">+ S/ {Number(o.total).toFixed(2)}</span>
-                      </div>
+                      {/* Fila 2: nombre cliente cortado sin puntos suspensivos */}
+                      <span className="text-xs text-foreground/60 font-medium overflow-hidden whitespace-nowrap mt-0.5">
+                        {o.customerName}
+                      </span>
                     </div>
                   ))}
 
                   {/* VENTAS DIRECTAS */}
                   {sessionSales.map((s) => (
-                    <div key={s.id} className="p-4 sm:px-5 flex flex-row items-center justify-between group hover:bg-black/[0.02] transition-colors border-b border-black/5 last:border-b-0">
-                      <div className="flex flex-col pr-4">
-                        <span className="font-bold font-mono text-primary text-sm sm:text-base group-hover:text-primary-hover transition-colors">POS VENTA</span>
-                        <span className="text-xs text-foreground/60 font-medium">{s.items?.length || 0} producto(s)</span>
+                    <div key={s.id} className="px-4 sm:px-5 py-3 flex flex-col group hover:bg-black/[0.02] transition-colors border-b border-black/5 last:border-b-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-bold font-mono text-primary text-sm shrink-0 group-hover:text-primary-hover transition-colors">
+                          POS VENTA
+                        </span>
+                        <div className="flex items-center gap-2 shrink-0">
+                          {s.payMethod === "YAPE" && <span className="px-2 py-0.5 rounded-full bg-[#742284]/10 text-[#742284] text-[9px] sm:text-[10px] font-black uppercase">YAPE/PLIN</span>}
+                          {s.payMethod === "EFECTIVO" && <span className="px-2 py-0.5 rounded-full bg-success/10 text-success text-[9px] sm:text-[10px] font-black uppercase">EFECTIVO</span>}
+                          <span className="font-black text-success font-mono text-sm sm:text-base">+ S/ {Number(s.total).toFixed(2)}</span>
+                        </div>
                       </div>
-
-                      <div className="flex items-center gap-3 sm:gap-4 shrink-0">
-                        {s.payMethod === "YAPE" && <span className="px-2 py-0.5 rounded-full bg-[#742284]/10 text-[#742284] text-[9px] sm:text-[10px] font-black uppercase">YAPE/PLIN</span>}
-                        {s.payMethod === "EFECTIVO" && <span className="px-2 py-0.5 rounded-full bg-success/10 text-success text-[9px] sm:text-[10px] font-black uppercase">EFECTIVO</span>}
-                        <span className="w-20 sm:w-24 text-right font-black text-success font-mono text-sm sm:text-base">+ S/ {Number(s.total).toFixed(2)}</span>
-                      </div>
+                      <span className="text-xs text-foreground/60 font-medium overflow-hidden whitespace-nowrap mt-0.5">
+                        {s.items?.length || 0} producto(s)
+                      </span>
                     </div>
                   ))}
 
                   {/* EGRESOS */}
                   {expenses.map((e) => (
-                    <div key={e.id} className="p-4 sm:px-5 flex flex-row items-center justify-between group bg-error/[0.03] hover:bg-error/[0.06] transition-colors border-b border-black/5 last:border-b-0">
-                      <div className="flex flex-col pr-4 max-w-[60%]">
-                        <span className="font-bold font-mono text-error text-sm sm:text-base leading-tight">EGRESO CAJA</span>
-                        <span className="text-xs text-error/70 font-bold italic line-clamp-1">{e.description}</span>
+                    <div key={e.id} className="px-4 sm:px-5 py-3 flex flex-col group bg-error/[0.03] hover:bg-error/[0.06] transition-colors border-b border-black/5 last:border-b-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-bold font-mono text-error text-sm shrink-0">
+                          EGRESO CAJA
+                        </span>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className="px-2 py-0.5 rounded-full bg-error/20 text-error text-[9px] sm:text-[10px] font-black uppercase hidden sm:block">GASTO CAJA</span>
+                          <span className="font-black text-error font-mono text-sm sm:text-base">- S/ {Number(e.amount).toFixed(2)}</span>
+                        </div>
                       </div>
-
-                      <div className="flex items-center gap-3 sm:gap-4 shrink-0">
-                        <span className="px-2 py-0.5 rounded-full bg-error/20 text-error text-[9px] sm:text-[10px] font-black uppercase hidden sm:block">GASTO CAJA</span>
-                        <span className="w-20 sm:w-24 text-right font-black text-error font-mono text-sm sm:text-base">- S/ {Number(e.amount).toFixed(2)}</span>
-                      </div>
+                      <span className="text-xs text-error/70 font-bold italic overflow-hidden whitespace-nowrap mt-0.5">
+                        {e.description}
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -383,9 +392,9 @@ export default function CajaPage() {
                   <div className="bg-primary/20 w-10 h-10 rounded-xl flex justify-center items-center text-primary">
                     <History size={20} />
                   </div>
-                  Historial de Turnos
+                  Historial de Caja
                 </h2>
-                <p className="text-sm text-foreground/60 font-medium mt-1">Resumen financiero y auditoría de todas las cajas cerradas previamente.</p>
+
               </div>
               <button onClick={() => setShowHistoryModal(false)} className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-black/5 text-foreground/50 hover:text-foreground transition-colors self-start">
                 <X size={20} />

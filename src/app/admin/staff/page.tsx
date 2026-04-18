@@ -124,9 +124,9 @@ export default function StaffPage() {
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
+    <div className="space-y-3 animate-in fade-in duration-500">
       <div>
-        <h1 className="text-3xl font-bold text-foreground mb-2">Personal del Negocio</h1>
+        <h1 className="text-2xl font-bold text-foreground">Personal del Negocio</h1>
 
       </div>
 

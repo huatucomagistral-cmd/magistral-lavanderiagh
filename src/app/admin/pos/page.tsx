@@ -227,8 +227,8 @@ export default function POSPage() {
       {/* Zona de Productos */}
       <div className="flex-1 flex flex-col min-h-[400px] md:min-h-0 bg-transparent">
         <div className="flex items-center justify-between mb-4">
-          <h1 className="text-2xl md:text-3xl font-bold text-foreground flex items-center gap-2">
-            <ShoppingCart className="text-primary" size={32} />
+          <h1 className="text-xl md:text-2xl font-bold text-foreground flex items-center gap-2">
+            <ShoppingCart className="text-primary" size={24} />
             Tienda
           </h1>
 
@@ -240,7 +240,7 @@ export default function POSPage() {
                   <div className={`block w-9 h-5 rounded-full transition-colors ${editMode ? 'bg-[#10b981]' : 'bg-black/20'}`}></div>
                   <div className={`absolute left-0.5 top-0.5 bg-white w-4 h-4 rounded-full transition-transform ${editMode ? 'translate-x-4' : ''}`}></div>
                 </div>
-                <span className="text-sm font-bold text-foreground/80">Modo Edición</span>
+                <span className="text-sm font-bold text-foreground/80"></span>
               </label>
 
               {editMode && (
@@ -310,10 +310,10 @@ export default function POSPage() {
                       {editMode ? (
                         <div className="flex items-center gap-1 bg-white/50 rounded-xl p-1 shadow-sm border border-black/5">
                           <button onClick={() => handleOpenModal(p)} className="flex items-center gap-2 px-3 py-2 text-primary bg-primary/10 hover:bg-primary hover:text-white font-bold text-xs rounded-lg transition-colors" title="Editar Producto">
-                            <Pencil size={14} /> Editar
+                            <Pencil size={14} />
                           </button>
                           <div className="w-px h-6 bg-black/5 mx-1"></div>
-                          <button onClick={() => handleDelete(p.id, p.name)} className="p-2 text-foreground/30 hover:bg-error/10 hover:text-error rounded-lg transition-colors" title="Eliminar definitivamente">
+                          <button onClick={() => handleDelete(p.id, p.name)} className="p-2 text-error hover:bg-error/10 hover:text-error rounded-lg transition-colors" title="Eliminar definitivamente">
                             <Trash2 size={16} />
                           </button>
                         </div>

@@ -184,10 +184,10 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-w-0 relative h-full">
-        <header className={`glass-header h-16 flex items-center justify-between px-4 sm:px-6 shrink-0 z-30 relative md:hidden border-b border-black/5 transition-all duration-300 ease-in-out ${isHeaderVisible ? "mt-0" : "-mt-16"}`}>
+        <header className={`bg-primary h-12 flex items-center justify-between px-3 sm:px-4 shrink-0 z-30 relative md:hidden transition-all duration-300 ease-in-out ${isHeaderVisible ? "mt-0" : "-mt-12"}`}>
 
           {/* Left side: Logo + Store Name (mobile) */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-1 min-w-0">
             {currentStore?.logoUrl ? (
               <img
                 src={currentStore.logoUrl}
@@ -195,27 +195,25 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                 className="w-7 h-7 rounded object-contain bg-white shrink-0"
               />
             ) : (
-              <div className="w-7 h-7 rounded bg-gradient-to-tr from-primary to-accent flex items-center justify-center shadow-sm shrink-0">
+              <div className="w-7 h-7 rounded bg-white/20 flex items-center justify-center shadow-sm shrink-0">
                 <span className="font-bold text-white text-sm">
                   {currentStore?.name ? currentStore.name.charAt(0).toUpperCase() : "M"}
                 </span>
               </div>
             )}
-            <span className="font-bold text-primary text-sm line-clamp-2 max-w-[160px] leading-tight">
+            <span className="font-bold text-white text-base truncate leading-tight">
               {currentStore?.name || "Magistral"}
             </span>
           </div>
 
           {/* Right side: Hamburger (mobile) */}
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setIsMobileMenuOpen(true)}
-              className="p-2 text-primary hover:text-primary-hover hover:bg-black/5 rounded-lg transition-colors"
-              aria-label="Abrir menú"
-            >
-              <List size={24} weight="bold" />
-            </button>
-          </div>
+          <button
+            onClick={() => setIsMobileMenuOpen(true)}
+            className="p-1.5 text-white hover:bg-white/10 rounded-lg transition-colors shrink-0"
+            aria-label="Abrir menú"
+          >
+            <List size={22} weight="bold" />
+          </button>
         </header>
 
 

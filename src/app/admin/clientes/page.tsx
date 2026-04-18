@@ -71,7 +71,7 @@ export default function ClientesPage() {
     <div className="space-y-8 animate-in fade-in duration-500">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">Clientes</h1>
+          <h1 className="text-2xl font-bold text-foreground">Clientes</h1>
 
         </div>
 

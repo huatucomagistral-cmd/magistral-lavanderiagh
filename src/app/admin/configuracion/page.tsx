@@ -100,9 +100,9 @@ export default function ConfigPage() {
   }
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
+    <div className="space-y-3 animate-in fade-in duration-500">
       <div>
-        <h1 className="text-3xl font-bold text-foreground mb-2">Configuración</h1>
+        <h1 className="text-2xl font-bold text-foreground">Configuración</h1>
       </div>
 
       <div className="max-w-3xl">
@@ -126,18 +126,17 @@ export default function ConfigPage() {
               </label>
 
               <div className="flex-1 space-y-4">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between bg-black/5 p-4 rounded-xl border border-black/10">
-                  <div>
-                    <p className="text-sm font-bold text-foreground">Mostrar logo en el Ticket</p>
-                  </div>
+                <div className="flex flex-row items-center justify-between bg-black/5 px-3 py-2 rounded-xl border border-black/10">
+                  <p className="text-sm font-bold text-foreground">Mostrar en ticket</p>
                   <button
                     type="button"
                     onClick={() => setShowLogoOnTicket(!showLogoOnTicket)}
-                    className={`w-12 h-6 rounded-full transition-colors relative outline-none mt-2 sm:mt-0 flex items-center ${showLogoOnTicket ? 'bg-primary' : 'bg-black/20'}`}
+                    className={`w-10 h-5 rounded-full transition-colors relative outline-none flex items-center shrink-0 ${showLogoOnTicket ? 'bg-primary' : 'bg-black/20'}`}
                   >
-                    <span className={`block w-4 h-4 rounded-full bg-white absolute transition-all ${showLogoOnTicket ? 'left-7' : 'left-1'}`} />
+                    <span className={`block w-3.5 h-3.5 rounded-full bg-white absolute transition-all ${showLogoOnTicket ? 'left-6' : 'left-0.5'}`} />
                   </button>
                 </div>
+
 
                 <div>
                   <label className="block text-sm font-medium text-foreground/70 mb-1">Nombre Comercial</label>

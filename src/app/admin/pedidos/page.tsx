@@ -193,7 +193,7 @@ export default function OrdenesPage() {
 
     return (
       <div key={order.id} className="relative hover:bg-white text-foreground p-3 sm:px-5 sm:py-3 transition-colors group w-full border-b border-black/5 last:border-0">
-        
+
         {/* === SOLUCIÓN MÓVIL (COMPACTA) === */}
         <div className="flex flex-col sm:hidden gap-1.5">
           {/* Fila 1: Ticket + Fecha -> Precio */}
@@ -206,7 +206,7 @@ export default function OrdenesPage() {
             </div>
             <span className="font-black text-primary text-sm shrink-0 mt-0.5">S/ {Number(order.total).toFixed(2)}</span>
           </div>
-          
+
           {/* Fila 2: Nombre <- -> Estado Financiero */}
           <div className="flex items-center justify-between gap-2">
             <h4 className="font-bold text-sm line-clamp-1 leading-tight text-foreground/90 capitalize w-full min-w-0" style={{ textTransform: 'capitalize' }}>
@@ -216,7 +216,7 @@ export default function OrdenesPage() {
               {renderPaymentStatus(true)}
             </div>
           </div>
-          
+
           {/* Fila 3: Acciones Operativas */}
           <div className="flex items-center justify-end gap-2 shrink-0 border-t border-black/5 pt-2 mt-1">
             {renderActions(true)}
@@ -247,7 +247,7 @@ export default function OrdenesPage() {
           <div className="flex flex-col justify-center gap-2 shrink-0">
             {renderPaymentStatus(false)}
           </div>
-           
+
           <div className="flex items-center justify-end gap-2 shrink-0">
             {renderActions(false)}
           </div>
@@ -262,7 +262,7 @@ export default function OrdenesPage() {
       {/* Cabecera */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 shrink-0">
         <div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">Órdenes en Curso</h1>
+          <h1 className="text-2xl font-bold text-foreground">Órdenes en Curso</h1>
 
         </div>
 

@@ -461,7 +461,7 @@ export default function NuevaOrdenPage() {
 
         {/* Columna Izquierda: Cliente & Catálogo */}
         <div className="space-y-6">
-          
+
           {/* Header y Controles */}
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-4">
@@ -716,8 +716,8 @@ export default function NuevaOrdenPage() {
                   <button
                     onClick={() => setShowEvidences(true)}
                     className={`relative p-2 rounded-lg transition-colors border ${(photoFiles.length > 0 || audioBlob)
-                        ? "bg-primary/10 text-primary border-primary/20"
-                        : "bg-white border-black/10 text-foreground/50 hover:text-primary hover:bg-primary/5"
+                      ? "bg-primary/10 text-primary border-primary/20"
+                      : "bg-white border-black/10 text-foreground/50 hover:text-primary hover:bg-primary/5"
                       }`}
                     title="Añadir Evidencia (Fotos / Audio)"
                   >
@@ -886,7 +886,7 @@ export default function NuevaOrdenPage() {
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="p-4 border-b border-black/5 flex justify-between items-center bg-black/2">
               <h2 className="font-bold flex items-center gap-2 text-foreground">
-                <Edit2 size={18} className="text-primary" /> 
+                <Edit2 size={18} className="text-primary" />
                 {editingServiceId ? "Editar Servicio" : "Nuevo Servicio"}
               </h2>
               <button
@@ -896,7 +896,7 @@ export default function NuevaOrdenPage() {
                 <X size={18} className="text-foreground/50" />
               </button>
             </div>
-            
+
             <form onSubmit={handleSubmitService} className="p-6 space-y-4">
               <div>
                 <label className="block text-xs font-bold text-foreground/70 mb-1 uppercase tracking-wider">Nombre del Servicio</label>
