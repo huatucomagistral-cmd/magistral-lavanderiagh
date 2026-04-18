@@ -1,4 +1,4 @@
-import { Calendar, X } from "lucide-react";
+import { X } from "lucide-react";
 
 interface DateRangePickerProps {
   startDate: string;
@@ -18,17 +18,13 @@ export function DateRangePicker({
   const hasDates = startDate || endDate;
 
   return (
-    <div className="flex flex-col sm:flex-row gap-3">
-      {/* Desde */}
+    <div className="flex flex-row gap-2 items-center">
       <div className="relative">
-        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-          <Calendar className="h-4 w-4 text-foreground/40" />
-        </div>
         <input
           type="date"
           value={startDate}
           onChange={(e) => onStartDateChange(e.target.value)}
-          className="block w-full sm:w-auto pl-9 pr-3 py-3 border border-black/10 rounded-xl leading-5 bg-white/50 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all shadow-sm"
+          className="block w-full sm:w-auto px-3 py-2.5 border border-black/10 rounded-xl leading-5 bg-white/50 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all shadow-sm"
           title="Fecha de inicio"
         />
         <label className="absolute -top-2 left-2 bg-white/80 px-1 text-[10px] font-bold text-foreground/50 uppercase tracking-wider backdrop-blur-sm">
@@ -36,17 +32,13 @@ export function DateRangePicker({
         </label>
       </div>
 
-      {/* Hasta */}
       <div className="relative">
-        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-          <Calendar className="h-4 w-4 text-foreground/40" />
-        </div>
         <input
           type="date"
           value={endDate}
           onChange={(e) => onEndDateChange(e.target.value)}
-          min={startDate} // No se puede seleccionar una fecha final menor a la inicial
-          className="block w-full sm:w-auto pl-9 pr-3 py-3 border border-black/10 rounded-xl leading-5 bg-white/50 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all shadow-sm"
+          min={startDate}
+          className="block w-full sm:w-auto px-3 py-2.5 border border-black/10 rounded-xl leading-5 bg-white/50 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all shadow-sm"
           title="Fecha de fin"
         />
         <label className="absolute -top-2 left-2 bg-white/80 px-1 text-[10px] font-bold text-foreground/50 uppercase tracking-wider backdrop-blur-sm">

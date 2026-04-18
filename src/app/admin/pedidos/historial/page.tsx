@@ -166,7 +166,7 @@ export default function HistorialPage() {
               type="text"
               value={searchString}
               onChange={(e) => setSearchString(e.target.value)}
-              placeholder="Ej: 260407-001 o Juana..."
+              placeholder="Ej: 260407-001"
               className="block w-full pl-10 pr-3 py-3 border border-black/10 rounded-xl leading-5 bg-white/50 text-foreground placeholder-foreground/30 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all shadow-sm"
             />
             <button
@@ -203,14 +203,14 @@ export default function HistorialPage() {
                   {/* Left Side: Ticket, Customer, Date */}
                   <div className="flex flex-col gap-1.5 flex-1 min-w-0 pr-10 md:pr-0">
                     <div className="flex items-center gap-2">
-                      <Link 
+                      <Link
                         href={`/admin/pedidos/ticket/${order.id}`}
                         className="font-mono text-xs font-bold bg-primary/10 hover:bg-primary active:scale-95 text-primary hover:text-white transition-all px-2 py-0.5 rounded border border-primary/20 hover:border-primary shrink-0"
                       >
                         #{order.ticketNumber || order.id.slice(0, 6)}
                       </Link>
-                      <span className="text-foreground font-black text-sm sm:text-base truncate group-hover:text-primary transition-colors">
-                        {order.customerName}
+                      <span className="text-foreground font-medium text-sm sm:text-base truncate group-hover:text-primary transition-colors">
+                        {order.customerName.toLowerCase().replace(/\b\w/g, c => c.toUpperCase())}
                       </span>
                     </div>
 
@@ -229,77 +229,55 @@ export default function HistorialPage() {
                     </div>
                   </div>
 
-                  {/* Middle / Info Badges */}
-                  <div className="flex flex-wrap items-center gap-2 sm:gap-4 flex-none md:justify-end mt-1 md:mt-0 w-full md:w-auto pl-[56px] sm:pl-[64px] md:pl-0">
-                    <div className="flex flex-col flex-1 sm:flex-none">
-                      <span className={`px-2 py-1.5 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-widest text-center ${getStatusColor(order.status)}`}>
-                        {OrderStatus[order.status as keyof typeof OrderStatus] || order.status}
+                  {/* Fila inferior: Estado + Pago + Precio en una sola línea */}
+                  <div className="flex items-center gap-2 mt-1 md:mt-0 w-full md:w-auto md:justify-end flex-wrap">
+                    {/* Status badge */}
+                    <span className={`px-2 py-1 rounded-full text-[10px] font-black uppercase tracking-widest whitespace-nowrap ${getStatusColor(order.status)}`}>
+                      {OrderStatus[order.status as keyof typeof OrderStatus] || order.status}
+                    </span>
+
+                    {/* Motivo de cancelación inline */}
+                    {order.status === 'CANCELADO' && order.cancelReason && (
+                      <span className="text-[10px] text-error font-medium italic truncate max-w-[120px]">
+                        {order.cancelReason}
                       </span>
-                      {order.status === 'CANCELADO' && order.cancelReason && (
-                        <div className="mt-1 flex flex-col text-center">
-                          <span className="text-[10px] text-error font-medium italic break-words max-w-[200px]">
-                            Motivo: {order.cancelReason}
-                          </span>
-                          {order.cancelledAt && (
-                            <span className="text-[9px] text-foreground/30 uppercase mt-0.5">
-                              {new Date(order.cancelledAt).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
-                            </span>
-                          )}
-                        </div>
-                      )}
-                    </div>
+                    )}
 
-                    <div className="flex flex-col items-center justify-center min-w-[85px] shrink-0">
-                      {(() => {
-                        if (order.paymentStatus === 'PAID') {
-                          const method = (order.payMethod || order.paymentMethod || 'EFECTIVO').toUpperCase();
-                          const isYape = method === 'YAPE';
-                          const colorClass = isYape ? 'border-[#742284]/20 bg-[#742284]/5 text-[#742284]' : 'border-success/20 bg-success/5 text-success';
-                          const dotColor = isYape ? 'bg-[#742284] shadow-[0_0_4px_rgba(116,34,132,0.5)]' : 'bg-success shadow-[0_0_4px_rgba(16,185,129,0.5)]';
-                          const label = isYape ? 'PAGADO YAPE' : 'PAGADO EFEC.';
-                          return (
-                            <div className={`flex items-center gap-1.5 border rounded px-2 py-1 w-full justify-center ${colorClass}`}>
-                              <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${dotColor}`}></div>
-                              <span className="text-[9px] font-black uppercase tracking-wider whitespace-nowrap">
-                                {label}
-                              </span>
-                            </div>
-                          );
-                        } else if (order.paymentStatus === 'PENDING_VERIFICATION') {
-                          return (
-                            <div className="flex items-center gap-1.5 border rounded px-2 py-1 w-full justify-center bg-warning/10 text-warning border-warning/20 hover:bg-warning/20 transition-colors">
-                              <div className="w-1.5 h-1.5 rounded-full shrink-0 bg-warning animate-pulse"></div>
-                              <span className="text-[9px] font-black uppercase tracking-wider whitespace-nowrap">
-                                VERIFICAR
-                              </span>
-                            </div>
-                          );
-                        } else {
-                          return (
-                            <div className="flex items-center gap-1.5 border rounded px-2 py-1 w-full justify-center bg-error/10 text-error border-error/20">
-                              <div className="w-1.5 h-1.5 rounded-full shrink-0 bg-error"></div>
-                              <span className="text-[9px] font-black uppercase tracking-wider whitespace-nowrap">
-                                DEBE
-                              </span>
-                            </div>
-                          );
-                        }
-                      })()}
-                    </div>
+                    {/* Payment badge */}
+                    {(() => {
+                      if (order.paymentStatus === 'PAID') {
+                        const method = (order.payMethod || order.paymentMethod || 'EFECTIVO').toUpperCase();
+                        const isYape = method === 'YAPE';
+                        const colorClass = isYape ? 'border-[#742284]/20 bg-[#742284]/5 text-[#742284]' : 'border-success/20 bg-success/5 text-success';
+                        const dotColor = isYape ? 'bg-[#742284]' : 'bg-success';
+                        const label = isYape ? 'PAGADO YAPE' : 'PAGADO EFEC.';
+                        return (
+                          <div className={`flex items-center gap-1.5 border rounded px-2 py-1 ${colorClass}`}>
+                            <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${dotColor}`} />
+                            <span className="text-[9px] font-black uppercase tracking-wider whitespace-nowrap">{label}</span>
+                          </div>
+                        );
+                      } else if (order.paymentStatus === 'PENDING_VERIFICATION') {
+                        return (
+                          <div className="flex items-center gap-1.5 border rounded px-2 py-1 bg-warning/10 text-warning border-warning/20">
+                            <div className="w-1.5 h-1.5 rounded-full shrink-0 bg-warning animate-pulse" />
+                            <span className="text-[9px] font-black uppercase tracking-wider whitespace-nowrap">VERIFICAR</span>
+                          </div>
+                        );
+                      } else {
+                        return (
+                          <div className="flex items-center gap-1.5 border rounded px-2 py-1 bg-error/10 text-error border-error/20">
+                            <div className="w-1.5 h-1.5 rounded-full shrink-0 bg-error" />
+                            <span className="text-[9px] font-black uppercase tracking-wider whitespace-nowrap">DEBE</span>
+                          </div>
+                        );
+                      }
+                    })()}
 
-                    {/* Total and Date */}
-                    <div className="flex flex-col items-end min-w-[80px] shrink-0">
-                      <p className="text-sm sm:text-lg text-foreground font-mono font-black">S/ {Number(order.total).toFixed(2)}</p>
-                      {order.status === 'ENTREGADO' && order.deliveredAt ? (
-                        <div className="flex items-center gap-1 text-[9px] text-foreground/40 mt-0.5 font-medium uppercase tracking-wider bg-black/5 px-2 py-0.5 rounded-lg">
-                          <Clock size={10} /> {new Date(order.deliveredAt).toLocaleDateString()}
-                        </div>
-                      ) : order.status === 'ENTREGADO' ? (
-                        <span className="text-[9px] text-foreground/30 italic mt-0.5 uppercase tracking-wider">Sin fecha</span>
-                      ) : null}
-                    </div>
-
+                    {/* Precio alineado a la derecha */}
+                    <p className="ml-auto text-sm sm:text-base text-foreground font-mono font-black">S/ {Number(order.total).toFixed(2)}</p>
                   </div>
+
 
                 </div>
               )

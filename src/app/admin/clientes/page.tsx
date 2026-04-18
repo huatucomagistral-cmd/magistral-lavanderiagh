@@ -110,16 +110,19 @@ export default function ClientesPage() {
                   </div>
 
                   <div className="flex flex-col flex-1 min-w-0">
-                    <p className="text-foreground font-black text-sm sm:text-base group-hover:text-primary transition-colors truncate">
-                      {client.name || "Sin nombre"}
+                    <p className="text-foreground font-medium text-sm sm:text-base group-hover:text-primary transition-colors truncate">
+                      {(client.name || "Sin nombre").toLowerCase().replace(/\b\w/g, c => c.toUpperCase())}
                     </p>
                     <div className="flex flex-wrap items-center gap-2 mt-0.5">
                       <p className="text-foreground/60 text-[11px] font-bold tracking-wide flex items-center gap-1">
                         <Phone size={10} /> {client.phone || "---"}
                       </p>
                       <span className="text-foreground/30 text-[10px] hidden sm:inline">•</span>
-                      <span className="text-foreground/70 text-[10px] font-mono font-bold tracking-widest flex items-center gap-1 px-1.5 py-0.5 rounded bg-black/5 border border-black/5">
-                        <CreditCard size={10} className="text-foreground/40" /> {client.dni || "Sin ID"}
+                      <span className="text-foreground/70 text-[10px] font-mono font-bold tracking-widest px-1.5 py-0.5 rounded bg-black/5 border border-black/5">
+                        {client.dni || "Sin ID"}
+                      </span>
+                      <span className={`px-1.5 py-0.5 rounded-full flex items-center gap-1 text-[10px] font-black uppercase tracking-widest ${client.totalKgAccumulated >= 10 ? 'bg-success/10 text-success border border-success/20' : 'bg-black/5 text-foreground/50 border border-black/5'}`}>
+                        <Award size={10} /> {client.totalKgAccumulated || 0} KG
                       </span>
                     </div>
                   </div>
@@ -128,9 +131,7 @@ export default function ClientesPage() {
                 {/* Fidelidad & Actions (Desktop on right, Mobile on bottom) */}
                 <div className="flex items-center justify-between md:justify-end gap-4 w-full md:w-auto mt-1 md:mt-0 pl-[56px] sm:pl-[64px] md:pl-0">
                   
-                  <div className={`px-2.5 py-1 rounded-full flex items-center gap-1.5 text-[10px] sm:text-xs font-black uppercase tracking-widest ${client.totalKgAccumulated >= 10 ? 'bg-success/10 text-success border border-success/20 shadow-sm' : 'bg-black/5 text-foreground/50 border border-black/5'}`}>
-                    <Award size={12} /> {client.totalKgAccumulated || 0} KG
-                  </div>
+
 
                   {/* Desktop Button */}
                   <div className="hidden md:block">

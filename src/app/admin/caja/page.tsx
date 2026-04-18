@@ -268,32 +268,32 @@ export default function CajaPage() {
           {/* Metrics Ribbon */}
           <div className="bg-white/60 rounded-2xl border border-black/5 shadow-sm grid grid-cols-2 lg:grid-cols-5 divide-x divide-y lg:divide-y-0 divide-black/5 overflow-hidden">
             <div className="p-3 sm:p-4 flex flex-col justify-center items-center text-center">
-              <span className="text-[9px] sm:text-[10px] text-foreground/50 font-black uppercase tracking-widest flex items-center gap-1 mb-1">
-                <Wallet size={12} /> Base Inicial
+              <span className="text-[12px] sm:text-[12px] text-foreground/50 font-black uppercase tracking-widest flex items-center gap-1 mb-1">
+                <Wallet size={13} /> Base Inicial
               </span>
               <span className="text-base sm:text-lg font-bold text-foreground font-mono">S/ {currentInitial.toFixed(2)}</span>
             </div>
             <div className="p-3 sm:p-4 flex flex-col justify-center items-center text-center">
-              <span className="text-[9px] sm:text-[10px] text-success/70 font-black uppercase tracking-widest flex items-center gap-1 mb-1">
-                <DollarSign size={12} /> Ingresos
+              <span className="text-[12px] sm:text-[12px] text-success/70 font-black uppercase tracking-widest flex items-center gap-1 mb-1">
+                <DollarSign size={13} /> Efectivo
               </span>
               <span className="text-base sm:text-lg font-bold text-success font-mono">+ S/ {stats.efectivo.toFixed(2)}</span>
             </div>
             <div className="p-3 sm:p-4 flex flex-col justify-center items-center text-center">
-              <span className="text-[9px] sm:text-[10px] text-error/70 font-black uppercase tracking-widest flex items-center gap-1 mb-1">
-                <ArrowRightLeft size={12} /> Egresos
+              <span className="text-[12px] sm:text-[12px] text-error/70 font-black uppercase tracking-widest flex items-center gap-1 mb-1">
+                <ArrowRightLeft size={13} /> Egresos
               </span>
               <span className="text-base sm:text-lg font-bold text-error font-mono">- S/ {totalGastosCaja.toFixed(2)}</span>
             </div>
             <div className="p-3 sm:p-4 flex flex-col justify-center items-center text-center">
-              <span className="text-[9px] sm:text-[10px] text-[#742284]/70 font-black uppercase tracking-widest flex items-center gap-1 mb-1">
-                <DollarSign size={12} /> Yape/Plin
+              <span className="text-[12px] sm:text-[12px] text-[#742284]/70 font-black uppercase tracking-widest flex items-center gap-1 mb-1">
+                <DollarSign size={13} /> Yape/Plin
               </span>
               <span className="text-base sm:text-lg font-bold text-[#742284] font-mono">+ S/ {stats.yape.toFixed(2)}</span>
             </div>
             <div className="p-3 sm:p-4 flex flex-col justify-center items-center text-center bg-primary/5 lg:col-span-1 col-span-2">
-              <span className="text-[9px] sm:text-[10px] text-primary/70 font-black uppercase tracking-widest flex items-center gap-1 mb-1 text-center justify-center">
-                <Activity size={12} /> Ingresos Totales
+              <span className="text-[12px] sm:text-[12px] text-primary/70 font-black uppercase tracking-widest flex items-center gap-1 mb-1 text-center justify-center">
+                <Activity size={13} /> Ingresos Totales
               </span>
               <span className="text-base sm:text-lg font-bold text-primary font-mono">+ S/ {totalIngresos.toFixed(2)}</span>
             </div>
@@ -328,7 +328,7 @@ export default function CajaPage() {
                       </div>
                       {/* Fila 2: nombre cliente cortado sin puntos suspensivos */}
                       <span className="text-xs text-foreground/60 font-medium overflow-hidden whitespace-nowrap mt-0.5">
-                        {o.customerName}
+                        {o.customerName.toLowerCase().replace(/\b\w/g, c => c.toUpperCase())}
                       </span>
                     </div>
                   ))}

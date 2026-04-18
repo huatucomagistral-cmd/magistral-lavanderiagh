@@ -169,7 +169,7 @@ export default function OrdenesPage() {
       return (
         <>
           {(order.status === 'RECIBIDO' || order.status === 'EN_PROCESO') && (
-            <button onClick={() => updateStatus(order.id, 'LISTO')} className={`${btnClass} bg-info/10 text-info hover:bg-info hover:text-white border border-info/20`}>
+            <button onClick={() => updateStatus(order.id, 'LISTO')} className={`${btnClass} bg-info/10 text-info hover:bg-primary hover:text-white border border-info/20`}>
               Listo <CheckCircle2 size={14} />
             </button>
           )}
@@ -209,8 +209,8 @@ export default function OrdenesPage() {
 
           {/* Fila 2: Nombre <- -> Estado Financiero */}
           <div className="flex items-center justify-between gap-2">
-            <h4 className="font-bold text-sm line-clamp-1 leading-tight text-foreground/90 capitalize w-full min-w-0" style={{ textTransform: 'capitalize' }}>
-              {order.customerName.toLowerCase()}
+            <h4 className="font-medium text-sm line-clamp-1 leading-tight text-foreground/90 capitalize w-full min-w-0" style={{ textTransform: 'capitalize' }}>
+              {order.customerName.toLowerCase().replace(/\b\w/g, c => c.toUpperCase())}
             </h4>
             <div className="flex items-center justify-end gap-1.5 shrink-0">
               {renderPaymentStatus(true)}
@@ -232,8 +232,8 @@ export default function OrdenesPage() {
               </Link>
               <span className="text-foreground/40 text-[10px] font-bold">{order.date}</span>
             </div>
-            <h4 className="font-bold text-base line-clamp-1 leading-tight text-foreground/90 capitalize" style={{ textTransform: 'capitalize' }}>
-              {order.customerName.toLowerCase()}
+            <h4 className="font-medium text-base line-clamp-1 leading-tight text-foreground/90 capitalize" style={{ textTransform: 'capitalize' }}>
+              {order.customerName.toLowerCase().replace(/\b\w/g, c => c.toUpperCase())}
             </h4>
           </div>
 
@@ -260,7 +260,7 @@ export default function OrdenesPage() {
   return (
     <div className="flex flex-col animate-in fade-in duration-500 md:h-[calc(100vh-8rem)]">
       {/* Cabecera */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 shrink-0">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-3 shrink-0">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Órdenes en Curso</h1>
 
@@ -270,11 +270,11 @@ export default function OrdenesPage() {
           <div className="relative flex-1 sm:w-64">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-foreground/70" size={18} />
             <input type="text" placeholder="Buscar ticket o cliente..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
-              className="w-full bg-white/50 border border-black/10 rounded-xl pl-10 pr-4 py-3 text-foreground text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary shadow-sm placeholder:text-foreground/40"
+              className="w-full bg-white/50 border border-black/10 rounded-xl pl-10 pr-4 py-2 text-foreground text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary shadow-sm placeholder:text-foreground/40"
             />
           </div>
 
-          <Link href="/admin/pedidos/nuevo" className="bg-primary hover:bg-primary-hover active:scale-95 transition-all text-white font-black rounded-xl px-4 py-3 flex items-center justify-center gap-2 shadow-lg shadow-primary/20 shrink-0">
+          <Link href="/admin/pedidos/nuevo" className="bg-primary hover:bg-primary-hover active:scale-95 transition-all text-white font-black rounded-xl px-4 py-2 flex items-center justify-center gap-2 shadow-lg shadow-primary/20 shrink-0">
             <Plus size={20} />
             <span className="hidden sm:inline">Nueva Orden</span>
           </Link>
