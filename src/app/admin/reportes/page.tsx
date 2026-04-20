@@ -5,7 +5,6 @@ import { useStore } from "@/store/useStore";
 import { collection, query, where, getDocs, orderBy } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { TrendingUp, Download, DollarSign, Loader2, BarChart2, AlertCircle, ShoppingBag } from "lucide-react";
-import { toast } from "react-hot-toast";
 import * as XLSX from "xlsx";
 import { DateRangePicker } from "@/components/ui/DateRangePicker";
 
@@ -52,7 +51,6 @@ export default function ReportesPage() {
       let start, end;
       if (filterType === "CUSTOM") {
         if (!startDate || !endDate) {
-          toast.error("Selecciona fecha de inicio y fin para el filtro personalizado.");
           setLoading(false);
           return;
         }
@@ -82,20 +80,37 @@ export default function ReportesPage() {
         where("paymentDate", "<=", endISO)
       );
 
-      const [snapByDate, snapByPayment] = await Promise.all([
+      // Consulta 3: Ventas POS (directSales) en el período
+      const qDirectSales = query(
+        collection(db, `stores/${user.storeId}/directSales`),
+        where("date", ">=", startISO),
+        where("date", "<=", endISO),
+        orderBy("date", "desc")
+      );
+
+      const [snapByDate, snapByPayment, snapDirectSales] = await Promise.all([
         getDocs(qByDate),
-        getDocs(qByPayment)
+        getDocs(qByPayment),
+        getDocs(qDirectSales)
       ]);
 
-      const ordersByDate = snapByDate.docs.map(d => ({ id: d.id, ...d.data() })) as any[];
-      const paidInPeriod = snapByPayment.docs.map(d => ({ id: d.id, ...d.data() })).filter((o: any) => o.paymentStatus === 'PAID') as any[];
+      // Formatear ventas POS para que sean compatibles con el array de órdenes
+      const directSalesData = snapDirectSales.docs.map(d => ({
+        id: d.id,
+        ...d.data(),
+        paymentStatus: 'PAID', // Las ventas POS siempre están pagadas
+        paymentDate: d.data().date, // Fecha de pago = fecha de creación
+        isDirectSale: true
+      })) as any[];
+
+      const ordersByDate = [...snapByDate.docs.map(d => ({ id: d.id, ...d.data() })), ...directSalesData] as any[];
+      const paidInPeriod = [...snapByPayment.docs.map(d => ({ id: d.id, ...d.data() })).filter((o: any) => o.paymentStatus === 'PAID'), ...directSalesData] as any[];
 
       // Combinar: los displays de volumen/cuentas usan ordersByDate
       // Los ingresos reales usan paidInPeriod
       setOrders({ byDate: ordersByDate, paidInPeriod } as any);
     } catch (e) {
       console.error("Error fetching report data", e);
-      toast.error("Error al cargar reportes.");
     } finally {
       setLoading(false);
     }
@@ -129,10 +144,14 @@ export default function ReportesPage() {
     allOrdersForServices.forEach((o: any) => {
       if (o.items && Array.isArray(o.items)) {
         o.items.forEach((c: any) => {
-          const name = c.item.name;
-          const current = services.get(name) || { qty: 0, revenue: 0, type: c.item.type };
-          current.qty += Number(c.qty) || 0;
-          current.revenue += (Number(c.qty) || 0) * (Number(c.item.price) || 0);
+          const name = o.isDirectSale ? c.name : c.item.name;
+          const price = o.isDirectSale ? c.price : c.item.price;
+          const qty = o.isDirectSale ? c.quantity : c.qty;
+          const type = o.isDirectSale ? 'Tienda' : c.item.type;
+
+          const current = services.get(name) || { qty: 0, revenue: 0, type };
+          current.qty += Number(qty) || 0;
+          current.revenue += (Number(qty) || 0) * (Number(price) || 0);
           services.set(name, current);
         });
       }
@@ -146,7 +165,7 @@ export default function ReportesPage() {
 
   // Exportar a Excel usando XLSX
   const handleExportExcel = () => {
-    if (allOrdersForServices.length === 0) return toast.error("No hay datos para exportar en este rango.");
+    if (allOrdersForServices.length === 0) return;
 
     const excelData = allOrdersForServices.map((o: any) => {
       const dateObj = new Date(o.date);
@@ -155,12 +174,13 @@ export default function ReportesPage() {
         "Fecha Recepción": dateObj.toLocaleDateString(),
         "Hora": dateObj.toLocaleTimeString(),
         "Fecha Pago": o.paymentDate ? new Date(o.paymentDate).toLocaleDateString() : "-",
-        "Cliente": o.customerName || "Sin Nombre",
-        "DNI": o.customerDni !== "0" ? o.customerDni : "-",
+        "Cliente": o.isDirectSale ? "Cliente Tienda" : (o.customerName || "Sin Nombre"),
+        "DNI": o.customerDni && o.customerDni !== "0" ? o.customerDni : "-",
         "Total (S/)": Number(o.total).toFixed(2),
-        "Servicios Llevados": o.items?.map((i: any) => `${i.qty}x ${i.item.name}`).join(", ") || "",
-        "Estado Entrega": OrderStatusObj[o.status as keyof typeof OrderStatusObj] || o.status,
+        "Servicios/Productos Llevados": o.items?.map((i: any) => o.isDirectSale ? `${i.quantity}x ${i.name}` : `${i.qty}x ${i.item.name}`).join(", ") || "",
+        "Estado Entrega": o.isDirectSale ? "ENTREGADO" : (OrderStatusObj[o.status as keyof typeof OrderStatusObj] || o.status),
         "Estado Pago": o.paymentStatus === "PAID" ? "PAGADO" : "DEBE",
+        "Tipo": o.isDirectSale ? "Venta Directa" : "Lavandería",
         "Método Pago": o.payMethod || "-"
       };
     });
@@ -189,7 +209,7 @@ export default function ReportesPage() {
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-foreground flex items-center gap-2">
             <TrendingUp className="text-primary w-6 h-6 sm:w-8 sm:h-8" />
-            Ganancias
+            Reporte de Ganancias
           </h1>
         </div>
 

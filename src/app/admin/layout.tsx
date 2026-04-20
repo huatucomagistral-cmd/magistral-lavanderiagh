@@ -23,7 +23,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const currentScrollY = e.currentTarget.scrollTop;
-    
+
     // Ignorar si estamos en menú móvil para no crear glitches
     if (isMobileMenuOpen) return;
 

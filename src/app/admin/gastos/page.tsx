@@ -313,7 +313,7 @@ export default function GastosPage() {
                       </div>
 
                       <div className="flex flex-col flex-1 min-w-0">
-                        <span className="text-sm sm:text-base font-black text-foreground truncate group-hover:text-primary transition-colors">{exp.description}</span>
+                        <span className="text-sm sm:text-base font-medium text-foreground truncate group-hover:text-primary transition-colors">{exp.description}</span>
                         <div className="flex items-center gap-2 mt-0.5 whitespace-nowrap overflow-x-auto scrollbar-hide py-0.5">
                           <span className="px-1.5 py-0.5 rounded text-[9px] font-black tracking-widest uppercase bg-black/5 text-foreground/70 shrink-0">
                             {CATEGORIES.find(c => c.id === exp.category)?.icon} {exp.category}

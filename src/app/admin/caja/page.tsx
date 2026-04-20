@@ -18,6 +18,7 @@ export default function CajaPage() {
   const [loadingOrders, setLoadingOrders] = useState(true);
 
   const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [showCloseCajaModal, setShowCloseCajaModal] = useState(false);
   const [cajaHistoryList, setCajaHistoryList] = useState<any[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
 
@@ -160,11 +161,10 @@ export default function CajaPage() {
     }
   };
 
-  const handleCloseCaja = async () => {
-    if (confirm("Al cerrar caja se generará el reporte del día y no podrás cobrar más órdenes en esta sesión. ¿Continuar?")) {
-      setIsProcessing(true);
-      try {
-        if (!user?.storeId) throw new Error("Store ID missing");
+  const executeCloseCaja = async () => {
+    setIsProcessing(true);
+    try {
+      if (!user?.storeId) throw new Error("Store ID missing");
 
         await addDoc(collection(db, `stores/${user.storeId}/cajas_historial`), {
           openedAt: cajaOpenedAt,
@@ -184,14 +184,13 @@ export default function CajaPage() {
           closedAt: new Date().toISOString(),
           closedBy: user?.email || "unknown"
         });
-        setInitialCashInput("");
-        toast.success("Caja cerrada exitosamente. Reporte guardado en el historial.");
+        setShowCloseCajaModal(false);
+        // toast removed globally
       } catch (err) {
         console.error("Error cerrando caja", err);
       } finally {
         setIsProcessing(false);
       }
-    }
   };
 
   return (
@@ -256,7 +255,7 @@ export default function CajaPage() {
             </div>
 
             <button
-              onClick={handleCloseCaja}
+              onClick={() => setShowCloseCajaModal(true)}
               disabled={isProcessing}
               className="w-full sm:w-auto bg-error hover:bg-error/90 text-white font-bold py-2 px-6 rounded-xl flex items-center justify-center gap-2 transition-transform active:scale-95 shadow-md shadow-error/20 shrink-0"
             >
@@ -338,7 +337,7 @@ export default function CajaPage() {
                     <div key={s.id} className="px-4 sm:px-5 py-3 flex flex-col group hover:bg-black/[0.02] transition-colors border-b border-black/5 last:border-b-0">
                       <div className="flex items-center justify-between gap-2">
                         <span className="font-bold font-mono text-primary text-sm shrink-0 group-hover:text-primary-hover transition-colors">
-                          POS VENTA
+                          TIENDA
                         </span>
                         <div className="flex items-center gap-2 shrink-0">
                           {s.payMethod === "YAPE" && <span className="px-2 py-0.5 rounded-full bg-[#742284]/10 text-[#742284] text-[9px] sm:text-[10px] font-black uppercase">YAPE/PLIN</span>}
@@ -451,6 +450,37 @@ export default function CajaPage() {
                   ))}
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showCloseCajaModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => !isProcessing && setShowCloseCajaModal(false)} />
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-6 relative z-10 animate-in zoom-in-95 duration-200 text-center">
+            <div className="w-16 h-16 bg-error/10 text-error rounded-full flex items-center justify-center mx-auto mb-4">
+              <LockKeyhole size={32} />
+            </div>
+            <h2 className="text-xl font-bold text-foreground mb-2">¿Cerrar Caja?</h2>
+            <p className="text-foreground/60 text-sm mb-6">
+              Se guardará el reporte y no podrás cobrar más órdenes en esta sesión.
+            </p>
+            <div className="flex gap-3 w-full">
+              <button
+                onClick={() => setShowCloseCajaModal(false)}
+                disabled={isProcessing}
+                className="flex-1 px-4 py-3 rounded-xl font-bold bg-black/5 text-foreground hover:bg-black/10 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={executeCloseCaja}
+                disabled={isProcessing}
+                className="flex-1 px-4 py-3 rounded-xl font-bold bg-error text-white hover:bg-error/90 transition-colors flex items-center justify-center gap-2"
+              >
+                {isProcessing ? <Loader2 size={18} className="animate-spin text-white" /> : "Sí, Cerrar"}
+              </button>
             </div>
           </div>
         </div>

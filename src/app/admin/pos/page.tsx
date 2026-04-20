@@ -26,7 +26,7 @@ export default function POSPage() {
 
   // Cart State (Local to POS)
   const [cart, setCart] = useState<{ product: Product; quantity: number }[]>([]);
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [processingMethod, setProcessingMethod] = useState<"EFECTIVO" | "YAPE" | null>(null);
 
   // Modal State (From Inventario)
   const [showModal, setShowModal] = useState(false);
@@ -103,7 +103,7 @@ export default function POSPage() {
       return;
     }
 
-    setIsProcessing(true);
+    setProcessingMethod(payMethod);
     try {
       // 1. Guardar la venta en directSales
       const salePayload = {
@@ -136,7 +136,7 @@ export default function POSPage() {
       console.error(error);
       toast.error("Error al procesar la venta.");
     } finally {
-      setIsProcessing(false);
+      setProcessingMethod(null);
     }
   };
 
@@ -292,7 +292,7 @@ export default function POSPage() {
                       }}
                     >
                       <div className="flex items-center gap-2">
-                        <span className={`font-bold text-base sm:text-lg leading-tight line-clamp-2 transition-colors ${!editMode && canAddToCart ? 'group-hover:text-primary text-foreground' : 'text-foreground'}`}>
+                        <span className={`font-medium text-base sm:text-lg leading-tight line-clamp-2 transition-colors ${!editMode && canAddToCart ? 'group-hover:text-primary text-foreground' : 'text-foreground'}`}>
                           {p.name}
                         </span>
                         {editMode && p.status === "INACTIVE" && (
@@ -358,7 +358,7 @@ export default function POSPage() {
                     <X size={12} strokeWidth={3} />
                   </button>
                   <div className="flex-1 min-w-0">
-                    <p className="font-bold text-foreground text-sm truncate">{item.product.name}</p>
+                    <p className="font-medium text-foreground text-sm truncate">{item.product.name}</p>
                     <p className="text-primary font-black font-mono text-xs">S/ {item.product.price.toFixed(2)}</p>
                   </div>
                   <div className="flex items-center gap-2 bg-black/5 rounded-lg p-1 shrink-0 h-10">
@@ -389,18 +389,18 @@ export default function POSPage() {
           <div className="grid grid-cols-2 gap-3">
             <button
               onClick={() => handleCheckout("EFECTIVO")}
-              disabled={isProcessing || cart.length === 0 || !isCajaOpen}
+              disabled={processingMethod !== null || cart.length === 0 || !isCajaOpen}
               className="bg-[#10b981] hover:bg-[#059669] disabled:opacity-50 disabled:active:scale-100 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg shadow-[#10b981]/20"
             >
-              {isProcessing ? <Loader2 size={18} className="animate-spin" /> : <Banknote size={18} />}
+              {processingMethod === "EFECTIVO" ? <Loader2 size={18} className="animate-spin" /> : <Banknote size={18} />}
               Efectivo
             </button>
             <button
               onClick={() => handleCheckout("YAPE")}
-              disabled={isProcessing || cart.length === 0 || !isCajaOpen}
+              disabled={processingMethod !== null || cart.length === 0 || !isCajaOpen}
               className="bg-[#742284] hover:bg-[#5a1b66] disabled:opacity-50 disabled:active:scale-100 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg shadow-[#742284]/20"
             >
-              {isProcessing ? <Loader2 size={18} className="animate-spin" /> : <CreditCard size={18} />}
+              {processingMethod === "YAPE" ? <Loader2 size={18} className="animate-spin" /> : <CreditCard size={18} />}
               Yape/Plin
             </button>
           </div>
