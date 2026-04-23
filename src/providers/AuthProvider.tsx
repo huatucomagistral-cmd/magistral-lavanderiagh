@@ -1,12 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { onAuthStateChanged } from "firebase/auth";
+import { onAuthStateChanged, signOut } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
+import { verificarLicencia } from "@/lib/licencias";
 import { useStore } from "@/store/useStore";
 import { Loader2 } from "lucide-react";
 import { useRouter, usePathname } from "next/navigation";
+
+// Correos que siempre tienen acceso de administrador (dueños originales)
+const OWNER_EMAILS = ["chuatucorojas25@gmail.com"];
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const setUser = useStore((state) => state.setUser);
@@ -18,11 +22,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser?.email) {
+        const email = firebaseUser.email.toLowerCase();
         try {
-          // Buscamos al usuario en la BD GLOBAL de usuarios SaaS
-          const userDoc = await getDoc(doc(db, "users", firebaseUser.email.toLowerCase()));
-          
+          // 1. ¿El usuario ya tiene una tienda registrada?
+          const userDoc = await getDoc(doc(db, "users", email));
+
           if (userDoc.exists()) {
+            // Usuario conocido → acceso directo
             const data = userDoc.data();
             setUser({
               uid: firebaseUser.uid,
@@ -31,33 +37,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               storeId: data.storeId || "demo-store",
             });
             setAuthError(null);
+
+          } else if (OWNER_EMAILS.includes(email)) {
+            // Bootstrap: correo del dueño original → crear su tienda
+            await setDoc(doc(db, "users", email), {
+              email,
+              role: "ADMIN",
+              storeId: "demo-store",
+              name: "Administrador Principal",
+              createdAt: new Date().toISOString(),
+            });
+            setUser({
+              uid: firebaseUser.uid,
+              email: firebaseUser.email,
+              role: "ADMIN",
+              storeId: "demo-store",
+            });
+            setAuthError(null);
+
           } else {
-            // MIGRACIÓN/BOOTSTRAP: Si es el correo del dueño original, le damos su tienda histórica
-            const ownerEmails = ["chuatucorojas25@gmail.com"];
-            if (ownerEmails.includes(firebaseUser.email.toLowerCase())) {
-              await setDoc(doc(db, "users", firebaseUser.email.toLowerCase()), {
-                email: firebaseUser.email.toLowerCase(),
-                role: "ADMIN",
-                storeId: "demo-store",
-                name: "Administrador Principal",
-                createdAt: new Date().toISOString()
-              });
-              
-              setUser({
-                uid: firebaseUser.uid,
-                email: firebaseUser.email,
-                role: "ADMIN",
-                storeId: "demo-store",
-              });
-              setAuthError(null);
-            } else {
-              // Si entra y no tiene tienda, lo redirigimos a crear su lavandería (Onboarding SaaS)
-              if (pathname && !pathname.startsWith('/registro')) {
-                console.warn("Usuario sin tienda SaaS:", firebaseUser.email);
-                router.push('/registro');
-              } else {
-                 console.warn("Usuario logueado pero sin roles SaaS");
+            // 2. Usuario nuevo → verificar licencia en magistral-afiliados
+            const tieneAcceso = await verificarLicencia(email);
+
+            if (tieneAcceso) {
+              // ✅ Licencia válida → puede registrar su lavandería
+              if (pathname && !pathname.startsWith("/registro")) {
+                router.push("/registro");
               }
+              // No llamamos setUser aquí; AuthProvider lo hará después del registro
+            } else {
+              // ❌ Sin licencia → cerrar sesión y mostrar error
+              await signOut(auth);
+              setUser(null);
+              setAuthError(
+                "No tienes una licencia activa para este sistema. " +
+                "Adquiere tu acceso en divi.magistral.pe"
+              );
             }
           }
         } catch (error) {
@@ -75,10 +90,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   if (loading) {
     return (
-      <div className="fixed inset-0 min-h-screen flex flex-col items-center justify-center z-50" style={{ backgroundColor: '#0d7b8a' }}>
+      <div className="fixed inset-0 min-h-screen flex flex-col items-center justify-center z-50" style={{ backgroundColor: "#0d7b8a" }}>
         <Loader2 className="animate-spin text-white mb-4" size={32} />
-        {/* Texto */}
-        <p className="font-mono text-xs tracking-widest uppercase font-bold text-white/70">Cargando...</p>
+        <p className="font-mono text-xs tracking-widest uppercase font-bold text-white/70">Verificando acceso...</p>
       </div>
     );
   }

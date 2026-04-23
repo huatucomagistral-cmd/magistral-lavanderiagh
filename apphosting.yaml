@@ -10,3 +10,16 @@ env:
     availability:
       - BUILD
       - RUNTIME
+  # Licencias — magistral-afiliados (Divi magistral)
+  - variable: NEXT_PUBLIC_LICENCIAS_API_KEY
+    value: "AIzaSyDsP6Yc-iF8SM1XeBSXL-dEXoT6uMBrihQ"
+  - variable: NEXT_PUBLIC_LICENCIAS_AUTH_DOMAIN
+    value: "magistral-afiliados.firebaseapp.com"
+  - variable: NEXT_PUBLIC_LICENCIAS_PROJECT_ID
+    value: "magistral-afiliados"
+  - variable: NEXT_PUBLIC_LICENCIAS_STORAGE_BUCKET
+    value: "magistral-afiliados.firebasestorage.app"
+  - variable: NEXT_PUBLIC_LICENCIAS_MESSAGING_SENDER_ID
+    value: "1022003192676"
+  - variable: NEXT_PUBLIC_LICENCIAS_APP_ID
+    value: "1:1022003192676:web:20022384c7f15f965e5071"
