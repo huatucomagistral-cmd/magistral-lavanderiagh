@@ -15,6 +15,7 @@ const OWNER_EMAILS = ["chuatucorojas25@gmail.com"];
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const setUser = useStore((state) => state.setUser);
   const setAuthError = useStore((state) => state.setAuthError);
+  const setHasLicense = useStore((state) => state.setHasLicense);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
@@ -30,6 +31,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           if (userDoc.exists()) {
             // Usuario conocido → acceso directo
             const data = userDoc.data();
+            setHasLicense(true);
             setUser({
               uid: firebaseUser.uid,
               email: firebaseUser.email,
@@ -40,6 +42,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
           } else if (OWNER_EMAILS.includes(email)) {
             // Bootstrap: correo del dueño original → crear su tienda
+            setHasLicense(true);
             await setDoc(doc(db, "users", email), {
               email,
               role: "ADMIN",
@@ -56,23 +59,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setAuthError(null);
 
           } else {
-            // 2. Usuario nuevo → verificar licencia en magistral-afiliados
             const tieneAcceso = await verificarLicencia(email);
 
             if (tieneAcceso) {
               // ✅ Licencia válida → puede registrar su lavandería
+              setHasLicense(true);
               if (pathname && !pathname.startsWith("/registro")) {
                 router.push("/registro");
               }
-              // No llamamos setUser aquí; AuthProvider lo hará después del registro
             } else {
-              // ❌ Sin licencia → cerrar sesión y mostrar error
-              await signOut(auth);
-              setUser(null);
-              setAuthError(
-                "No tienes una licencia activa para este sistema. " +
-                "Adquiere tu acceso en divi.magistral.pe"
-              );
+              // ❌ Sin licencia → Seteamos estado para mostrar modal
+              setHasLicense(false);
+              // Seteamos un usuario básico para que la app no lo saque de inmediato
+              setUser({
+                uid: firebaseUser.uid,
+                email: firebaseUser.email,
+                role: "ADMIN",
+                storeId: "no-license",
+              });
             }
           }
         } catch (error) {

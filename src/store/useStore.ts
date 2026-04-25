@@ -35,8 +35,10 @@ interface AppState {
   isCajaOpen: boolean;
   initialCash: number;
   cajaOpenedAt: string | null;
+  hasLicense: boolean | null;
   setUser: (user: User | null) => void;
   setAuthError: (error: string | null) => void;
+  setHasLicense: (has: boolean | null) => void;
   setStore: (store: LaundryStore | null) => void;
   addToCart: (item: CartItem) => void;
   removeFromCart: (id: string) => void;
@@ -46,6 +48,7 @@ interface AppState {
 export const useStore = create<AppState>((set) => ({
   user: null,
   authError: null,
+  hasLicense: null,
   currentStore: null,
   cart: [],
   isCajaOpen: false,
@@ -53,6 +56,7 @@ export const useStore = create<AppState>((set) => ({
   cajaOpenedAt: null,
   setUser: (user) => set({ user }),
   setAuthError: (error) => set({ authError: error }),
+  setHasLicense: (has) => set({ hasLicense: has }),
   setStore: (store) => set({ currentStore: store }),
   addToCart: (item) =>
     set((state) => ({
